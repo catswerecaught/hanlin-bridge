@@ -2,12 +2,12 @@
 .tutors-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 40px;
+    padding: 20px 40px 40px;
 }
 
 .tutors-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 25px;
 }
 
 .tutors-header h1 {
@@ -21,6 +21,12 @@
     font-size: 18px;
     color: var(--secondary-text-color);
     margin: 0;
+}
+
+.premium-tutor-explanation {
+    font-size: 16px;
+    color: var(--secondary-text-color);
+    margin-top: 15px;
 }
 
 .tutors-grid {

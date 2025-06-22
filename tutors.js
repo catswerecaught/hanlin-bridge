@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor1.jpg',
             score: '春考120，二模125',
             format: 'both',
-            price: '¥300/2小时',
+            price: '¥???/2小时',
             description: '语文静安高二下区统考88/100区一，高三上第一次月考130/150年一，高三二模125/150年一，三模129/150年一，春考语文120/150',
             isPremium: true // 头部助学人
         },
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor2.jpg',
             score: '高考A',
             format: 'offline',
-            price: '¥240/2小时',
+            price: '¥???/2小时',
             description: '没有躺赢的奇迹，只有厚积薄发的传奇。',
             isPremium: false
         },
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor3.jpg',
             score: '春考131，二模138',
             format: 'both',
-            price: '¥300/2小时',
+            price: '¥???/2小时',
             description: '拒绝"刷题化"单一教学模式，结合学生该学科学习情况提供针对性资源，分享自身学习过程中的心得、技巧、易错点，培养活跃性思维。',
             isPremium: true // 头部助学人
         },
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor4.jpg',
             score: '高考A+',
             format: 'both',
-            price: '¥300/2小时',
+            price: '¥???/2小时',
             description: '究天人之际，通古今之变，知应试之要。',
             isPremium: true
         },
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor5.jpg',
             score: '一模129，二模121',
             format: 'both',
-            price: '¥240/2小时',
+            price: '¥???/2小时',
             description: '还在担心老师的高深思维不易理解？我们的同龄将是相近思路的基础，能为您传递更易听懂的解法和思维过程。拒绝仅仅死板解题步骤的呈现。',
             isPremium: false // 头部助学人
         },
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor6.jpg',
             score: '高考A',
             format: 'both',
-            price: '¥240/2小时',
+            price: '¥???/2小时',
             description: '暂无',
             isPremium: false // 头部助学人
         },
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor7.jpg',
             score: '高考A+',
             format: 'both',
-            price: '¥300/2小时',
+            price: '¥???/2小时',
             description: '高考生物A+，用我的经验为你们导航，用知识为你们赋能，让我们一起追逐梦想，创造属于我们的辉煌！',
             isPremium: true // 头部助学人
         },
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor8.jpg',
             score: '一模117，二模124',
             format: 'both',
-            price: '¥240/2小时',
+            price: '¥???/2小时',
             description: '找到数学的乐趣，挖掘数学的潜能。',
             isPremium: false
         },
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor9.jpg',
             score: '未知',
             format: 'both',
-            price: '¥？/2小时',
+            price: '¥???/2小时',
             description: '暂无',
             isPremium: false
         }
@@ -250,72 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 初始化
     displayAllTutors();
-    highlightTutorFromURL(); // 调用高亮函数
-
-    // GSAP Navigation Highlight Effect (moved inside DOMContentLoaded)
-    const nav = document.querySelector('.main-nav ul');
-    const navItems = document.querySelectorAll('.main-nav ul li a');
-    const highlight = document.querySelector('.nav-highlight');
-
-    function moveHighlight(target) {
-        if (!target) return;
-        gsap.to(highlight, {
-            duration: 0.4,
-            ease: 'power3.out',
-            left: target.offsetLeft,
-            top: target.offsetTop,
-            width: target.offsetWidth,
-            height: target.offsetHeight,
-            opacity: 1
-        });
-    }
-
-    const activeLink = document.querySelector('.main-nav ul li a.active');
-    if (activeLink) {
-        setTimeout(() => moveHighlight(activeLink.parentElement), 50);
-    }
-    
-    if (nav) {
-        navItems.forEach(item => {
-            const parentLi = item.parentElement;
-            parentLi.addEventListener('mouseenter', () => {
-                moveHighlight(parentLi);
-            });
-        });
-
-        nav.addEventListener('mouseleave', () => {
-            if (activeLink) {
-                moveHighlight(activeLink.parentElement);
-            } else {
-                gsap.to(highlight, {
-                    duration: 0.3,
-                    opacity: 0
-                });
-            }
-        });
-    }
-
-    // Page Transition Effect
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-        document.querySelectorAll('.main-nav a[href*=".html"]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                const destination = this.href;
-
-                // 如果是当前页面，则不执行任何操作
-                if (window.location.href.endsWith(this.getAttribute('href'))) {
-                    e.preventDefault();
-                    return;
-                }
-
-                e.preventDefault();
-                mainContent.classList.add('is-exiting');
-                setTimeout(() => {
-                    window.location.href = destination;
-                }, 500); // 必须与CSS动画时长匹配
-            });
-        });
-    }
+    highlightTutorFromURL();
+    initContactModal();
 }); 

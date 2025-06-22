@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: 'images/tutor1.jpg',
             score: '春考120，二模125',
             format: 'both',
-            price: '¥300/2小时',
+            price: '¥3??/2小时',
             description: '语文静安高二下区统考88/100区一，高三上第一次月考130/150年一，高三二模125/150年一，三模129/150年一，春考语文120/150',
             isPremium: true // 头部助学人
         },
@@ -155,73 +155,72 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // GSAP Navigation Highlight Effect
-    const nav = document.querySelector('.main-nav ul');
-    const navItems = document.querySelectorAll('.main-nav ul li a');
+    // --- SMOOTH NAVIGATION HIGHLIGHT LOGIC ---
+
+    const navList = document.querySelector('.main-nav ul');
+    const navLinks = document.querySelectorAll('.main-nav ul li a');
     const highlight = document.querySelector('.nav-highlight');
-
-    // Function to move the highlight
-    function moveHighlight(target) {
-        gsap.to(highlight, {
-            duration: 0.4,
-            ease: 'power3.out',
-            left: target.offsetLeft,
-            top: target.offsetTop,
-            width: target.offsetWidth,
-            height: target.offsetHeight,
-            // opacity: 1 // No longer needed as it's always visible
-        });
-    }
-
-    // Set initial position on the active link
     const activeLink = document.querySelector('.main-nav ul li a.active');
-    if (activeLink) {
-        // Use a short delay to ensure dimensions are calculated correctly
-        // We still use GSAP here for a smooth initial placement, but without the fade-in.
-        setTimeout(() => moveHighlight(activeLink.parentElement), 50);
-    }
-    
-    /*
-    // REMOVED mouse enter/leave logic to prevent highlight from moving on hover.
-    // The highlight will now stay on the active item.
-    navItems.forEach(item => {
-        const parentLi = item.parentElement;
-        parentLi.addEventListener('mouseenter', () => {
-            moveHighlight(parentLi);
-        });
-    });
 
-    // Handle mouse leaving the entire navigation area
-    nav.addEventListener('mouseleave', () => {
-        if (activeLink) {
-            moveHighlight(activeLink.parentElement);
-        } else {
-            // If there's no active link, we don't need to do anything.
-            // The highlight will just stay where it is, or can be hidden if preferred.
-            // For now, we do nothing.
-        }
-    });
-    */
+    // On page load, move the highlight
+    if (activeLink && highlight) {
+        const lastPos = sessionStorage.getItem('navHighlightPos');
+        const targetLi = activeLink.parentElement;
 
-    // Page Transition Effect
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-        document.querySelectorAll('.main-nav a[href*=".html"]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                const destination = this.href;
+        // Make sure the element is visible from the start
+        gsap.set(highlight, { opacity: 1 });
 
-                // 如果是当前页面，则不执行任何操作
-                if (window.location.href.endsWith(this.getAttribute('href'))) {
-                    e.preventDefault();
-                    return;
+        if (lastPos) {
+            // If we have a stored position, animate from it
+            const fromPos = JSON.parse(lastPos);
+            
+            gsap.fromTo(highlight, 
+                { // from
+                    left: fromPos.left,
+                    top: fromPos.top,
+                    width: fromPos.width,
+                    height: fromPos.height
+                }, 
+                { // to
+                    duration: 0.5,
+                    ease: 'power3.out',
+                    left: targetLi.offsetLeft,
+                    top: targetLi.offsetTop,
+                    width: targetLi.offsetWidth,
+                    height: targetLi.offsetHeight
                 }
-
-                e.preventDefault();
-                mainContent.classList.add('is-exiting');
-                setTimeout(() => {
-                    window.location.href = destination;
-                }, 500); // 必须与CSS动画时长匹配
+            );
+            sessionStorage.removeItem('navHighlightPos');
+        } else {
+            // Otherwise, just set it instantly without animation
+            gsap.set(highlight, {
+                left: targetLi.offsetLeft,
+                top: targetLi.offsetTop,
+                width: targetLi.offsetWidth,
+                height: targetLi.offsetHeight
             });
-        });
+        }
     }
+
+    // Before leaving the page, store the current highlight position
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            // Only store for valid, internal page links
+            if (href && href !== '#' && !href.startsWith('javascript:') && !link.classList.contains('active')) {
+                const currentActiveLi = document.querySelector('.main-nav ul li a.active').parentElement;
+                if (currentActiveLi) {
+                    const pos = {
+                        left: currentActiveLi.offsetLeft,
+                        top: currentActiveLi.offsetTop,
+                        width: currentActiveLi.offsetWidth,
+                        height: currentActiveLi.offsetHeight
+                    };
+                    sessionStorage.setItem('navHighlightPos', JSON.stringify(pos));
+                }
+            }
+        });
+    });
+
+    // --- END OF SMOOTH NAVIGATION LOGIC ---
 });

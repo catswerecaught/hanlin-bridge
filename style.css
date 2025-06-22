@@ -83,13 +83,12 @@ body {
     /* opacity: 0; */ /* REMOVED to prevent fade-in effect */
     pointer-events: none;
     z-index: 1; /* Below the text but above the grey island */
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition for movement */
 }
 
 .content-wrapper {
     display: flex;
     gap: 40px;
-    padding: 40px;
+    padding: 20px 40px 40px;
     max-width: 1200px;
     margin: 0 auto;
     align-items: flex-start;
@@ -319,12 +318,47 @@ main.is-exiting {
 }
 
 @keyframes pageFadeOut {
-    from {
-        opacity: 1;
-        transform: scale(1);
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+
+/* --- Responsive Design for Mobile --- */
+
+@media (max-width: 768px) {
+    .main-header {
+        padding: 10px 0;
     }
-    to {
-        opacity: 0;
-        transform: scale(0.98);
+
+    .main-nav ul li a {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .content-wrapper {
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .tutor-recommendations {
+        position: static;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .activity-card {
+        min-height: 250px;
+    }
+
+    .activity-text h2 {
+        font-size: 24px;
+    }
+
+    .activity-details h3 {
+        font-size: 20px;
+    }
+
+    .activity-details p {
+        font-size: 14px;
     }
 }
