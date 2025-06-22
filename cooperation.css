@@ -8,13 +8,13 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 20px 40px 40px;
+    padding: 40px;
 }
 
 .founder-section {
     max-width: 1000px;
     width: 100%;
-    margin-top: -40px;
+    /* margin-top: -40px; */ /* Removed to restore gap with navbar */
 }
 
 .founder-card {
