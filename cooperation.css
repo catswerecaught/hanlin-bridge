@@ -1,0 +1,121 @@
+/* 合作页面样式 */
+.cooperation-content {
+    min-height: calc(100vh - 52px);
+    background-image: url('images/cooperation-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px;
+    padding-top: 80px;
+}
+
+.founder-section {
+    max-width: 1000px;
+    width: 100%;
+    margin-top: -40px;
+}
+
+.founder-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px;
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.founder-image-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.founder-image {
+    width: 200px;
+    height: 200px;
+    border-radius: 20px;
+    object-fit: cover;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.verification-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 3px solid white;
+}
+
+.verification-badge svg {
+    width: 24px;
+    height: 24px;
+}
+
+.founder-info {
+    flex: 1;
+}
+
+.founder-name {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.founder-title {
+    font-size: 18px;
+    color: var(--primary-blue);
+    font-weight: 600;
+    margin: 0 0 24px 0;
+}
+
+.founder-description {
+    color: var(--secondary-text-color);
+    line-height: 1.6;
+}
+
+.founder-description p {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+}
+
+.founder-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .founder-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px;
+    }
+    
+    .founder-image {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+    }
+    
+    .founder-name {
+        font-size: 28px;
+    }
+    
+    .founder-title {
+        font-size: 16px;
+    }
+} 

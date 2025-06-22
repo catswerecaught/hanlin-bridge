@@ -1,0 +1,223 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // 完整的助学人数据 - 与tutors.js保持一致
+    const tutors = [
+        {
+            name: '杜学姐',
+            subject: '语文·头部助学人',
+            avatar: 'images/tutor1.jpg',
+            score: '春考120，二模125',
+            format: 'both',
+            price: '¥300/2小时',
+            description: '语文静安高二下区统考88/100区一，高三上第一次月考130/150年一，高三二模125/150年一，三模129/150年一，春考语文120/150',
+            isPremium: true // 头部助学人
+        },
+        {
+            name: '顾学长',
+            subject: '生物助学人',
+            avatar: 'images/tutor2.jpg',
+            score: '高考A',
+            format: 'offline',
+            price: '¥240/2小时',
+            description: '没有躺赢的奇迹，只有厚积薄发的传奇。',
+            isPremium: false
+        },
+        {
+            name: '李学长',
+            subject: '数学·头部助学人',
+            avatar: 'images/tutor3.jpg',
+            score: '春考131，二模138',
+            format: 'both',
+            price: '¥300/2小时',
+            description: '拒绝"刷题化"单一教学模式，结合学生该学科学习情况提供针对性资源，分享自身学习过程中的心得、技巧、易错点，培养活跃性思维。',
+            isPremium: true // 头部助学人
+        },
+        {
+            name: '王学长',
+            subject: '历史·头部助学人',
+            avatar: 'images/tutor4.jpg',
+            score: '高考A+',
+            format: 'both',
+            price: '¥300/2小时',
+            description: '究天人之际，通古今之变，知应试之要。',
+            isPremium: true
+        },
+        {
+            name: '翁学姐',
+            subject: '数学',
+            avatar: 'images/tutor5.jpg',
+            score: '一模129，二模121',
+            format: 'both',
+            price: '¥240/2小时',
+            description: '还在担心老师的高深思维不易理解？我们的同龄将是相近思路的基础，能为您传递更易听懂的解法和思维过程。拒绝仅仅死板解题步骤的呈现。',
+            isPremium: false // 头部助学人
+        },
+        {
+            name: '邬学长',
+            subject: '地理',
+            avatar: 'images/tutor6.jpg',
+            score: '高考A',
+            format: 'both',
+            price: '¥240/2小时',
+            description: '暂无',
+            isPremium: false // 头部助学人
+        },
+        {
+            name: '包学长',
+            subject: '生物·头部助学人',
+            avatar: 'images/tutor7.jpg',
+            score: '高考A+',
+            format: 'both',
+            price: '¥300/2小时',
+            description: '高考生物A+，用我的经验为你们导航，用知识为你们赋能，让我们一起追逐梦想，创造属于我们的辉煌！',
+            isPremium: true // 头部助学人
+        },
+        {
+            name: '徐学姐',
+            subject: '数学',
+            avatar: 'images/tutor8.jpg',
+            score: '一模117，二模124',
+            format: 'both',
+            price: '¥240/2小时',
+            description: '找到数学的乐趣，挖掘数学的潜能。',
+            isPremium: false
+        },
+        {
+            name: '正在招募中',
+            subject: '未知',
+            avatar: 'images/tutor9.jpg',
+            score: '未知',
+            format: 'both',
+            price: '¥？/2小时',
+            description: '暂无',
+            isPremium: false
+        }
+    ];
+
+    const tutorContainer = document.querySelector('.tutor-card-container');
+    
+    if (tutorContainer) {
+        function getRandomTutors(tutorList, count) {
+            const shuffled = [...tutorList].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        function displayTutors() {
+            tutorContainer.innerHTML = '';
+            const randomTutors = getRandomTutors(tutors, 4);
+
+            randomTutors.forEach(tutor => {
+                const tutorCardLink = document.createElement('a');
+                tutorCardLink.className = 'tutor-card';
+                if (tutor.isPremium) {
+                    tutorCardLink.classList.add('premium');
+                }
+                
+                tutorCardLink.href = `tutors.html?highlight=${encodeURIComponent(tutor.name)}`;
+                
+                tutorCardLink.innerHTML = `
+                    <img src="${tutor.avatar}" alt="${tutor.name}" onerror="this.src='images/tutor1.jpg'">
+                    <div class="tutor-info">
+                        <h4>${tutor.name}</h4>
+                        <p>${tutor.subject}</p>
+                    </div>
+                `;
+                
+                tutorContainer.appendChild(tutorCardLink);
+            });
+        }
+
+        displayTutors();
+    }
+
+    // Activity Card Expand/Collapse Logic
+    const activityWrappers = document.querySelectorAll('.activity-wrapper');
+
+    activityWrappers.forEach(activityWrapper => {
+        const activityCard = activityWrapper.querySelector('.activity-card');
+        const closeActivityBtn = activityWrapper.querySelector('.close-activity-btn');
+
+        if (activityCard && closeActivityBtn) {
+            activityCard.addEventListener('click', () => {
+                // Close any other expanded card first
+                activityWrappers.forEach(otherWrapper => {
+                    if (otherWrapper !== activityWrapper) {
+                        otherWrapper.classList.remove('is-expanded');
+                    }
+                });
+                // Then expand the clicked one
+                activityWrapper.classList.add('is-expanded');
+            });
+
+            closeActivityBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // 防止事件冒泡到activityCard上
+                activityWrapper.classList.remove('is-expanded');
+            });
+        }
+    });
+
+    // GSAP Navigation Highlight Effect
+    const nav = document.querySelector('.main-nav ul');
+    const navItems = document.querySelectorAll('.main-nav ul li a');
+    const highlight = document.querySelector('.nav-highlight');
+
+    // Function to move the highlight
+    function moveHighlight(target) {
+        gsap.to(highlight, {
+            duration: 0.4,
+            ease: 'power3.out',
+            left: target.offsetLeft,
+            top: target.offsetTop,
+            width: target.offsetWidth,
+            height: target.offsetHeight,
+            opacity: 1
+        });
+    }
+
+    // Set initial position on the active link
+    const activeLink = document.querySelector('.main-nav ul li a.active');
+    if (activeLink) {
+        // Use a short delay to ensure dimensions are calculated correctly
+        setTimeout(() => moveHighlight(activeLink.parentElement), 50);
+    }
+    
+    navItems.forEach(item => {
+        const parentLi = item.parentElement;
+        parentLi.addEventListener('mouseenter', () => {
+            moveHighlight(parentLi);
+        });
+    });
+
+    // Handle mouse leaving the entire navigation area
+    nav.addEventListener('mouseleave', () => {
+        if (activeLink) {
+            moveHighlight(activeLink.parentElement);
+        } else {
+            gsap.to(highlight, {
+                duration: 0.3,
+                opacity: 0
+            });
+        }
+    });
+
+    // Page Transition Effect
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        document.querySelectorAll('.main-nav a[href*=".html"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const destination = this.href;
+
+                // 如果是当前页面，则不执行任何操作
+                if (window.location.href.endsWith(this.getAttribute('href'))) {
+                    e.preventDefault();
+                    return;
+                }
+
+                e.preventDefault();
+                mainContent.classList.add('is-exiting');
+                setTimeout(() => {
+                    window.location.href = destination;
+                }, 500); // 必须与CSS动画时长匹配
+            });
+        });
+    }
+});

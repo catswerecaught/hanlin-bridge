@@ -1,0 +1,363 @@
+/* 助学人页面专用样式 */
+.tutors-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px;
+}
+
+.tutors-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.tutors-header h1 {
+    font-size: 36px;
+    color: var(--dark-blue);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.tutors-header p {
+    font-size: 18px;
+    color: var(--secondary-text-color);
+    margin: 0;
+}
+
+.tutors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.tutor-card-full {
+    background: var(--card-background);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.tutor-card-full:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-blue);
+}
+
+.tutor-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.tutor-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-blue);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+    position: relative;
+}
+
+/* 头部助学人的金色头像框 */
+.tutor-avatar.premium {
+    border: 3px solid #DAA520;
+    box-shadow: 0 4px 20px rgba(218, 165, 32, 0.4);
+}
+
+/* 认证图标 */
+.verification-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(45deg, #DAA520, #B8860B);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(218, 165, 32, 0.5);
+    border: 2px solid white;
+}
+
+.verification-badge::before {
+    content: '✓';
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.tutor-basic-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 20px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.tutor-subject {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary-blue);
+    font-weight: 500;
+}
+
+.tutor-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.tutor-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.tutor-detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-size: 14px;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.tutor-score {
+    color: var(--dark-green);
+}
+
+.tutor-format {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tutor-format.online {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.tutor-format.offline {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.tutor-format.both {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.tutor-price {
+    color: #ff6b35;
+    font-weight: 700;
+}
+
+.tutor-description {
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    flex-grow: 1;
+}
+
+.tutor-description p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.tutor-contact {
+    margin-top: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.contact-btn {
+    background-color: #0071e3; /* 苹果官网购买按钮蓝色 */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 980px; /* 改为苹果风格的胶囊形状 */
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease; /* 更新过渡效果 */
+    box-shadow: none; /* 移除阴影 */
+}
+
+.contact-btn:hover {
+    background-color: #0077ed; /* 鼠标悬浮时颜色微调 */
+    transform: translateY(-2px);
+    box-shadow: none; /* 确保悬浮时也没有阴影 */
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .tutors-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tutors-content {
+        padding: 20px;
+    }
+    
+    .tutors-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .tutors-header h1 {
+        font-size: 28px;
+    }
+    
+    .tutors-header p {
+        font-size: 16px;
+    }
+}
+
+/* 加载动画 */
+.tutor-card-full {
+    animation: fadeInUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 为每个卡片添加延迟动画 */
+.tutor-card-full:nth-child(1) { animation-delay: 0.1s; }
+.tutor-card-full:nth-child(2) { animation-delay: 0.2s; }
+.tutor-card-full:nth-child(3) { animation-delay: 0.3s; }
+.tutor-card-full:nth-child(4) { animation-delay: 0.4s; }
+.tutor-card-full:nth-child(5) { animation-delay: 0.5s; }
+.tutor-card-full:nth-child(6) { animation-delay: 0.6s; }
+
+
+/* Contact Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #ddd;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 16px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    animation: fadeInModal 0.4s ease-out;
+}
+
+.close-modal-btn {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal-btn:hover,
+.close-modal-btn:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 22px;
+    color: var(--text-color);
+}
+
+.qr-code-modal {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.wechat-id-modal {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dark-blue);
+    background-color: #f0f5fa;
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Highlight Animation - Breathing Effect */
+.tutor-card-full.is-highlighted .tutor-avatar {
+    /*
+      一个动画 (2.5s) 代表一次完整的呼吸 (放大再缩小).
+      重复3次.
+    */
+    animation: gold-breath 2.5s ease-in-out 3;
+}
+
+@keyframes gold-breath {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
