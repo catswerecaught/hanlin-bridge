@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
             top: target.offsetTop,
             width: target.offsetWidth,
             height: target.offsetHeight,
-            opacity: 1
+            // opacity: 1 // No longer needed as it's always visible
         });
     }
 
@@ -177,9 +177,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const activeLink = document.querySelector('.main-nav ul li a.active');
     if (activeLink) {
         // Use a short delay to ensure dimensions are calculated correctly
+        // We still use GSAP here for a smooth initial placement, but without the fade-in.
         setTimeout(() => moveHighlight(activeLink.parentElement), 50);
     }
     
+    /*
+    // REMOVED mouse enter/leave logic to prevent highlight from moving on hover.
+    // The highlight will now stay on the active item.
     navItems.forEach(item => {
         const parentLi = item.parentElement;
         parentLi.addEventListener('mouseenter', () => {
@@ -192,12 +196,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeLink) {
             moveHighlight(activeLink.parentElement);
         } else {
-            gsap.to(highlight, {
-                duration: 0.3,
-                opacity: 0
-            });
+            // If there's no active link, we don't need to do anything.
+            // The highlight will just stay where it is, or can be hidden if preferred.
+            // For now, we do nothing.
         }
     });
+    */
 
     // Page Transition Effect
     const mainContent = document.querySelector('main');

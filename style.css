@@ -80,9 +80,10 @@ body {
     background-color: white; /* The white inner island */
     border-radius: 999px; /* Pill-shaped */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    opacity: 0;
+    /* opacity: 0; */ /* REMOVED to prevent fade-in effect */
     pointer-events: none;
     z-index: 1; /* Below the text but above the grey island */
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition for movement */
 }
 
 .content-wrapper {
