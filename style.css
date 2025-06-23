@@ -352,12 +352,17 @@ main.is-exiting {
 /* --- Responsive Design for Mobile --- */
 
 @media (max-width: 768px) {
+    .logo {
+        display: none; /* Hide logo on mobile */
+    }
+
     .main-header {
         padding: 10px 20px; /* Give more horizontal space */
     }
 
     .main-nav-container {
-        gap: 15px; /* Reduce gap between logo and nav on mobile */
+        justify-content: center; /* Center the nav bar since the logo is gone */
+        gap: 0;
     }
 
     .main-nav {
