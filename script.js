@@ -376,4 +376,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
     }
+
+    // 权限拦截：只有Pro会员可进入趋势页面
+    function setupTrendAccessControl() {
+        // 只在非 trend.html 页面拦截
+        if (window.location.pathname.endsWith('trend.html')) return;
+        var navLinks = document.querySelectorAll('.main-nav ul li a');
+        var trendLink = Array.from(navLinks).find(a => a.textContent.trim() === '趋势');
+        if (!trendLink) return;
+        trendLink.addEventListener('click', function(e) {
+            var user = getLoginUser();
+            if (!user || user.vip !== 'Pro会员') {
+                e.preventDefault();
+                var modal = document.getElementById('proOnlyModal');
+                if (modal) {
+                    modal.classList.add('show');
+                    setTimeout(function() {
+                        modal.classList.remove('show');
+                    }, 1500);
+                } else {
+                    alert('该功能仅向Pro用户开放');
+                }
+            }
+        });
+    }
+    setupTrendAccessControl();
 });

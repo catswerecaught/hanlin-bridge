@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>合作 - 翰林桥</title>
+    <title>趋势 - 智能教学</title>
     <link rel="stylesheet" href="style.css?v=3">
-    <link rel="stylesheet" href="cooperation.css?v=1.2">
+    <link rel="stylesheet" href="trend.css?v=1">
 </head>
 <body>
     <header class="main-header">
@@ -16,9 +16,9 @@
                     <li class="nav-highlight"></li>
                     <li><a href="index.html">首页</a></li>
                     <li><a href="tutors.html">助学人</a></li>
-                    <li><a href="trend.html">趋势</a></li>
+                    <li><a href="trend.html" class="active">趋势</a></li>
                     <li><a href="help.html">帮助</a></li>
-                    <li><a href="cooperation.html" class="active">合作</a></li>
+                    <li><a href="cooperation.html">合作</a></li>
                 </ul>
             </nav>
             <div class="user-avatar" id="userAvatar">
@@ -38,31 +38,40 @@
             <div class="login-error" id="loginError"></div>
         </div>
     </div>
-
-    <main class="cooperation-content">
-        <div class="founder-section">
-            <div class="founder-card">
-                <div class="founder-image-container">
-                    <img src="images/founder.jpg" alt="陶悠然" class="founder-image">
-                    <div class="verification-badge">
-                        <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <text x="18" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">V</text>
-                        </svg>
-                    </div>
-                </div>
-                <div class="founder-info">
-                    <h1 class="founder-name">陶先生</h1>
-                    <p class="founder-title">平台创始人兼负责人</p>
-                    <div class="founder-description">
-                        <p>致力于连接求知者与助学者，构建知识传承的桥梁。秉持"薪火相传"的教育理念，为每一个学习者提供个性化的成长路径。</p>
-                        <p>在自媒体领域拥有丰富经验。</p>
-                    </div>
-                </div>
-            </div>
+    <main class="trend-docs-wrapper">
+        <aside class="trend-sidebar" id="trendSidebar">
+            <h2>目录</h2>
+            <ul id="trendCatalog">
+                <li>智能教学简介</li>
+                <li>核心功能</li>
+                <li>应用场景</li>
+                <li>未来趋势</li>
+            </ul>
+        </aside>
+        <section class="trend-content" id="trendContent">
+            <h1>智能教学产品文档</h1>
+            <p>欢迎编辑此处内容，介绍智能教学的理念、功能、应用与未来发展。</p>
+            <h2>智能教学简介</h2>
+            <p>智能教学结合AI与大数据，为师生提供个性化、数据驱动的学习体验。</p>
+            <h2>核心功能</h2>
+            <ul>
+                <li>智能作业批改</li>
+                <li>学习路径推荐</li>
+                <li>实时学习分析</li>
+            </ul>
+            <h2>应用场景</h2>
+            <p>适用于K12、高校、职业培训等多种教育场景。</p>
+            <h2>未来趋势</h2>
+            <p>AI驱动的教育将持续进化，助力每一位学习者成长。</p>
+        </section>
+        <div class="trend-edit-btns">
+            <button id="editBtn">编辑</button>
+            <button id="saveBtn" style="display:none;">保存</button>
         </div>
     </main>
-
+    <div class="pro-only-modal" id="proOnlyModal">该功能仅向Pro用户开放</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="script.js?v=3"></script>
+    <script src="trend.js?v=1"></script>
 </body>
 </html> 

@@ -500,7 +500,7 @@ main.is-exiting {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: box-shadow 0.2s, transform 0.22s cubic-bezier(.4,1.2,.4,1);
+    transition: none !important;
 }
 .user-avatar:hover .logout-popover,
 .user-avatar .logout-popover:hover {
@@ -511,7 +511,7 @@ main.is-exiting {
     box-shadow: 0 4px 16px rgba(0,0,0,0.13);
 }
 .user-avatar-img {
-    transition: box-shadow 0.2s, transform 0.22s cubic-bezier(.4,1.2,.4,1);
+    transition: none !important;
 }
 .user-avatar img,
 .user-avatar .user-initial {
@@ -632,7 +632,7 @@ main.is-exiting {
     font-size: 16px;
     color: #007aff;
     font-weight: 500;
-    transition: opacity 0.28s cubic-bezier(.4,1.2,.4,1), left 0.28s cubic-bezier(.4,1.2,.4,1);
+    transition: none !important;
     user-select: none;
     cursor: pointer;
     border: none;
@@ -661,6 +661,7 @@ main.is-exiting {
     z-index: 12;
     object-fit: contain;
     pointer-events: none;
+    transition: none !important;
 }
 
 .user-avatar img.vip-badge {

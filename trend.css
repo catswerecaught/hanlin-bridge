@@ -1,0 +1,140 @@
+/* 趋势页面文档风格布局 */
+.trend-docs-wrapper {
+    display: flex;
+    min-height: 80vh;
+    max-width: 1200px;
+    margin: 32px auto 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.trend-sidebar {
+    width: 220px;
+    background: #f7f8fa;
+    border-right: 1.5px solid #ececec;
+    padding: 32px 18px 32px 24px;
+    font-size: 16px;
+    color: #1d1d1f;
+    min-width: 140px;
+    outline: none;
+}
+.trend-sidebar h2 {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #007aff;
+}
+.trend-sidebar ul {
+    list-style: disc inside;
+    padding: 0;
+    margin: 0;
+}
+.trend-sidebar li {
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: text;
+}
+.trend-content {
+    flex: 1;
+    padding: 40px 40px 40px 36px;
+    font-size: 17px;
+    color: #222;
+    line-height: 1.7;
+    outline: none;
+    min-width: 0;
+}
+.trend-content h1 {
+    font-size: 2.1em;
+    margin-top: 0;
+    color: #007aff;
+}
+.trend-content h2 {
+    font-size: 1.3em;
+    margin-top: 32px;
+    color: #0a2c52;
+}
+.trend-content ul {
+    margin: 12px 0 24px 24px;
+}
+.trend-content p {
+    margin: 12px 0;
+}
+.pro-only-modal {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 60px;
+    transform: translateX(-50%);
+    background: rgba(34,34,34,0.97);
+    color: #fff;
+    font-size: 17px;
+    padding: 16px 32px;
+    border-radius: 14px;
+    z-index: 3000;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+.pro-only-modal.show {
+    display: block;
+    opacity: 1;
+}
+.trend-edit-btns {
+    position: absolute;
+    top: 24px;
+    right: 48px;
+    z-index: 10;
+    display: flex;
+    gap: 16px;
+}
+#editBtn, #saveBtn {
+    background: #007aff;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 28px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.2s;
+}
+#editBtn:hover, #saveBtn:hover {
+    background: #005ecb;
+}
+.catalog-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border-radius: 50%;
+    background: #28a745;
+    vertical-align: middle;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(40,167,69,0.13);
+    border: 2px solid #fff;
+    transition: box-shadow 0.2s;
+}
+.catalog-dot.active {
+    box-shadow: 0 0 0 3px #b6f2c2;
+}
+@media (max-width: 900px) {
+    .trend-docs-wrapper {
+        flex-direction: column;
+        margin: 12px 0 0 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .trend-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1.5px solid #ececec;
+        padding: 18px 12px 12px 16px;
+        min-width: 0;
+    }
+    .trend-content {
+        padding: 24px 10px 24px 10px;
+    }
+} 
