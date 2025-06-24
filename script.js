@@ -249,11 +249,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 用户模拟数据
     const users = [
-        { name: '111', username: '111', password: '111', vip: 'Pro会员', avatar: 'images/user00001.jpg' },
+        { name: '111', username: 'user00001', password: '111', vip: 'Pro会员', avatar: 'images/user00001.jpg' },
         { name: '李雷', username: 'user00002', password: 'abc123', vip: 'Pro会员', avatar: 'images/user00002.jpg' },
         { name: '张三', username: 'user00003', password: 'pass321', vip: '普通会员', avatar: 'images/user00003.jpg' },
         { name: '赵四', username: 'user00004', password: 'qwerty', vip: '普通会员', avatar: 'images/user00004.jpg' },
-        { name: '孙五', username: 'user00005', password: 'letmein', vip: 'Pro会员', avatar: 'images/user00005.jpg' }
+        { name: '邬学长', username: 'goxuezhang', password: 'letmein', vip: 'Pro会员', avatar: 'images/user00005.jpg' }
     ];
 
     function getInitial(name) {
