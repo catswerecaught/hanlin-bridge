@@ -78,6 +78,7 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Failed to write to KV', detail: text });
         return;
       }
+      console.log('保存时的docData:', JSON.stringify(body, null, 2));
       res.status(200).json({ success: true });
     } catch (err) {
       console.error('POST /api/trend error:', err);
