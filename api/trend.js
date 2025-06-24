@@ -43,7 +43,11 @@ export default async function handler(req, res) {
         });
         return;
       }
-      res.status(200).json(result.value || result);
+      let data = result.value || result;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
+      res.status(200).json(data);
     } catch (err) {
       console.error('GET /api/trend error:', err);
       res.status(500).json({ error: 'Internal Server Error', detail: String(err) });
