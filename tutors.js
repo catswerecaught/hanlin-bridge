@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
             subject: '生物助学人',
             avatar: 'images/tutor2.jpg',
             score: '高考A',
-            format: 'offline',
+            format: 'online',
             price: '¥???/2小时',
             description: '没有躺赢的奇迹，只有厚积薄发的传奇。',
             isPremium: false
