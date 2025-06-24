@@ -47,6 +47,7 @@ let editMode = false;
 let currentIndex = 0;
 
 function renderCatalog(editing) {
+    if (!docData || !Array.isArray(docData.catalog)) return;
     catalogUl.innerHTML = '';
     docData.catalog.forEach((item, idx) => {
         const li = document.createElement('li');
@@ -80,6 +81,7 @@ function renderCatalog(editing) {
 }
 
 function renderContent(editing) {
+    if (!docData || !Array.isArray(docData.contents)) return;
     contentSection.innerHTML = '';
     if (!editing) {
         // 阅览模式：显示所有内容
@@ -169,6 +171,9 @@ saveBtn.onclick = async function() {
 // 初始化
 async function init() {
     docData = await loadTrendData();
+    if (!docData || !Array.isArray(docData.catalog) || !Array.isArray(docData.contents)) {
+        docData = { catalog: [], contents: [] };
+    }
     renderCatalog(false);
     renderContent(false);
 }
