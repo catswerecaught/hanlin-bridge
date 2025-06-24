@@ -303,7 +303,7 @@ body {
 
 /* 首页推荐助学人卡片的"头部"特殊样式 */
 .tutor-card.premium {
-    background: linear-gradient(90deg, #FFE066 0%, #FFFBEA 100%);
+    background: linear-gradient(90deg, #E6B800 0%, #FFFBEA 100%);
 }
 
 .tutor-card img {
