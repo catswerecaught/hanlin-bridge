@@ -18,7 +18,10 @@ body {
 }
 
 .main-header {
-    padding: 10px 40px;
+    width: 100vw;
+    min-width: 100vw;
+    left: 0;
+    right: 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -27,8 +30,12 @@ body {
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     transition: background-color 0.3s ease;
     display: grid;
-    grid-template-columns: 1fr auto 1fr; /* Left-spacer | Content | Right-spacer */
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    position: sticky;
+    height: 68px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 .logo {
@@ -41,6 +48,7 @@ body {
     border-radius: 50%;
     box-shadow: none;
     text-decoration: none;
+    margin-right: 16px;
 }
 
 #site-logo {
@@ -52,14 +60,20 @@ body {
 }
 
 .main-nav-container {
-    grid-column: 2 / 3; /* Place the container in the center column */
+    grid-column: 2 / 3;
     display: flex;
     align-items: center;
-    gap: 20px; /* This now controls the gap between logo and nav */
-    justify-self: center; /* Ensure the container itself is centered */
+    gap: 20px;
+    justify-self: center;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .main-nav {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
     width: fit-content;
     margin: 0;
     background-color: #e8e8ed;
@@ -357,16 +371,18 @@ main.is-exiting {
     }
 
     .main-header {
-        padding: 10px 20px; /* Give more horizontal space */
+        height: 54px;
+        padding-top: 4px;
+        padding-bottom: 4px;
     }
 
     .main-nav-container {
-        justify-content: center; /* Center the nav bar since the logo is gone */
         gap: 0;
     }
 
     .main-nav {
-        padding: 6px; /* Slightly reduce padding on the nav pill */
+        flex: 1 1 auto;
+        justify-content: center;
     }
 
     .main-nav ul {
@@ -376,8 +392,8 @@ main.is-exiting {
     }
 
     .main-nav ul li a {
-        font-size: 14px;
-        padding: 8px 12px;
+        font-size: 13px;
+        padding: 7px 10px;
     }
 
     .content-wrapper {
@@ -407,6 +423,40 @@ main.is-exiting {
     .activity-details p {
         font-size: 14px;
     }
+
+    .user-avatar {
+        right: 8px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .user-avatar-img,
+    .user-avatar img,
+    .user-avatar .user-initial {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 18px;
+    }
+
+    .user-avatar img.vip-badge {
+        width: 11px !important;
+        height: 11px !important;
+        right: -2px;
+        bottom: -2px;
+        border-width: 1px !important;
+    }
+
+    .logout-popover {
+        min-width: 70px;
+        height: 32px;
+        font-size: 13px;
+        border-radius: 16px;
+        left: -70px;
+    }
+
+    .user-avatar.show-logout .logout-popover {
+        left: -60px;
+    }
 }
 
 .shuffle-tutors-btn {
@@ -425,4 +475,201 @@ main.is-exiting {
 .shuffle-tutors-btn:hover {
     background: #e0e0e0;
     color: #111;
+}
+
+.user-avatar {
+    position: absolute;
+    right: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 10;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #f5f5f7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.22s cubic-bezier(.4,1.2,.4,1);
+}
+.user-avatar:hover .logout-popover,
+.user-avatar .logout-popover:hover {
+    /* 不影响头像缩放 */
+}
+.user-avatar-img:hover {
+    transform: scale(1.13);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+}
+.user-avatar-img {
+    transition: box-shadow 0.2s, transform 0.22s cubic-bezier(.4,1.2,.4,1);
+}
+.user-avatar img,
+.user-avatar .user-initial {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    font-size: 28px;
+}
+
+.login-modal {
+    display: none;
+    position: fixed;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.18);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.35s cubic-bezier(.4,1.2,.4,1);
+    opacity: 0;
+    pointer-events: none;
+}
+.login-modal.show {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+}
+.login-modal-content {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(22px);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 36px 28px 28px 28px;
+    min-width: 320px;
+    max-width: 90vw;
+    text-align: center;
+    position: relative;
+    animation: fadeInModal 0.4s cubic-bezier(.4,1.2,.4,1);
+    opacity: 0;
+    transform: translateY(32px) scale(0.98);
+    transition: opacity 0.35s cubic-bezier(.4,1.2,.4,1), transform 0.35s cubic-bezier(.4,1.2,.4,1);
+}
+.login-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    font-size: 28px;
+    color: #aaa;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: color 0.2s;
+}
+.login-close-btn:hover {
+    color: var(--primary-blue);
+}
+#loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 18px;
+}
+#loginForm input {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 16px;
+    background: #f7f7fa;
+    outline: none;
+    transition: border 0.2s;
+}
+#loginForm input:focus {
+    border: 1.5px solid var(--primary-blue);
+}
+#loginForm button {
+    background: var(--primary-blue);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 0;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+#loginForm button:hover {
+    background: #2196f3;
+}
+.login-error {
+    color: #e53935;
+    font-size: 15px;
+    margin-top: 10px;
+    min-height: 22px;
+}
+.login-modal.show .login-modal-content {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.logout-popover {
+    position: absolute;
+    left: -140px;
+    top: 50%;
+    transform: translateY(-50%) scale(1);
+    opacity: 0;
+    pointer-events: none;
+    min-width: 90px;
+    height: 44px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 22px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #007aff;
+    font-weight: 500;
+    transition: opacity 0.28s cubic-bezier(.4,1.2,.4,1), left 0.28s cubic-bezier(.4,1.2,.4,1);
+    user-select: none;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    z-index: 20;
+}
+.user-avatar.show-logout .logout-popover {
+    opacity: 1;
+    left: -110px;
+    pointer-events: auto;
+}
+.logout-popover:active {
+    background: #e6f0fa;
+}
+
+.vip-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    border: 1.5px solid #fff;
+    z-index: 12;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.user-avatar img.vip-badge {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid #fff !important;
+}
+
+.user-avatar.logged-in {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 2.5px solid #fff;
+    background: #fff;
 }

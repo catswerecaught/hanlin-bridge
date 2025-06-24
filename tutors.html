@@ -22,6 +22,9 @@
                     <li><a href="cooperation.html">合作</a></li>
                 </ul>
             </nav>
+            <div class="user-avatar" id="userAvatar">
+                <img src="images/login-default.png" alt="登录" id="avatarImg">
+            </div>
         </div>
     </header>
 
@@ -46,6 +49,19 @@
                 <img src="images/platform-qr.png" alt="平台负责人二维码" class="qr-code-modal">
                 <p class="wechat-id-modal">微信号：killer999988</p>
             </div>
+        </div>
+    </div>
+
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-content">
+            <span class="login-close-btn" id="loginCloseBtn">&times;</span>
+            <h2>登录</h2>
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="用户名/账号" autocomplete="username" required>
+                <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required>
+                <button type="submit">登录</button>
+            </form>
+            <div class="login-error" id="loginError"></div>
         </div>
     </div>
 

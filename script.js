@@ -246,4 +246,134 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- END OF SMOOTH NAVIGATION LOGIC ---
+
+    // 用户模拟数据
+    const users = [
+        { name: '111', username: '111', password: '111', vip: 'Pro会员', avatar: 'images/user00001.jpg' },
+        { name: '李雷', username: 'user00002', password: 'abc123', vip: 'Pro会员', avatar: 'images/user00002.jpg' },
+        { name: '张三', username: 'user00003', password: 'pass321', vip: '普通会员', avatar: 'images/user00003.jpg' },
+        { name: '赵四', username: 'user00004', password: 'qwerty', vip: '普通会员', avatar: 'images/user00004.jpg' },
+        { name: '孙五', username: 'user00005', password: 'letmein', vip: 'Pro会员', avatar: 'images/user00005.jpg' }
+    ];
+
+    function getInitial(name) {
+        if (!name) return '';
+        // 取第一个汉字的拼音首字母大写
+        const zh = name[0];
+        // 简单处理：用英文首字母或直接大写
+        return zh.charAt(0).toUpperCase();
+    }
+
+    function showLoginModal(show) {
+        const modal = document.getElementById('loginModal');
+        if (show) {
+            modal.classList.add('show');
+        } else {
+            modal.classList.remove('show');
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginForm').reset();
+        }
+    }
+
+    function setUserAvatar(user) {
+        const avatar = document.getElementById('userAvatar');
+        avatar.innerHTML = '';
+        if (user) {
+            avatar.classList.add('logged-in');
+            // 登录后显示自定义头像图片
+            const img = document.createElement('img');
+            img.src = user.avatar || 'images/user00001.jpg';
+            img.alt = user.name;
+            img.className = 'user-avatar-img';
+            avatar.appendChild(img);
+            // 会员认证标识
+            const badge = document.createElement('img');
+            badge.className = 'vip-badge';
+            if (user.vip === 'Pro会员') {
+                badge.src = 'images/vip-pro.png';
+                badge.alt = 'Pro会员';
+            } else {
+                badge.src = 'images/vip-normal.png';
+                badge.alt = '普通会员';
+            }
+            avatar.appendChild(badge);
+            // 添加登出弹窗
+            const logout = document.createElement('div');
+            logout.className = 'logout-popover';
+            logout.textContent = '登出';
+            logout.onclick = function(e) {
+                e.stopPropagation();
+                setLoginUser(null);
+                setUserAvatar(null);
+            };
+            avatar.appendChild(logout);
+        } else {
+            avatar.classList.remove('logged-in');
+            // 未登录显示默认图片
+            const img = document.createElement('img');
+            img.src = 'images/login-default.png';
+            img.alt = '登录';
+            img.id = 'avatarImg';
+            avatar.appendChild(img);
+        }
+        // 移除弹窗状态
+        avatar.classList.remove('show-logout');
+    }
+
+    function getLoginUser() {
+        try {
+            return JSON.parse(localStorage.getItem('loginUser'));
+        } catch { return null; }
+    }
+    function setLoginUser(user) {
+        if (user) {
+            localStorage.setItem('loginUser', JSON.stringify(user));
+        } else {
+            localStorage.removeItem('loginUser');
+        }
+    }
+
+    // 入口交互
+    const avatar = document.getElementById('userAvatar');
+    const loginModal = document.getElementById('loginModal');
+    const closeBtn = document.getElementById('loginCloseBtn');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+
+    // 只在有登录入口的页面挂载
+    if (avatar && loginModal && closeBtn && loginForm && loginError) {
+        setUserAvatar(getLoginUser());
+        avatar.onclick = function(e) {
+            if (getLoginUser()) {
+                // 已登录，切换登出弹窗
+                e.stopPropagation();
+                avatar.classList.toggle('show-logout');
+            } else {
+                showLoginModal(true);
+            }
+        };
+        // 点击页面其他地方关闭登出弹窗
+        document.addEventListener('click', function(e) {
+            if (avatar.classList.contains('show-logout')) {
+                avatar.classList.remove('show-logout');
+            }
+        });
+        closeBtn.onclick = function() { showLoginModal(false); };
+        loginModal.onclick = function(e) {
+            if (e.target === loginModal) showLoginModal(false);
+        };
+        loginForm.onsubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const user = users.find(u => (u.username === username) && u.password === password);
+            if (user) {
+                setLoginUser(user);
+                setUserAvatar(user);
+                showLoginModal(false);
+            } else {
+                loginError.textContent = '用户名或密码错误';
+            }
+        };
+    }
 });
