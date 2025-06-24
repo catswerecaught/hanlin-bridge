@@ -147,7 +147,7 @@ function showSaveStatus(type, msg) {
 }
 
 saveBtn.onclick = async function() {
-    // 编辑模式下，保存前先同步当前内容
+    // 编辑模式下，保存前同步当前内容
     if (editMode && contentSection && typeof currentIndex === 'number') {
         docData.contents[currentIndex] = contentSection.innerHTML;
     }
@@ -161,6 +161,12 @@ saveBtn.onclick = async function() {
     } else if (docData.contents.length > docData.catalog.length) {
         docData.contents = docData.contents.slice(0, docData.catalog.length);
     }
+    // 校验目录和内容不能为空
+    if (docData.catalog.length === 0 || docData.contents.every(c => !c.trim())) {
+        showSaveStatus('fail', '内容不能为空');
+        return;
+    }
+    console.log('保存时的docData:', docData);
     showSaveStatus('loading');
     try {
         await saveTrendData(docData);
