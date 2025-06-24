@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         });
         return;
       }
-      res.status(200).json(result);
+      res.status(200).json(result.value || result);
     } catch (err) {
       console.error('GET /api/trend error:', err);
       res.status(500).json({ error: 'Internal Server Error', detail: String(err) });
