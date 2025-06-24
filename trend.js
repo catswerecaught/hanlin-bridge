@@ -101,12 +101,15 @@ function renderContent(editing) {
 }
 
 function switchCatalog(idx) {
+    // 编辑模式下切换目录前，先保存当前内容
+    if (editMode && contentSection && typeof currentIndex === 'number') {
+        docData.contents[currentIndex] = contentSection.innerHTML;
+    }
     currentIndex = idx;
     if (editMode) {
         renderCatalog(true);
         renderContent(true);
     } else {
-        // 阅览模式下跳转锚点
         scrollToContent(idx);
         renderCatalog(false);
     }
@@ -144,6 +147,10 @@ function showSaveStatus(type, msg) {
 }
 
 saveBtn.onclick = async function() {
+    // 编辑模式下，保存前先同步当前内容
+    if (editMode && contentSection && typeof currentIndex === 'number') {
+        docData.contents[currentIndex] = contentSection.innerHTML;
+    }
     // 清理空目录
     docData.catalog = docData.catalog.map(t => t.trim()).filter(t => t);
     // 保证内容数组长度一致
