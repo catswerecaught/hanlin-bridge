@@ -1,37 +1,45 @@
-const fs = require('fs');
-const path = require('path');
+const TREND_KEY = 'trend-doc-data';
 
-const DATA_PATH = path.join(__dirname, 'trend-data.json');
+export default async function handler(req, res) {
+  const apiUrl = process.env.KV_REST_API_URL;
+  const apiToken = process.env.KV_REST_API_TOKEN;
 
-function readData() {
-  if (!fs.existsSync(DATA_PATH)) {
-    return {
-      catalog: [
-        '智能教学简介',
-        '核心功能',
-        '应用场景',
-        '未来趋势'
-      ],
-      contents: [
-        '<h2>智能教学简介</h2><p>智能教学结合AI与大数据，为师生提供个性化、数据驱动的学习体验。</p>',
-        '<h2>核心功能</h2><ul><li>智能作业批改</li><li>学习路径推荐</li><li>实时学习分析</li></ul>',
-        '<h2>应用场景</h2><p>适用于K12、高校、职业培训等多种教育场景。</p>',
-        '<h2>未来趋势</h2><p>AI驱动的教育将持续进化，助力每一位学习者成长。</p>'
-      ]
-    };
+  if (!apiUrl || !apiToken) {
+    res.status(500).json({ error: 'KV_REST_API_URL or KV_REST_API_TOKEN not set' });
+    return;
   }
-  return JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'));
-}
 
-function writeData(data) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-module.exports = async (req, res) => {
   if (req.method === 'GET') {
-    const data = readData();
-    res.status(200).json(data);
+    // 读取
+    const kvRes = await fetch(`${apiUrl}/get/${TREND_KEY}`, {
+      headers: { Authorization: `Bearer ${apiToken}` }
+    });
+    if (!kvRes.ok) {
+      res.status(500).json({ error: 'Failed to fetch from KV' });
+      return;
+    }
+    const { result } = await kvRes.json();
+    if (!result) {
+      // 默认内容
+      res.status(200).json({
+        catalog: [
+          '智能教学简介',
+          '核心功能',
+          '应用场景',
+          '未来趋势'
+        ],
+        contents: [
+          '<h2>智能教学简介</h2><p>智能教学结合AI与大数据，为师生提供个性化、数据驱动的学习体验。</p>',
+          '<h2>核心功能</h2><ul><li>智能作业批改</li><li>学习路径推荐</li><li>实时学习分析</li></ul>',
+          '<h2>应用场景</h2><p>适用于K12、高校、职业培训等多种教育场景。</p>',
+          '<h2>未来趋势</h2><p>AI驱动的教育将持续进化，助力每一位学习者成长。</p>'
+        ]
+      });
+      return;
+    }
+    res.status(200).json(JSON.parse(result));
   } else if (req.method === 'POST') {
+    // 保存
     let body = req.body;
     if (!body) {
       let raw = '';
@@ -45,9 +53,20 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'Invalid data' });
       return;
     }
-    writeData(body);
+    const kvRes = await fetch(`${apiUrl}/set/${TREND_KEY}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ value: JSON.stringify(body) })
+    });
+    if (!kvRes.ok) {
+      res.status(500).json({ error: 'Failed to write to KV' });
+      return;
+    }
     res.status(200).json({ success: true });
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
-}; 
+} 
