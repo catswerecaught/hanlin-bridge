@@ -104,8 +104,8 @@ body {
     min-width: 0;
 }
 .contact-title {
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 28px;
+    font-weight: 700;
     color: var(--primary-blue);
     margin-bottom: 12px;
 }
@@ -129,7 +129,7 @@ body {
     transition: background 0.2s, box-shadow 0.2s;
 }
 .contact-btn:hover {
-    background: var(--light-blue);
+    background: #2196f3;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 .contact-modal {
@@ -265,6 +265,13 @@ body {
     font-weight: 600;
     box-shadow: 0 2px 8px 0 rgba(27,191,131,0.08);
 }
+.help-categories li .tutor-break {
+    display: inline-block;
+    white-space: nowrap;
+}
+.help-categories li .tutor-break br {
+    display: none;
+}
 
 .help-qa-area {
     flex: 2 1 0;
@@ -364,8 +371,8 @@ body {
     align-items: center;
 }
 .contact-title {
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 28px;
+    font-weight: 700;
     color: var(--primary-blue);
     margin-bottom: 12px;
 }
@@ -389,7 +396,7 @@ body {
     transition: background 0.2s, box-shadow 0.2s;
 }
 .contact-btn:hover {
-    background: var(--light-blue);
+    background: #2196f3;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
@@ -546,5 +553,14 @@ body {
     .modal-content {
         padding: 18px 6px 14px 6px;
         max-width: 98vw;
+    }
+    .help-categories li .tutor-break {
+        white-space: normal;
+        text-align: center;
+        line-height: 1.2;
+        display: inline-block;
+    }
+    .help-categories li .tutor-break br {
+        display: inline;
     }
 } 

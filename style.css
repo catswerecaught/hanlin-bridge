@@ -303,7 +303,7 @@ body {
 
 /* 首页推荐助学人卡片的"头部"特殊样式 */
 .tutor-card.premium {
-    background: linear-gradient(to right, #f0f0f0, #fff9e0);
+    background: linear-gradient(90deg, #FFE066 0%, #FFFBEA 100%);
 }
 
 .tutor-card img {
@@ -407,4 +407,22 @@ main.is-exiting {
     .activity-details p {
         font-size: 14px;
     }
+}
+
+.shuffle-tutors-btn {
+    background: #f3f3f3;
+    color: #333;
+    border: none;
+    border-radius: 10px;
+    padding: 5px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: none;
+    margin-left: 12px;
+    transition: background 0.2s, color 0.2s;
+}
+.shuffle-tutors-btn:hover {
+    background: #e0e0e0;
+    color: #111;
 }

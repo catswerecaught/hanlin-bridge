@@ -97,8 +97,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (tutorContainer) {
         function getRandomTutors(tutorList, count) {
-            const shuffled = [...tutorList].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, count);
+            // 过滤掉"正在招募中"
+            const filtered = tutorList.filter(t => t.name !== '正在招募中');
+            // 先分组
+            const premium = filtered.filter(t => t.isPremium);
+            const normal = filtered.filter(t => !t.isPremium);
+            // 打乱各自顺序
+            const shuffle = arr => arr.sort(() => 0.5 - Math.random());
+            const premiumShuffled = shuffle(premium);
+            const normalShuffled = shuffle(normal);
+            // 先取最多2个头部助学人
+            const premiumCount = Math.min(2, premiumShuffled.length);
+            const selectedPremium = premiumShuffled.slice(0, premiumCount);
+            // 再补足普通助学人
+            const normalCount = count - selectedPremium.length;
+            const selectedNormal = normalShuffled.slice(0, normalCount);
+            // 头部助学人在前
+            return selectedPremium.concat(selectedNormal);
         }
 
         function displayTutors() {
@@ -127,6 +142,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         displayTutors();
+
+        // 换一换按钮功能
+        const shuffleBtn = document.querySelector('.shuffle-tutors-btn');
+        if (shuffleBtn) {
+            shuffleBtn.addEventListener('click', function() {
+                displayTutors();
+            });
+        }
     }
 
     // Activity Card Expand/Collapse Logic
