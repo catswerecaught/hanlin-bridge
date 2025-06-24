@@ -377,12 +377,11 @@ main.is-exiting {
     }
 
     .main-nav-container {
-        gap: 0;
+        justify-content: flex-start;
     }
 
     .main-nav {
-        flex: 1 1 auto;
-        justify-content: center;
+        flex: none;
     }
 
     .main-nav ul {
@@ -392,8 +391,8 @@ main.is-exiting {
     }
 
     .main-nav ul li a {
-        font-size: 13px;
-        padding: 7px 10px;
+        font-size: 16px;
+        padding: 10px 16px;
     }
 
     .content-wrapper {
@@ -426,36 +425,38 @@ main.is-exiting {
 
     .user-avatar {
         right: 8px;
-        width: 36px;
-        height: 36px;
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        min-height: 28px;
     }
 
     .user-avatar-img,
     .user-avatar img,
     .user-avatar .user-initial {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 18px;
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 14px;
     }
 
     .user-avatar img.vip-badge {
-        width: 11px !important;
-        height: 11px !important;
-        right: -2px;
-        bottom: -2px;
+        width: 8px !important;
+        height: 8px !important;
+        right: -1px;
+        bottom: -1px;
         border-width: 1px !important;
     }
 
     .logout-popover {
-        min-width: 70px;
-        height: 32px;
-        font-size: 13px;
-        border-radius: 16px;
-        left: -70px;
+        min-width: 60px;
+        height: 24px;
+        font-size: 12px;
+        border-radius: 12px;
+        left: -54px;
     }
 
     .user-avatar.show-logout .logout-popover {
-        left: -60px;
+        left: -44px;
     }
 }
 
