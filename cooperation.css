@@ -33,20 +33,23 @@
 .founder-image-container {
     position: relative;
     flex-shrink: 0;
+    width: 200px;
+    height: 200px;
 }
 
 .founder-image {
-    width: 200px;
-    height: 200px;
-    border-radius: 20px;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
     object-fit: cover;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: 4px solid white;
 }
 
 .verification-badge {
     position: absolute;
-    bottom: 12px;
-    right: 12px;
+    bottom: 5px;
+    right: 5px;
     background: var(--primary-blue);
     border-radius: 50%;
     width: 36px;
@@ -102,12 +105,17 @@
         flex-direction: column;
         text-align: center;
         padding: 30px;
+        align-items: center;
+    }
+    
+    .founder-image-container {
+        width: 150px;
+        height: 150px;
+        margin-bottom: 20px;
     }
     
     .founder-image {
-        width: 150px;
-        height: 150px;
-        margin: 0 auto;
+        /* No changes needed here, it will inherit 100% width/height */
     }
     
     .founder-name {

@@ -147,7 +147,7 @@
         </section>
         <aside class="help-contact-wrapper">
             <h2 class="contact-title">联系客服</h2>
-            <p class="contact-desc">我们欢迎您直接与我们取得联系1</p>
+            <p class="contact-desc">欢迎您直接与我们取得联系！</p>
             <button class="contact-btn" id="show-contact">联系</button>
         </aside>
     </main>
@@ -171,6 +171,8 @@
             document.querySelectorAll('.help-qa-list').forEach(function(list) {
                 list.style.display = (list.getAttribute('data-category') === cat) ? '' : 'none';
             });
+            // 切换分类时也做卡片入场动画
+            animateQAList();
         };
     });
     // 默认选中第一个分类
@@ -220,6 +222,57 @@
             contactModal.style.display = 'none';
         }
     });
+
+    // --- 入场动画 ---
+    function animateQAList() {
+        var qaList = document.querySelector('.help-qa-list:not([style*="display: none"])');
+        var qaItems = qaList ? qaList.querySelectorAll('.help-qa-item') : [];
+        // 先全部隐藏
+        qaItems.forEach(function(item) {
+            item.style.opacity = 0;
+            item.style.transform = 'translateY(20px)';
+        });
+        // 依次动画
+        gsap.to(qaItems, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            stagger: { each: 0.07 },
+            ease: 'power2.out',
+            clearProps: 'transform',
+            delay: 0.18
+        });
+    }
+    // 页面初始动画
+    window.addEventListener('DOMContentLoaded', function() {
+        var sidebar = document.querySelector('.help-sidebar');
+        var qaList = document.querySelector('.help-qa-list:not([style*="display: none"])');
+        var qaItems = qaList ? qaList.querySelectorAll('.help-qa-item') : [];
+        var contact = document.querySelector('.help-contact-wrapper');
+        // 初始全部隐藏
+        sidebar.style.opacity = 0;
+        sidebar.style.transform = 'translateY(20px)';
+        contact.style.opacity = 0;
+        contact.style.transform = 'translateY(20px)';
+        qaItems.forEach(function(item) {
+            item.style.opacity = 0;
+            item.style.transform = 'translateY(20px)';
+        });
+        // 动画顺序：左侧导航 -> 问题卡片(逐条) -> 右侧客服
+        gsap.to(sidebar, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out', clearProps: 'transform' });
+        gsap.to(qaItems, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            stagger: { each: 0.07 },
+            ease: 'power2.out',
+            clearProps: 'transform',
+            delay: 0.18
+        });
+        gsap.to(contact, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out', clearProps: 'transform', delay: 0.65 });
+    });
+    // 切换分类时也做卡片入场动画
+    // animateQAList() 已在 tab.onclick 里调用
     </script>
 </body>
 </html> 

@@ -525,7 +525,7 @@ body {
 @media (max-width: 600px) {
     .help-center-main {
         margin-top: 8px;
-        padding: 0 0 24px 0;
+        padding: 0 16px 24px 16px;
     }
     .help-qa-list {
         gap: 12px;
