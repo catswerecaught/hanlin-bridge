@@ -84,8 +84,8 @@ function renderContent(editing) {
     if (!docData || !Array.isArray(docData.contents)) return;
     contentSection.innerHTML = '';
     if (!editing) {
-        // 阅览模式：显示所有内容
-        contentSection.innerHTML = '<h1>智能教学产品文档</h1>' + docData.contents.map(c => c).join('');
+        // 阅览模式：只显示内容数组，不再额外加标题，避免重复
+        contentSection.innerHTML = docData.contents.map(c => c).join('');
         contentSection.contentEditable = false;
         contentSection.spellcheck = false;
     } else {
