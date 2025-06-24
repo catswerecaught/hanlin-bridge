@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         });
         return;
       }
-      res.status(200).json(JSON.parse(result));
+      res.status(200).json(result);
     } catch (err) {
       console.error('GET /api/trend error:', err);
       res.status(500).json({ error: 'Internal Server Error', detail: String(err) });
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
           Authorization: `Bearer ${apiToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ value: JSON.stringify(body) })
+        body: JSON.stringify({ value: body })
       });
       if (!kvRes.ok) {
         const text = await kvRes.text();
