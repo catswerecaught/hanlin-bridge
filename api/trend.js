@@ -47,6 +47,8 @@ export default async function handler(req, res) {
       if (typeof data === 'string') {
         try { data = JSON.parse(data); } catch (e) {}
       }
+      // 防止多层嵌套 value
+      while (data && data.value) data = data.value;
       res.status(200).json(data);
     } catch (err) {
       console.error('GET /api/trend error:', err);
