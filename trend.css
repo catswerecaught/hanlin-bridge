@@ -137,4 +137,42 @@
     .trend-content {
         padding: 24px 10px 24px 10px;
     }
+}
+.trend-save-status {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    left: -110px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #28a745;
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 6px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    z-index: 20;
+}
+.trend-save-status.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.trend-save-status.fail {
+    color: #e53935;
+}
+.trend-save-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid #e0e0e0;
+    border-top: 2.5px solid #007aff;
+    border-radius: 50%;
+    margin-right: 10px;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 } 

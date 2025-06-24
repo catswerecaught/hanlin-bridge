@@ -40,6 +40,7 @@ const contentSection = document.getElementById('trendContent');
 const editBtn = document.getElementById('editBtn');
 const saveBtn = document.getElementById('saveBtn');
 const sidebar = document.getElementById('trendSidebar');
+const saveStatus = document.getElementById('trendSaveStatus');
 
 let docData = null;
 let editMode = false;
@@ -125,6 +126,21 @@ editBtn.onclick = function() {
     renderContent(true);
 };
 
+function showSaveStatus(type, msg) {
+    if (!saveStatus) return;
+    saveStatus.className = 'trend-save-status show' + (type === 'fail' ? ' fail' : '');
+    saveStatus.innerHTML =
+        type === 'loading'
+            ? '<span class="trend-save-spinner"></span>保存中...'
+            : msg;
+    if (type === 'success' || type === 'fail') {
+        setTimeout(() => {
+            saveStatus.className = 'trend-save-status';
+            saveStatus.innerHTML = '';
+        }, 2000);
+    }
+}
+
 saveBtn.onclick = async function() {
     // 清理空目录
     docData.catalog = docData.catalog.map(t => t.trim()).filter(t => t);
@@ -136,12 +152,18 @@ saveBtn.onclick = async function() {
     } else if (docData.contents.length > docData.catalog.length) {
         docData.contents = docData.contents.slice(0, docData.catalog.length);
     }
-    await saveTrendData(docData);
-    editMode = false;
-    editBtn.style.display = '';
-    saveBtn.style.display = 'none';
-    renderCatalog(false);
-    renderContent(false);
+    showSaveStatus('loading');
+    try {
+        await saveTrendData(docData);
+        editMode = false;
+        editBtn.style.display = '';
+        saveBtn.style.display = 'none';
+        renderCatalog(false);
+        renderContent(false);
+        showSaveStatus('success', '保存成功');
+    } catch (e) {
+        showSaveStatus('fail', '保存失败');
+    }
 };
 
 // 初始化
