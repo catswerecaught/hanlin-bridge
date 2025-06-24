@@ -183,6 +183,7 @@ saveBtn.onclick = async function() {
 
 // 初始化
 async function init() {
+    contentSection.innerHTML = '正在加载中...';
     docData = await loadTrendData();
     if (!docData || !Array.isArray(docData.catalog) || !Array.isArray(docData.contents)) {
         docData = { catalog: [], contents: [] };
