@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 卡片配色与风格（10卡种共用4主色）
     const cardStyle = {
       '大众': 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
-      '金卡': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
+      '金卡': 'background:linear-gradient(90deg,#f7ecd0 0%,#f5e7b2 100%);color:#bfa14b;',
       '金玉兰': 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
       '至臻明珠': 'background:linear-gradient(120deg,#e0eafc 0%,#f7faff 50%,#e6e9f0 100%);color:#007aff;position:relative;overflow:hidden;'
     };
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
     balanceCardWrapper.innerHTML = `
       <div class="balance-card-mplus" style="width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;">
         <div class="balance-card-bg-${cardClass}" style="${cardStyle[cardClass]}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
-          <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户余额</div>
+          <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户积分余额</div>
           <div id="balanceAmount" style="font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;">￥0.00</div>
           <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardType}</div>
         </div>
