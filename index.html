@@ -75,19 +75,79 @@
             </div>
         </section>
 
-        <aside class="tutor-recommendations">
-            <div class="tutor-recommend-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
-                <h2 style="margin: 0; padding: 0; line-height: 1.1;">推荐助学人</h2>
-                <button class="shuffle-tutors-btn" type="button">换一换</button>
-            </div>
-            <div class="tutor-card-container">
-                <!-- Tutor cards will be dynamically inserted here by JavaScript -->
-            </div>
-        </aside>
+        <div class="right-column">
+            <section class="tutor-recommendations">
+                <h2>推荐助学人</h2>
+                <div class="tutor-card-container"></div>
+            </section>
+
+            <section class="hanlin-vip-section" id="hanlinVipSection">
+                <h2 class="hanlin-vip-title">翰林会员</h2>
+                <button class="hanlin-vip-join-btn" id="hanlinVipJoinBtn">加入我们</button>
+                <div class="hanlin-vip-benefits" id="hanlinVipBenefits" style="display:none;">
+                    <table class="hanlin-vip-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>普通会员</th>
+                                <th><span class="vip-pro-gradient">Pro会员</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>会员图标</td>
+                                <td><img src="images/vip-normal.png" alt="普通会员" style="height:22px;"></td>
+                                <td><img src="images/vip-pro.png" alt="Pro会员" style="height:22px;"></td>
+                            </tr>
+                            <tr>
+                                <td>助学工具</td>
+                                <td><span class="apple-check-svg" style="display:inline-block;vertical-align:middle;"> <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;"><path d="M5.5 12.5L9.5 16.5L16.5 7.5" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                                <td><span class="apple-check-svg" style="display:inline-block;vertical-align:middle;"> <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;"><path d="M5.5 12.5L9.5 16.5L16.5 7.5" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                            </tr>
+                            <tr>
+                                <td>解锁趋势</td>
+                                <td>—</td>
+                                <td><span class="apple-check-svg" style="display:inline-block;vertical-align:middle;"> <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;"><path d="M5.5 12.5L9.5 16.5L16.5 7.5" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                            </tr>
+                            <tr>
+                                <td>倍速积分</td>
+                                <td>—</td>
+                                <td>1.2倍</td>
+                            </tr>
+                            <tr>
+                                <td>价格</td>
+                                <td>12元/月</td>
+                                <td>28元/月</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="script.js?v=3"></script>
     <!-- Trigger Vercel Deploy -->
+
+    <script>
+    // 翰林会员展开动画
+    const vipBtn = document.getElementById('hanlinVipJoinBtn');
+    const vipBenefits = document.getElementById('hanlinVipBenefits');
+    vipBtn.addEventListener('click', function() {
+        if (vipBenefits.style.display === 'none') {
+            vipBenefits.style.display = '';
+            vipBenefits.style.maxHeight = vipBenefits.scrollHeight + 'px';
+            vipBenefits.style.opacity = 1;
+            setTimeout(()=>{
+                document.getElementById('hanlinVipSection').scrollIntoView({behavior: 'smooth', block: 'center'});
+            }, 100);
+        } else {
+            vipBenefits.style.maxHeight = '0';
+            vipBenefits.style.opacity = 0;
+            setTimeout(()=>{vipBenefits.style.display = 'none';}, 250);
+        }
+    });
+    </script>
 </body>
 </html>

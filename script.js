@@ -249,11 +249,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 用户模拟数据
     const users = [
-        { name: 'admin', username: 'admin', password: '962777', vip: 'Pro会员', avatar: 'images/user00001.jpg', supreme: true },
-        { name: '李雷', username: 'user00002', password: 'abc123', vip: 'Pro会员', avatar: 'images/user00002.jpg', supreme: false },
-        { name: '张三', username: 'user00003', password: 'pass321', vip: '普通会员', avatar: 'images/user00003.jpg', supreme: false },
-        { name: '赵四', username: 'user00004', password: 'qwerty', vip: '普通会员', avatar: 'images/user00004.jpg', supreme: false },
-        { name: '邬学长', username: 'goxuezhang', password: 'letmein', vip: 'Pro会员', avatar: 'images/user00005.jpg', supreme: false }
+        { name: '管理员', username: 'admin', password: '962777', vip: 'Pro会员', avatar: 'images/user00001.jpg', supreme: true, expire: '终身会员' },
+        { name: '李雷', username: 'user00002', password: 'abc123', vip: 'Pro会员', avatar: 'images/user00002.jpg', supreme: false, expire: '2025-11-30' },
+        { name: '张三', username: 'user00003', password: 'pass321', vip: '普通会员', avatar: 'images/user00003.jpg', supreme: false, expire: '2024-12-31' },
+        { name: '赵四', username: 'user00004', password: 'qwerty', vip: '普通会员', avatar: 'images/user00004.jpg', supreme: false, expire: '2024-10-15' },
+        { name: '邬学长', username: 'goxuezhang', password: 'letmein', vip: '', avatar: 'images/user00005.jpg', supreme: false, expire: '终身会员' }
     ];
 
     function getInitial(name) {
@@ -345,10 +345,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (avatar && loginModal && closeBtn && loginForm && loginError) {
         setUserAvatar(getLoginUser());
         avatar.onclick = function(e) {
-            if (getLoginUser()) {
-                // 已登录，切换登出弹窗
-                e.stopPropagation();
-                avatar.classList.toggle('show-logout');
+            const user = getLoginUser();
+            const isProfile = window.location.pathname.endsWith('profile.html');
+            if (user) {
+                if (!isProfile) {
+                    // 跳转到个人主页并带参数，要求弹出登出按钮
+                    window.location.href = 'profile.html?showLogout=1';
+                } else {
+                    // 已在个人主页，直接弹出登出按钮
+                    e.stopPropagation();
+                    avatar.classList.add('show-logout');
+                }
             } else {
                 showLoginModal(true);
             }

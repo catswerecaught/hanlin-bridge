@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>个人主页 - 翰林桥</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css?v=3">
+  <style>
+    .profile-wrapper {
+      max-width: 420px;
+      margin: 48px auto 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+      padding: 40px 36px 32px 36px;
+      text-align: left;
+      font-size: 17px;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #fffbe6;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .profile-vip-badge {
+      width: 22px;
+      height: 22px;
+      margin-left: -18px;
+      margin-top: 36px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      border: 1.5px solid #fff;
+      object-fit: contain;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .profile-info-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .profile-info-label {
+      width: 90px;
+      color: #888;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .profile-info-value {
+      flex: 1;
+      color: #222;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .profile-password {
+      letter-spacing: 2px;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    }
+    .profile-show-btn {
+      margin-left: 12px;
+      background: #f3f3f3;
+      border: none;
+      border-radius: 8px;
+      padding: 2px 14px;
+      font-size: 14px;
+      color: #888;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .profile-show-btn:hover {
+      background: #e6e6e6;
+      color: #007aff;
+    }
+    .profile-vip-pro {
+      background: linear-gradient(90deg, #e6c97a 0%, #bfa14b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+      font-weight: 700;
+    }
+    @media (max-width: 600px) {
+      .profile-wrapper {
+        max-width: 98vw;
+        padding: 24px 6vw 18px 6vw;
+      }
+      .profile-header {
+        gap: 10px;
+      }
+      .profile-avatar {
+        width: 48px;
+        height: 48px;
+      }
+      .profile-vip-badge {
+        width: 16px;
+        height: 16px;
+        margin-left: -10px;
+        margin-top: 24px;
+      }
+      .profile-info-label {
+        width: 70px;
+        font-size: 15px;
+      }
+      .profile-info-value {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <!-- 复用现有导航栏 -->
+    <div class="main-nav-container">
+      <a href="index.html" class="logo"><img id="site-logo" src="images/logo.png" alt="翰林桥 Logo"></a>
+      <nav class="main-nav">
+        <ul>
+          <li class="nav-highlight"></li>
+          <li><a href="index.html">首页</a></li>
+          <li><a href="tutors.html">助学人</a></li>
+          <li><a href="trend.html">趋势</a></li>
+          <li><a href="help.html">帮助</a></li>
+          <li><a href="cooperation.html">合作</a></li>
+        </ul>
+      </nav>
+      <div class="user-avatar" id="userAvatar">
+        <!-- 头像和认证标识由JS动态填充 -->
+      </div>
+    </div>
+  </header>
+  <div class="login-modal" id="loginModal">
+    <div class="login-modal-content">
+      <span class="login-close-btn" id="loginCloseBtn">&times;</span>
+      <h2>登录</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="用户名/账号" autocomplete="username" required>
+        <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required>
+        <button type="submit">登录</button>
+      </form>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+  <main>
+    <div class="profile-wrapper" id="profileWrapper">
+      <!-- 由JS动态填充 -->
+    </div>
+  </main>
+  <script src="script.js?v=3"></script>
+  <script src="profile.js"></script>
+</body>
+</html> 
