@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class=\"balance-card-bg-${cardClass}\" style=\"${cardStyle[cardClass]}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;\">
           <div style=\"font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;\">账户积分余额</div>
           <div id=\"balanceAmount\" style=\"font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;\">￥0.00</div>
-          <div style=\"font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#bfa14b 0%,#e6c97a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;font-weight:700;' : ''}\">${cardType}</div>
+          <div style=\"font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#7ed6ff 0%,#b2e0ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;font-weight:700;' : ''}\">${cardType}</div>
         </div>
       </div>
     `;
