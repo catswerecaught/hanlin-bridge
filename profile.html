@@ -8,7 +8,8 @@
   <style>
     .profile-wrapper {
       max-width: 420px;
-      margin: 48px auto 0 auto;
+      margin-top: 0;
+      margin-right: 0;
       background: #fff;
       border-radius: 18px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.09);
@@ -87,6 +88,53 @@
       text-fill-color: transparent;
       font-weight: 700;
     }
+    .profile-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 50px;
+      max-width: 1200px;
+      margin: 48px auto 0 auto;
+      justify-content: flex-start;
+    }
+    .teaching-tool-wrapper {
+      min-width: 600px;
+      max-width: 1000px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+      padding: 36px 32px 32px 32px;
+      margin-top: 0;
+    }
+    #newProgressBtn {
+      display: none;
+      margin: 18px auto 16px auto;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: background 0.2s;
+      width: fit-content;
+      display: block;
+    }
+    #newProgressBtn:hover {
+      background: #005ecb;
+    }
+    @media (max-width: 1100px) {
+      .profile-main-row {
+        flex-direction: column;
+        gap: 32px;
+        max-width: 98vw;
+        margin: 32px auto 0 auto;
+      }
+      .profile-wrapper, .teaching-tool-wrapper {
+        max-width: 98vw;
+      }
+    }
     @media (max-width: 600px) {
       .profile-wrapper {
         max-width: 98vw;
@@ -148,10 +196,18 @@
     </div>
   </div>
   <main>
-    <div class="profile-wrapper" id="profileWrapper">
-      <!-- 由JS动态填充 -->
+    <div class="profile-main-row">
+      <div class="profile-wrapper" id="profileWrapper"></div>
+      <div class="teaching-tool-wrapper" id="teachingToolWrapper">
+        <h2 style="font-size:1.35em;font-weight:700;color:#007aff;margin-bottom:18px;">助学工具</h2>
+        <div id="classCardList" style="margin-bottom:22px;"></div>
+        <div id="teachingProgressList"></div>
+        <button id="newProgressBtn" style="margin-top:18px;margin-bottom:18px;display:none;">+ 新建教学进度</button>
+        <div id="teachingProgressForm" style="display:none;"></div>
+      </div>
     </div>
   </main>
+  <script src="users.js"></script>
   <script src="script.js?v=3"></script>
   <script src="profile.js"></script>
 </body>

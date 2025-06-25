@@ -796,3 +796,113 @@ main.is-exiting {
     text-fill-color: transparent;
     font-weight: 700;
 }
+
+.apple-btn-primary {
+    background: #007aff;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.apple-btn-primary:hover {
+    background: #005ecb;
+}
+.apple-btn-outline {
+    background: #f3f3f3;
+    color: #007aff;
+    border: 1.5px solid #e0e6ef;
+    border-radius: 999px;
+    padding: 8px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.apple-btn-outline:hover {
+    background: #eaf3ff;
+    color: #005ecb;
+}
+.apple-btn-outline-red {
+    background: #fff0f0;
+    color: #e53935;
+    border: 1.5px solid #ffeaea;
+    border-radius: 999px;
+    padding: 8px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.apple-btn-outline-red:hover {
+    background: #ffeaea;
+    color: #b71c1c;
+}
+.apple-input {
+    border: 1.5px solid #e0e6ef;
+    border-radius: 10px;
+    padding: 7px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #f9fbff;
+    color: #222;
+    outline: none;
+    box-shadow: none;
+    transition: border 0.2s, background 0.2s;
+}
+.apple-input:focus {
+    border: 1.5px solid #007aff;
+    background: #fff;
+}
+
+.class-card-apple {
+    display: inline-flex;
+    align-items: center;
+    background: #f9fbff;
+    color: #007aff;
+    font-size: 1.08em;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1.5px solid #e0e6ef;
+    padding: 8px 22px 8px 18px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    margin-bottom: 2px;
+}
+.class-card-apple.active {
+    background: #eaf3ff;
+    color: #005ecb;
+    border: 1.5px solid #007aff;
+}
+.class-card-apple:hover {
+    background: #eaf3ff;
+    color: #005ecb;
+}
+.class-card-del {
+    background: none;
+    border: none;
+    color: #e53935;
+    font-size: 1.1em;
+    font-weight: 700;
+    margin-left: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s, color 0.18s;
+}
+.class-card-del:hover {
+    background: #ffeaea;
+    color: #b71c1c;
+}

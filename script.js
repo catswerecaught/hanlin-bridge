@@ -248,14 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- END OF SMOOTH NAVIGATION LOGIC ---
 
     // 用户模拟数据
-    const users = [
-        { name: '管理员', username: 'admin', password: '962777', vip: 'Pro会员', avatar: 'images/user00001.jpg', supreme: true, expire: '终身会员' },
-        { name: '李雷', username: 'user00002', password: 'abc123', vip: 'Pro会员', avatar: 'images/user00002.jpg', supreme: false, expire: '2025-11-30' },
-        { name: '张三', username: 'user00003', password: 'pass321', vip: '普通会员', avatar: 'images/user00003.jpg', supreme: false, expire: '2024-12-31' },
-        { name: '赵四', username: 'user00004', password: 'qwerty', vip: '普通会员', avatar: 'images/user00004.jpg', supreme: false, expire: '2024-10-15' },
-        { name: '邬学长', username: 'goxuezhang', password: 'letmein', vip: '', avatar: 'images/user00005.jpg', supreme: false, expire: '终身会员' }
-    ];
-
     function getInitial(name) {
         if (!name) return '';
         // 取第一个汉字的拼音首字母大写
