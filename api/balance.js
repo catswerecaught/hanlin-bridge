@@ -18,17 +18,31 @@ export default async function handler(req, res) {
       const kvRes = await fetch(`${apiUrl}/get/${key}`, {
         headers: { Authorization: `Bearer ${apiToken}` }
       });
+      let data;
       if (!kvRes.ok) {
-        res.status(500).json({ error: 'Failed to fetch from KV' });
-        return;
+        // 余额不存在，自动新建
+        const defaultBalance = { amount: 0, cardType: 'M1' };
+        await fetch(`${apiUrl}/set/${key}` , {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ value: defaultBalance })
+        });
+        data = defaultBalance;
+      } else {
+        const { result } = await kvRes.json();
+        data = result?.value || result;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch (e) {}
+        }
+        while (data && data.value) data = data.value;
+        if (!data || typeof data !== 'object') {
+          data = { amount: 0, cardType: 'M1' };
+        }
       }
-      const { result } = await kvRes.json();
-      let data = result?.value || result;
-      if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch (e) {}
-      }
-      while (data && data.value) data = data.value;
-      res.status(200).json(typeof data === 'object' && data !== null ? data : { amount: 0, cardType: 'M1' });
+      res.status(200).json(data);
     } catch (err) {
       res.status(500).json({ error: 'Internal Server Error', detail: String(err) });
     }
