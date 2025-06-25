@@ -110,8 +110,8 @@ function switchCatalog(idx) {
         renderCatalog(true);
         renderContent(true);
     } else {
+        renderCatalog(false); // 先渲染目录高亮
         scrollToContent(idx);
-        renderCatalog(false);
     }
 }
 
@@ -123,7 +123,42 @@ function scrollToContent(idx) {
     }
 }
 
+// 权限辅助函数
+function getLoginUser() {
+    try {
+        return JSON.parse(localStorage.getItem('loginUser'));
+    } catch { return null; }
+}
+
+function isSupremeUser(user) {
+    return user && user.supreme === true;
+}
+function isProUser(user) {
+    return user && user.vip === 'Pro会员';
+}
+
+// 编辑权限弹窗
+function showNoEditPermission() {
+    let modal = document.getElementById('noEditPermissionModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'noEditPermissionModal';
+        modal.className = 'pro-only-modal';
+        modal.textContent = '您暂无编辑权限。';
+        document.body.appendChild(modal);
+    }
+    modal.classList.add('show');
+    setTimeout(() => {
+        modal.classList.remove('show');
+    }, 1500);
+}
+
 editBtn.onclick = function() {
+    const user = getLoginUser();
+    if (!isSupremeUser(user)) {
+        showNoEditPermission();
+        return;
+    }
     editMode = true;
     editBtn.style.display = 'none';
     saveBtn.style.display = '';
@@ -147,6 +182,11 @@ function showSaveStatus(type, msg) {
 }
 
 saveBtn.onclick = async function() {
+    const user = getLoginUser();
+    if (!isSupremeUser(user)) {
+        showNoEditPermission();
+        return;
+    }
     // 编辑模式下，保存前同步当前内容
     if (editMode && contentSection && typeof currentIndex === 'number') {
         docData.contents[currentIndex] = contentSection.innerHTML;
@@ -190,5 +230,24 @@ async function init() {
     }
     renderCatalog(false);
     renderContent(false);
+
+    // 权限控制
+    const user = getLoginUser();
+    if (isSupremeUser(user)) {
+        editBtn.disabled = false;
+        editBtn.classList.remove('disabled');
+        editBtn.style.display = '';
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('disabled');
+    } else if (isProUser(user)) {
+        editBtn.disabled = true;
+        editBtn.classList.add('disabled');
+        editBtn.style.display = '';
+        saveBtn.disabled = true;
+        saveBtn.classList.add('disabled');
+    } else {
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'none';
+    }
 }
 init(); 

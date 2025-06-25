@@ -34,6 +34,31 @@
     margin-bottom: 12px;
     cursor: pointer;
     user-select: text;
+    font-size: 18px;
+    line-height: 1.8;
+    transition-property: background, color, padding, font-weight;
+    transition-duration: 0.25s;
+    transition-timing-function: cubic-bezier(0.4,0,0.2,1);
+}
+.trend-sidebar li.active {
+    background: #eaf3ff;
+    color: #007aff;
+    border-radius: 8px;
+    font-weight: 600;
+    will-change: background, color;
+    transition-property: background, color, padding, font-weight;
+    transition-duration: 0.25s;
+    transition-timing-function: cubic-bezier(0.4,0,0.2,1);
+    padding-left: 18px;
+}
+.trend-sidebar li .catalog-dot {
+    margin-left: -8px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.trend-sidebar li.active .catalog-dot {
+    margin-left: 0;
+    margin-right: 8px;
 }
 .trend-content {
     flex: 1;
@@ -103,6 +128,13 @@
 }
 #editBtn:hover, #saveBtn:hover {
     background: #005ecb;
+}
+#editBtn.disabled, #editBtn:disabled, #saveBtn.disabled, #saveBtn:disabled {
+    background: #e0e0e0 !important;
+    color: #aaa !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 .catalog-dot {
     display: inline-block;
