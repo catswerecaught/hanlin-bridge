@@ -18,8 +18,9 @@ export default async function handler(req, res) {
       const kvRes = await fetch(`${apiUrl}/get/${key}`, {
         headers: { Authorization: `Bearer ${apiToken}` }
       });
+      const { result } = await kvRes.json();
       let data;
-      if (!kvRes.ok) {
+      if (result == null) {
         // 余额不存在，自动新建
         const defaultBalance = { amount: 0, cardType: 'M1' };
         await fetch(`${apiUrl}/set/${key}` , {
@@ -32,7 +33,6 @@ export default async function handler(req, res) {
         });
         data = defaultBalance;
       } else {
-        const { result } = await kvRes.json();
         data = result?.value || result;
         if (typeof data === 'string') {
           try { data = JSON.parse(data); } catch (e) {}
