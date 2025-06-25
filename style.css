@@ -506,13 +506,7 @@ main.is-exiting {
 .user-avatar .logout-popover:hover {
     /* 不影响头像缩放 */
 }
-.user-avatar-img:hover {
-    transform: scale(1.13);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
-}
-.user-avatar-img {
-    transition: none !important;
-}
+.user-avatar-img,
 .user-avatar img,
 .user-avatar .user-initial {
     width: 50px;
@@ -521,6 +515,18 @@ main.is-exiting {
     object-fit: cover;
     display: block;
     font-size: 28px;
+}
+.user-avatar-img {
+    transition: transform 0.25s cubic-bezier(.4,1.2,.4,1), box-shadow 0.25s;
+}
+.user-avatar-img:hover {
+    transform: scale(1.13);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+}
+.user-avatar.logged-in {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 2.5px solid #fff;
+    background: #fff;
 }
 
 .login-modal {
@@ -632,17 +638,18 @@ main.is-exiting {
     font-size: 16px;
     color: #007aff;
     font-weight: 500;
-    transition: none !important;
     user-select: none;
     cursor: pointer;
     border: none;
     outline: none;
     z-index: 20;
+    transition: opacity 0.25s, left 0.25s, transform 0.25s;
 }
 .user-avatar.show-logout .logout-popover {
     opacity: 1;
     left: -110px;
     pointer-events: auto;
+    transform: translateY(-50%) scale(1.08);
 }
 .logout-popover:active {
     background: #e6f0fa;
@@ -674,10 +681,4 @@ main.is-exiting {
     right: -4px;
     bottom: -4px;
     border: 1px solid #fff !important;
-}
-
-.user-avatar.logged-in {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 2.5px solid #fff;
-    background: #fff;
 }

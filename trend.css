@@ -4,20 +4,25 @@
     min-height: 80vh;
     max-width: 1200px;
     margin: 32px auto 0 auto;
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-    overflow: hidden;
+    background: transparent;
+    /* border-radius: 18px; */
+    /* box-shadow: 0 4px 24px rgba(0,0,0,0.07); */
+    overflow: visible;
 }
 .trend-sidebar {
     width: 220px;
-    background: #f7f8fa;
-    border-right: 1.5px solid #ececec;
+    background: #f7f8fa !important;
     padding: 32px 18px 32px 24px;
     font-size: 16px;
     color: #1d1d1f;
     min-width: 140px;
     outline: none;
+    position: sticky;
+    top: 32px;
+    align-self: flex-start;
+    height: fit-content;
+    z-index: 2;
+    border-radius: 18px 0 0 18px;
 }
 .trend-sidebar h2 {
     font-size: 18px;
@@ -68,6 +73,8 @@
     line-height: 1.7;
     outline: none;
     min-width: 0;
+    background: #fff;
+    border-radius: 0 18px 18px 0;
 }
 .trend-content h1 {
     font-size: 2.1em;
@@ -161,8 +168,6 @@
     }
     .trend-sidebar {
         width: 100%;
-        border-right: none;
-        border-bottom: 1.5px solid #ececec;
         padding: 18px 12px 12px 16px;
         min-width: 0;
     }

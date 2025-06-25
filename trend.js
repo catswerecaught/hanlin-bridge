@@ -85,7 +85,13 @@ function renderContent(editing) {
     contentSection.innerHTML = '';
     if (!editing) {
         // 阅览模式：只显示内容数组，不再额外加标题，避免重复
-        contentSection.innerHTML = docData.contents.map(c => c).join('');
+        // 为每个h2动态加唯一id，便于目录跳转
+        let html = '';
+        docData.contents.forEach((c, i) => {
+            // 给第一个h2加id
+            html += c.replace(/<h2([^>]*)>/, `<h2$1 id="trend-section-${i}">`);
+        });
+        contentSection.innerHTML = html;
         contentSection.contentEditable = false;
         contentSection.spellcheck = false;
     } else {
@@ -116,10 +122,10 @@ function switchCatalog(idx) {
 }
 
 function scrollToContent(idx) {
-    // 根据 h2 标题跳转
-    const h2s = contentSection.querySelectorAll('h2');
-    if (h2s[idx]) {
-        h2s[idx].scrollIntoView({behavior: 'smooth', block: 'start'});
+    // 跳转到带id的h2
+    const target = document.getElementById(`trend-section-${idx}`);
+    if (target) {
+        target.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 }
 
