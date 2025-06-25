@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderBalanceCard(balance) {
     if (!balanceCardWrapper) return;
     const { amount = 0, cardType = 'M1' } = balance || {};
-    // 卡片配色与风格（合并为4大类）
+    // 卡片配色与风格（10卡种共用4主色）
     const cardStyle = {
       '大众': 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
       '金卡': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
