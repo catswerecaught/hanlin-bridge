@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:1.08em;font-weight:600;color:#007aff;letter-spacing:0.5px;">${item.class || '-'}
           <span style="font-size:0.95em;color:#888;font-weight:400;margin-left:12px;">${item.type || ''}${item.paper ? ' · ' + item.paper : ''}${item.remark ? '（' + item.remark + '）' : ''}</span>
         </div>
-        <div style="margin:8px 0 10px 0;color:#222;line-height:1.7;">${item.content ? item.content : ''}</div>
+        <div style="margin:8px 0 10px 0;color:#222;line-height:1.7;font-weight:500;">${item.content ? item.content : ''}</div>
         <div style="font-size:13px;color:#aaa;">${item.time || ''}</div>
         <div style="position:absolute;top:18px;right:18px;display:flex;gap:10px;">
           <button class="edit-progress-btn apple-btn-outline" data-idx="${idx}">编辑</button>
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 步骤1：班级显示
     const classRow = document.createElement('div');
     classRow.style.marginBottom = '16px';
-    classRow.innerHTML = `<div style=\"font-weight:600;margin-bottom:7px;\">班级</div><div style=\"font-size:1.1em;font-weight:500;color:#007aff;\">${selectedClass||'-'}</div>`;
+    classRow.innerHTML = `<div style=\"font-weight:600;margin-bottom:7px;margin-top:22px;\">班级</div><div style=\"font-size:1.1em;font-weight:500;color:#007aff;\">${selectedClass||'-'}</div>`;
     teachingProgressForm.appendChild(classRow);
     // 步骤2：课堂内容
     const typeRow = document.createElement('div');
@@ -353,6 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
     typeRow.appendChild(remarkInput);
     typeRow.appendChild(customInput);
     teachingProgressForm.appendChild(typeRow);
+    // 默认触发一次change，确保试卷讲评的后续选项显示
+    setTimeout(()=>{ typeSelect.onchange(); }, 0);
     // 步骤3：教学进度
     const contentRow = document.createElement('div');
     contentRow.style.marginBottom = '16px';
