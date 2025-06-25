@@ -1,5 +1,28 @@
 const BALANCE_KEY_PREFIX = 'balance-';
 
+// 卡种等级与门槛
+const CARD_LEVELS = [
+  { type: '大众M1', threshold: 0 },
+  { type: '大众M2', threshold: 1000 },
+  { type: '金卡M1', threshold: 50000 },
+  { type: '金卡M2', threshold: 200000 },
+  { type: '金玉兰M1', threshold: 500000 },
+  { type: '金玉兰M2', threshold: 2000000 },
+  { type: '金玉兰M3', threshold: 5000000 },
+  { type: '至臻明珠M1', threshold: 10000000 },
+  { type: '至臻明珠M2', threshold: 50000000 },
+  { type: '至臻明珠M3', threshold: 100000000 },
+];
+
+function getCardType(amount) {
+  let card = CARD_LEVELS[0].type;
+  for (const level of CARD_LEVELS) {
+    if (amount >= level.threshold) card = level.type;
+    else break;
+  }
+  return card;
+}
+
 export default async function handler(req, res) {
   const apiUrl = process.env.KV_REST_API_URL;
   const apiToken = process.env.KV_REST_API_TOKEN;
@@ -22,16 +45,15 @@ export default async function handler(req, res) {
       let data;
       if (result == null) {
         // 余额不存在，自动新建
-        const defaultBalance = { amount: 0, cardType: 'M1' };
+        data = { amount: 0, cardType: getCardType(0) };
         await fetch(`${apiUrl}/set/${key}` , {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ value: defaultBalance })
+          body: JSON.stringify({ value: data })
         });
-        data = defaultBalance;
       } else {
         data = result?.value || result;
         if (typeof data === 'string') {
@@ -39,7 +61,21 @@ export default async function handler(req, res) {
         }
         while (data && data.value) data = data.value;
         if (!data || typeof data !== 'object') {
-          data = { amount: 0, cardType: 'M1' };
+          data = { amount: 0, cardType: getCardType(0) };
+        }
+        // 自动修正卡种
+        const correctType = getCardType(Number(data.amount) || 0);
+        if (data.cardType !== correctType) {
+          data.cardType = correctType;
+          // 同步修正到Upstash
+          await fetch(`${apiUrl}/set/${key}` , {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ value: data })
+          });
         }
       }
       res.status(200).json(data);
@@ -61,13 +97,17 @@ export default async function handler(req, res) {
         res.status(400).json({ error: 'Invalid data' });
         return;
       }
+      let { amount = 0 } = body.data;
+      amount = Number(amount) || 0;
+      const cardType = getCardType(amount);
+      const data = { ...body.data, amount, cardType };
       const kvRes = await fetch(`${apiUrl}/set/${key}`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ value: body.data })
+        body: JSON.stringify({ value: data })
       });
       if (!kvRes.ok) {
         res.status(500).json({ error: 'Failed to write to KV' });

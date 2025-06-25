@@ -569,21 +569,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const { amount = 0, cardType = 'M1' } = balance || {};
     // 卡片配色与风格
     const cardStyle = {
-      M1: 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
-      M2: 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
-      M3: 'background:linear-gradient(90deg,#e0f7fa 0%,#b2ebf2 100%);color:#007aff;'
+      '大众M1': 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
+      '大众M2': 'background:linear-gradient(90deg,#e6e9f0 0%,#d0e6fa 100%);color:#007aff;',
+      '金卡M1': 'background:linear-gradient(90deg,#fffbe6 0%,#ffe9b3 100%);color:#bfa14b;',
+      '金卡M2': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
+      '金玉兰M1': 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
+      '金玉兰M2': 'background:linear-gradient(90deg,#e0f7fa 0%,#b2ebf2 100%);color:#007aff;',
+      '金玉兰M3': 'background:linear-gradient(90deg,#e0eafc 0%,#e6e9f0 100%);color:#bfa14b;',
+      '至臻明珠M1': 'background:linear-gradient(90deg,#e0eafc 0%,#e6e9f0 100%);color:#007aff;',
+      '至臻明珠M2': 'background:linear-gradient(90deg,#e0eafc 0%,#fffbe6 100%);color:#bfa14b;',
+      '至臻明珠M3': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
     };
     const cardName = {
-      M1: 'M1 普通卡',
-      M2: 'M2 金卡',
-      M3: 'M3 黑金卡'
+      '大众M1': '大众M1',
+      '大众M2': '大众M2',
+      '金卡M1': '金卡M1',
+      '金卡M2': '金卡M2',
+      '金玉兰M1': '金玉兰M1',
+      '金玉兰M2': '金玉兰M2',
+      '金玉兰M3': '金玉兰M3',
+      '至臻明珠M1': '至臻明珠M1',
+      '至臻明珠M2': '至臻明珠M2',
+      '至臻明珠M3': '至臻明珠M3',
     };
     balanceCardWrapper.innerHTML = `
       <div class="balance-card-mplus" style="width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;">
-        <div style="${cardStyle[cardType]||cardStyle.M1}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
+        <div style="${cardStyle[cardType]||cardStyle['大众M1']}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
           <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户余额</div>
           <div id="balanceAmount" style="font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;">￥0.00</div>
-          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardName[cardType]||'M1 普通卡'}</div>
+          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardName[cardType]||'大众M1'}</div>
         </div>
       </div>
     `;
