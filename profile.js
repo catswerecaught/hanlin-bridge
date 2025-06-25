@@ -612,4 +612,27 @@ document.addEventListener('DOMContentLoaded', function() {
       renderBalanceCard(balance);
     })();
   }
+
+  // 数字滚动动画函数
+  function animateBalanceNumber(el, target) {
+    target = Number(target) || 0;
+    const duration = 900; // ms
+    const start = performance.now();
+    const from = 0;
+    const to = target;
+    function format(val) {
+      return '￥' + Number(val).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const value = from + (to - from) * progress;
+      el.textContent = format(value);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = format(to);
+      }
+    }
+    requestAnimationFrame(step);
+  }
 }); 
