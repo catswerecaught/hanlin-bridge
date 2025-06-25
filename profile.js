@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 2. 渲染个人主页内容
   const wrapper = document.getElementById('profileWrapper');
+  // 保证余额卡片容器存在
+  let balanceCardWrapper = document.getElementById('balanceCardWrapper');
+  if (!balanceCardWrapper) {
+    balanceCardWrapper = document.createElement('div');
+    balanceCardWrapper.className = 'balance-card-wrapper';
+    balanceCardWrapper.id = 'balanceCardWrapper';
+    balanceCardWrapper.style.width = '100%';
+    balanceCardWrapper.style.margin = '18px 0 0 0';
+    wrapper.appendChild(balanceCardWrapper);
+  }
   // 会员等级与样式
   let vipText = '非会员';
   let vipClass = '';
@@ -73,6 +83,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="profile-info-row"><div class="profile-info-label">账号</div><div class="profile-info-value">${user.username || '-'}</div></div>
     <div class="profile-info-row"><div class="profile-info-label">密码</div><div class="profile-info-value"><span class="profile-password" id="profilePassword">******</span><button class="profile-show-btn" id="showPwdBtn">显示</button></div></div>
   `;
+  // 重新插入余额卡片容器到profile信息下方
+  if (!wrapper.contains(balanceCardWrapper)) {
+    wrapper.appendChild(balanceCardWrapper);
+  }
   // 密码显示/隐藏逻辑
   document.getElementById('showPwdBtn').onclick = function() {
     const pwdSpan = document.getElementById('profilePassword');
@@ -527,5 +541,61 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
       toast.style.opacity = '0';
     }, 1500);
+  }
+
+  // ===== 余额卡片组件 =====
+  async function fetchBalance() {
+    const user = getCurrentUser();
+    if (!user) return { amount: 0, cardType: 'M1' };
+    try {
+      const res = await fetch(`/api/balance?user=${encodeURIComponent(user.username)}`);
+      if (!res.ok) return { amount: 0, cardType: 'M1' };
+      return await res.json();
+    } catch {
+      return { amount: 0, cardType: 'M1' };
+    }
+  }
+  async function saveBalance(data) {
+    const user = getCurrentUser();
+    if (!user) return;
+    await fetch(`/api/balance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: user.username, data })
+    });
+  }
+  function renderBalanceCard(balance) {
+    if (!balanceCardWrapper) return;
+    const { amount = 0, cardType = 'M1' } = balance || {};
+    // 卡片配色与风格
+    const cardStyle = {
+      M1: 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
+      M2: 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
+      M3: 'background:linear-gradient(90deg,#e0f7fa 0%,#b2ebf2 100%);color:#007aff;'
+    };
+    const cardName = {
+      M1: 'M1 普通卡',
+      M2: 'M2 金卡',
+      M3: 'M3 黑金卡'
+    };
+    balanceCardWrapper.innerHTML = `
+      <div class="balance-card-mplus" style="width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;">
+        <div style="${cardStyle[cardType]||cardStyle.M1}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
+          <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户余额</div>
+          <div id="balanceAmount" style="font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;">￥0.00</div>
+          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardName[cardType]||'M1 普通卡'}</div>
+        </div>
+      </div>
+    `;
+    // 数字滚动动画
+    const el = document.getElementById('balanceAmount');
+    if (el) animateBalanceNumber(el, amount);
+  }
+  // 初始化余额卡片
+  if (balanceCardWrapper) {
+    (async function(){
+      const balance = await fetchBalance();
+      renderBalanceCard(balance);
+    })();
   }
 }); 
