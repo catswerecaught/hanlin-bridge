@@ -906,3 +906,8 @@ main.is-exiting {
     background: #ffeaea;
     color: #b71c1c;
 }
+
+@keyframes crystalFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}

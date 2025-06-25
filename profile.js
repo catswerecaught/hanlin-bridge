@@ -567,40 +567,53 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderBalanceCard(balance) {
     if (!balanceCardWrapper) return;
     const { amount = 0, cardType = 'M1' } = balance || {};
-    // 卡片配色与风格
+    // 卡片配色与风格（合并为4大类）
     const cardStyle = {
-      '大众M1': 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
-      '大众M2': 'background:linear-gradient(90deg,#e6e9f0 0%,#d0e6fa 100%);color:#007aff;',
-      '金卡M1': 'background:linear-gradient(90deg,#fffbe6 0%,#ffe9b3 100%);color:#bfa14b;',
-      '金卡M2': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
-      '金玉兰M1': 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
-      '金玉兰M2': 'background:linear-gradient(90deg,#e0f7fa 0%,#b2ebf2 100%);color:#007aff;',
-      '金玉兰M3': 'background:linear-gradient(90deg,#e0eafc 0%,#e6e9f0 100%);color:#bfa14b;',
-      '至臻明珠M1': 'background:linear-gradient(90deg,#e0eafc 0%,#e6e9f0 100%);color:#007aff;',
-      '至臻明珠M2': 'background:linear-gradient(90deg,#e0eafc 0%,#fffbe6 100%);color:#bfa14b;',
-      '至臻明珠M3': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
+      '大众': 'background:linear-gradient(90deg,#e6e9f0 0%,#eef1f5 100%);color:#222;',
+      '金卡': 'background:linear-gradient(90deg,#fffbe6 0%,#ffd700 100%);color:#bfa14b;',
+      '金玉兰': 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
+      '至臻明珠': 'background:linear-gradient(120deg,#e0eafc 0%,#f7faff 50%,#e6e9f0 100%);color:#007aff;position:relative;overflow:hidden;'
     };
-    const cardName = {
-      '大众M1': '大众M1',
-      '大众M2': '大众M2',
-      '金卡M1': '金卡M1',
-      '金卡M2': '金卡M2',
-      '金玉兰M1': '金玉兰M1',
-      '金玉兰M2': '金玉兰M2',
-      '金玉兰M3': '金玉兰M3',
-      '至臻明珠M1': '至臻明珠M1',
-      '至臻明珠M2': '至臻明珠M2',
-      '至臻明珠M3': '至臻明珠M3',
-    };
+    // 卡片大类映射
+    function getCardClass(type) {
+      if(type.startsWith('大众')) return '大众';
+      if(type.startsWith('金卡')) return '金卡';
+      if(type.startsWith('金玉兰')) return '金玉兰';
+      if(type.startsWith('至臻明珠')) return '至臻明珠';
+      return '大众';
+    }
+    const cardClass = getCardClass(cardType);
     balanceCardWrapper.innerHTML = `
       <div class="balance-card-mplus" style="width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;">
-        <div style="${cardStyle[cardType]||cardStyle['大众M1']}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
+        <div class="balance-card-bg-${cardClass}" style="${cardStyle[cardClass]}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
           <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户余额</div>
           <div id="balanceAmount" style="font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;">￥0.00</div>
-          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardName[cardType]||'大众M1'}</div>
+          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;">${cardType}</div>
         </div>
       </div>
     `;
+    // 至臻明珠水晶流动动画
+    if(cardClass==='至臻明珠'){
+      const bg = balanceCardWrapper.querySelector('.balance-card-bg-至臻明珠');
+      if(bg){
+        bg.style.background = 'linear-gradient(120deg,#e0eafc 0%,#f7faff 50%,#e6e9f0 100%)';
+        bg.style.position = 'relative';
+        bg.style.overflow = 'hidden';
+        // 添加流动动画层
+        const crystal = document.createElement('div');
+        crystal.style.position = 'absolute';
+        crystal.style.left = 0;
+        crystal.style.top = 0;
+        crystal.style.width = '100%';
+        crystal.style.height = '100%';
+        crystal.style.background = 'linear-gradient(120deg,rgba(255,255,255,0.7) 0%,rgba(200,220,255,0.25) 50%,rgba(255,255,255,0.7) 100%)';
+        crystal.style.opacity = '0.7';
+        crystal.style.pointerEvents = 'none';
+        crystal.style.borderRadius = '18px';
+        crystal.style.animation = 'crystalFlow 3.5s linear infinite';
+        bg.appendChild(crystal);
+      }
+    }
     // 数字滚动动画
     const el = document.getElementById('balanceAmount');
     if (el) animateBalanceNumber(el, amount);
