@@ -908,6 +908,14 @@ main.is-exiting {
 }
 
 @keyframes crystalFlow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  0% { background-position: 0% 50%; opacity: 0.7; }
+  50% { background-position: 100% 50%; opacity: 1; }
+  100% { background-position: 0% 50%; opacity: 0.7; }
+}
+
+.profile-main-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 48px;
 }
