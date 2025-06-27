@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {
             name: '翁学姐',
-            subject: '数学',
+            subject: '数学助学人',
             avatar: 'images/tutor5.jpg',
             score: '一模129，二模121',
             format: 'both',
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {
             name: '邬学长',
-            subject: '地理',
+            subject: '地理助学人',
             avatar: 'images/tutor6.jpg',
             score: '高考A',
             format: 'both',
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {
             name: '徐学姐',
-            subject: '数学',
+            subject: '数学助学人',
             avatar: 'images/tutor8.jpg',
             score: '一模117，二模124',
             format: 'both',
