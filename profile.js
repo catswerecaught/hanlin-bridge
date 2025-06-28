@@ -574,7 +574,6 @@ document.addEventListener('DOMContentLoaded', function() {
       '金玉兰': 'background:linear-gradient(90deg,#f7d9e3 0%,#fbeee6 100%);color:#b71c1c;',
       '至臻明珠': 'background:linear-gradient(120deg,#232526 0%,#414345 100%);color:#fff;position:relative;overflow:hidden;'
     };
-    // 卡片大类映射
     function getCardClass(type) {
       if(type.startsWith('大众')) return '大众';
       if(type.startsWith('金卡')) return '金卡';
@@ -584,38 +583,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const cardClass = getCardClass(cardType);
     balanceCardWrapper.innerHTML = `
-      <div class=\"balance-card-mplus\" style=\"width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;\">
-        <div class=\"balance-card-bg-${cardClass}\" style=\"${cardStyle[cardClass]}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;\">
-          <div style=\"font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;\">账户积分余额</div>
-          <div id=\"balanceAmount\" style=\"font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#7ed6ff 0%,#b2e0ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;' : ''}\">￥0.00</div>
-          <div style=\"font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#7ed6ff 0%,#b2e0ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;font-weight:700;' : ''}\">${cardType}</div>
+      <div class="balance-card-mplus" style="width:100%;max-width:420px;margin:0 auto 0 auto;padding:0;">
+        <div class="balance-card-bg-${cardClass}" style="${cardStyle[cardClass]}border-radius:18px;padding:28px 32px 22px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
+          <div style="font-size:1.1em;font-weight:600;letter-spacing:1px;opacity:0.85;">账户积分余额</div>
+          <div id="balanceAmount" style="font-size:2.2em;font-weight:700;letter-spacing:1px;margin:6px 0 0 0;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#7ed6ff 0%,#b2e0ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;' : ''}">${formatBalance(amount)}</div>
+          <div style="font-size:1em;font-weight:500;opacity:0.7;margin-top:8px;${cardClass==='至臻明珠' ? 'background:linear-gradient(90deg,#7ed6ff 0%,#b2e0ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-fill-color:transparent;font-weight:700;' : ''}">${cardType}</div>
         </div>
       </div>
     `;
-    // 数字滚动动画
-    function animateBalanceNumber(el, target) {
-      target = Number(target) || 0;
-      const duration = 900; // ms
-      const start = performance.now();
-      const from = 0;
-      const to = target;
-      function format(val) {
-        return '￥' + Number(val).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      }
-      function step(now) {
-        const progress = Math.min((now - start) / duration, 1);
-        const value = from + (to - from) * progress;
-        el.textContent = format(value);
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        } else {
-          el.textContent = format(to);
-        }
-      }
-      requestAnimationFrame(step);
-    }
-    const el = document.getElementById('balanceAmount');
-    if (el) animateBalanceNumber(el, amount);
+  }
+  function formatBalance(val) {
+    return '￥' + Number(val).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
   // 初始化余额卡片
   if (balanceCardWrapper) {
