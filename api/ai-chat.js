@@ -13,6 +13,10 @@ export default async function handler(req, res) {
     }
 
     try {
+        // 添加调试信息
+        console.log('API Key exists:', !!process.env.OPENAI_API_KEY);
+        console.log('API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+        
         // 直接调用AI服务，暂时跳过积分检查
         const aiResponse = await callAIService(message);
         
@@ -52,38 +56,47 @@ function getCardType(amount) {
 async function callAIService(message) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     
+    console.log('Checking OpenAI API key...');
+    console.log('API Key exists:', !!OPENAI_API_KEY);
+    
     if (!OPENAI_API_KEY) {
         console.log('OpenAI API key not found, using mock response');
         return getMockResponse(message);
     }
     
-    console.log('Attempting to call OpenAI API...');
+    console.log('API Key found, attempting to call OpenAI API...');
+    console.log('API Key starts with:', OPENAI_API_KEY.substring(0, 10) + '...');
     
     try {
+        const requestBody = {
+            model: 'gpt-3.5-turbo',
+            messages: [
+                {
+                    role: 'system',
+                    content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
+                },
+                {
+                    role: 'user',
+                    content: message
+                }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+        };
+        
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${OPENAI_API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ],
-                max_tokens: 1000,
-                temperature: 0.7
-            })
+            body: JSON.stringify(requestBody)
         });
         
         console.log('OpenAI response status:', response.status);
+        console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -93,6 +106,8 @@ async function callAIService(message) {
         
         const data = await response.json();
         console.log('OpenAI API success, response received');
+        console.log('Response data:', JSON.stringify(data, null, 2));
+        
         return data.choices[0].message.content;
         
     } catch (error) {
