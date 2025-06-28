@@ -213,7 +213,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const text = document.createElement('div');
         text.className = 'message-text';
-        text.textContent = message.content;
+        if (message.role === 'assistant') {
+            text.innerHTML = renderMarkdown(message.content);
+        } else {
+            text.textContent = message.content;
+        }
         
         const time = document.createElement('div');
         time.className = 'message-time';
@@ -224,6 +228,17 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.appendChild(content);
         
         return messageDiv;
+    }
+    
+    // 简单Markdown渲染（仅支持换行、粗体、斜体、代码）
+    function renderMarkdown(text) {
+        if (!text) return '';
+        let html = text
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>');
+        return html;
     }
     
     function formatTime(timestamp) {
@@ -305,7 +320,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 更新AI消息内容
             aiMessage.content = response;
-            aiMessageElement.querySelector('.message-text').textContent = response;
+            aiMessageElement.querySelector('.message-text').innerHTML = renderMarkdown(response);
+            
+            // 保存AI消息到本地历史
+            addMessageToChat(aiMessage);
             
             // 扣除积分
             await deductPoints();
