@@ -67,53 +67,87 @@ async function callAIService(message) {
     console.log('API Key found, attempting to call OpenAI API...');
     console.log('API Key starts with:', OPENAI_API_KEY.substring(0, 10) + '...');
     
-    try {
-        const requestBody = {
-            model: 'gpt-3.5-turbo',
-            messages: [
-                {
-                    role: 'system',
-                    content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
+    // 重试机制
+    const maxRetries = 3;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`Attempt ${attempt}/${maxRetries} to call OpenAI API...`);
+            
+            const requestBody = {
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
+                    },
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ],
+                max_tokens: 800, // 减少token数量
+                temperature: 0.7,
+                timeout: 30000 // 30秒超时
+            };
+            
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'HanlinBridge/1.0'
                 },
-                {
-                    role: 'user',
-                    content: message
-                }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
-        };
-        
-        console.log('Request body:', JSON.stringify(requestBody, null, 2));
-        
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        console.log('OpenAI response status:', response.status);
-        console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('OpenAI API error response:', errorText);
-            throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+                body: JSON.stringify(requestBody)
+            });
+            
+            console.log('OpenAI response status:', response.status);
+            console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (response.status === 429) {
+                // 速率限制，等待后重试
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.log(`Rate limited. Waiting ${retryAfter} seconds before retry...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                lastError = new Error(`Rate limited on attempt ${attempt}`);
+                continue;
+            }
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('OpenAI API error response:', errorText);
+                throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log('OpenAI API success, response received');
+            console.log('Response data:', JSON.stringify(data, null, 2));
+            
+            return data.choices[0].message.content;
+            
+        } catch (error) {
+            console.error(`OpenAI API call failed on attempt ${attempt}:`, error);
+            lastError = error;
+            
+            // 如果是速率限制错误，等待后重试
+            if (error.message.includes('429') && attempt < maxRetries) {
+                const waitTime = Math.pow(2, attempt) * 1000; // 指数退避
+                console.log(`Waiting ${waitTime}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue;
+            }
+            
+            // 其他错误或已达到最大重试次数
+            break;
         }
-        
-        const data = await response.json();
-        console.log('OpenAI API success, response received');
-        console.log('Response data:', JSON.stringify(data, null, 2));
-        
-        return data.choices[0].message.content;
-        
-    } catch (error) {
-        console.error('OpenAI API call failed:', error);
-        return getMockResponse(message);
     }
+    
+    // 所有重试都失败了，返回模拟响应
+    console.log('All attempts failed, returning mock response');
+    return getMockResponse(message);
 }
 
 function getMockResponse(message) {
@@ -126,5 +160,5 @@ function getMockResponse(message) {
     ];
     
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    return `${randomResponse}\n\n（注：当前为模拟响应，实际AI服务正在配置中）`;
+    return `${randomResponse}\n\n（注：当前为模拟响应。AI服务正在处理中，请稍后再试。如果问题持续存在，请联系客服。）`;
 } 
