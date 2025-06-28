@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatInput.value = '';
         handleInputChange();
         
-        // 显示AI回复
+        // 显示AI回复loading
         const aiMessage = {
             role: 'assistant',
             content: '',
@@ -310,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const aiMessageElement = createMessageElement(aiMessage);
         aiMessageElement.querySelector('.message-text').innerHTML = '<div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
-        
         chatMessages.appendChild(aiMessageElement);
         scrollToBottom();
         
@@ -318,11 +317,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // 调用AI API
             const response = await callAIAPI(text);
             
-            // 更新AI消息内容
-            aiMessage.content = response;
-            aiMessageElement.querySelector('.message-text').innerHTML = renderMarkdown(response);
+            // 移除loading的AI消息
+            aiMessageElement.remove();
             
-            // 保存AI消息到本地历史
+            // 保存AI消息到本地历史（会自动渲染）
+            aiMessage.content = response;
             addMessageToChat(aiMessage);
             
             // 扣除积分
@@ -346,7 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (error.message.includes('API key not found')) {
                 errorMessage = 'AI服务配置错误，请联系管理员。';
             }
-            
             aiMessageElement.querySelector('.message-text').textContent = errorMessage;
         }
         
