@@ -7,57 +7,22 @@ export default async function handler(req, res) {
 
     const { message, user } = req.body;
     
-    if (!message || !user) {
-        res.status(400).json({ error: 'Missing message or user' });
+    if (!message) {
+        res.status(400).json({ error: 'Missing message' });
         return;
     }
 
     try {
-        // 检查用户积分
-        const balanceResponse = await fetch(`${process.env.KV_REST_API_URL}/get/balance-${user}`, {
-            headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` }
-        });
-        
-        if (!balanceResponse.ok) {
-            res.status(500).json({ error: 'Failed to check balance' });
-            return;
-        }
-        
-        const balanceData = await balanceResponse.json();
-        const currentBalance = balanceData.result?.value?.amount || 0;
-        
-        if (currentBalance < 35) {
-            res.status(402).json({ error: 'Insufficient points', balance: currentBalance });
-            return;
-        }
-
-        // 调用AI服务
+        // 直接调用AI服务，暂时跳过积分检查
         const aiResponse = await callAIService(message);
         
-        // 扣除积分
-        const newBalance = currentBalance - 35;
-        await fetch(`${process.env.KV_REST_API_URL}/set/balance-${user}`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                value: {
-                    amount: newBalance,
-                    cardType: getCardType(newBalance)
-                }
-            })
-        });
-
         res.status(200).json({
-            response: aiResponse,
-            balance: newBalance
+            response: aiResponse
         });
         
     } catch (error) {
         console.error('AI chat error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', detail: error.message });
     }
 }
 
@@ -85,19 +50,17 @@ function getCardType(amount) {
 }
 
 async function callAIService(message) {
-    // 这里需要替换为实际的AI服务调用
-    // 示例：调用OpenAI API
-    
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    const OPENAI_API_URL = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
     
     if (!OPENAI_API_KEY) {
-        // 如果没有配置OpenAI API，返回模拟响应
+        console.log('OpenAI API key not found, using mock response');
         return getMockResponse(message);
     }
     
+    console.log('Attempting to call OpenAI API...');
+    
     try {
-        const response = await fetch(OPENAI_API_URL, {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -120,22 +83,25 @@ async function callAIService(message) {
             })
         });
         
+        console.log('OpenAI response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('OpenAI API error response:', errorText);
+            throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
+        console.log('OpenAI API success, response received');
         return data.choices[0].message.content;
         
     } catch (error) {
-        console.error('OpenAI API error:', error);
-        // 如果AI服务失败，返回模拟响应
+        console.error('OpenAI API call failed:', error);
         return getMockResponse(message);
     }
 }
 
 function getMockResponse(message) {
-    // 简单的模拟AI响应
     const responses = [
         '我理解您的问题。让我为您详细解答...',
         '这是一个很好的问题。根据我的分析...',
