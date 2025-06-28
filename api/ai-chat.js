@@ -1,4 +1,6 @@
 // AI聊天API接口 - 详细诊断版本
+import { GoogleGenAI } from "@google/genai";
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
@@ -18,6 +20,9 @@ export default async function handler(req, res) {
         console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
         console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
         console.log('OPENAI_API_KEY starts with:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'N/A');
+        console.log('GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY);
+        console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0);
+        console.log('GEMINI_API_KEY starts with:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 20) + '...' : 'N/A');
         
         // 直接调用AI服务，不重试，直接返回错误
         const aiResponse = await callAIService(message);
@@ -67,7 +72,7 @@ async function callAIService(message) {
     
     if (GEMINI_API_KEY) {
         try {
-            return await callGemini(message, GEMINI_API_KEY);
+            return await callGemini(message);
         } catch (error) {
             console.error('Gemini调用失败:', error);
             // 如果 Gemini 失败，尝试 OpenAI
@@ -94,40 +99,26 @@ async function callAIService(message) {
     }
 }
 
-// Google Gemini API 调用（仅用 gemini-pro）
-async function callGemini(message, apiKey) {
-    const model = 'gemini-pro';
+// Google Gemini API 调用（使用官方SDK）
+async function callGemini(message) {
     try {
-        console.log(`调用 Google Gemini API，模型: ${model}`);
-        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-        const requestBody = {
-            contents: [
-                {
-                    role: 'user',
-                    parts: [{ text: message }]
-                }
-            ]
-        };
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+        console.log('调用 Google Gemini API (SDK)...');
+        const ai = new GoogleGenAI({});
+        
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: message,
         });
-        const responseText = await response.text();
-        console.log(`Gemini Response (${model}):`, response.status, responseText);
-        if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status} - ${responseText}`);
-        }
-        const data = JSON.parse(responseText);
-        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
-            return data.candidates[0].content.parts[0].text;
+        
+        console.log('Gemini SDK Response:', response);
+        
+        if (response && response.text) {
+            return response.text;
         }
         throw new Error('Gemini API response format error');
     } catch (err) {
-        console.error(`Gemini模型 ${model} 调用失败:`, err.message);
-        throw new Error('Gemini-pro 调用失败，请确认您的 API Key 是通过 Google AI Studio 生成，且账号/地区支持 Gemini API。\n详细错误: ' + err.message);
+        console.error('Gemini SDK调用失败:', err);
+        throw new Error('Gemini API 调用失败: ' + err.message);
     }
 }
 
