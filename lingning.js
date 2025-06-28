@@ -111,7 +111,11 @@ document.addEventListener('DOMContentLoaded', function() {
             chatItem.appendChild(deleteMenu);
             
             // 点击聊天项
-            chatContent.addEventListener('click', () => {
+            chatItem.addEventListener('click', (e) => {
+                // 如果点击的是删除按钮或菜单，不跳转
+                if (e.target === deleteBtn || deleteMenu.contains(e.target)) {
+                    return;
+                }
                 loadChat(chat.id);
             });
             
@@ -132,13 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteChat(chat.id);
-            });
-            
-            // 点击其他地方隐藏删除菜单
-            document.addEventListener('click', (e) => {
-                if (!deleteBtn.contains(e.target) && !deleteMenu.contains(e.target)) {
-                    deleteMenu.classList.remove('show');
-                }
             });
             
             chatHistory.appendChild(chatItem);
@@ -369,6 +366,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function callAIAPI(message) {
+        const user = getLoginUser();
+        if (!user) return '请先登录';
+        
+        // 获取当前对话的历史消息作为上下文
+        const chat = chatHistoryData.find(c => c.id === currentChatId);
+        const conversationHistory = chat ? chat.messages.slice(-10) : []; // 最近10条消息作为上下文
+        
         const response = await fetch('/api/ai-chat', {
             method: 'POST',
             headers: {
@@ -376,7 +380,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 message: message,
-                user: getLoginUser().username
+                user: user.username,
+                conversationHistory: conversationHistory // 发送对话历史
             })
         });
         

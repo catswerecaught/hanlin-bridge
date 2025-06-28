@@ -1,41 +1,39 @@
 // AI聊天API接口 - 详细诊断版本
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method not allowed' });
-        return;
-    }
-
-    const { message, user } = req.body;
-    
-    if (!message) {
-        res.status(400).json({ error: 'Missing message' });
-        return;
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        // 详细的环境变量检查
-        console.log('=== 环境变量检查 ===');
-        console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
-        console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
-        console.log('OPENAI_API_KEY starts with:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'N/A');
-        console.log('GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY);
-        console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0);
-        console.log('GEMINI_API_KEY starts with:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 20) + '...' : 'N/A');
+        const { message, user, conversationHistory = [] } = req.body;
         
-        // 直接调用AI服务，不重试，直接返回错误
-        const aiResponse = await callAIService(message);
+        if (!message || !user) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        console.log('=== AI聊天请求 ===');
+        console.log('用户:', user);
+        console.log('消息:', message);
+        console.log('对话历史条数:', conversationHistory.length);
+
+        // 构建包含历史上下文的完整消息
+        let fullMessage = message;
+        if (conversationHistory.length > 0) {
+            const historyContext = conversationHistory
+                .map(msg => `${msg.role === 'user' ? '用户' : 'AI'}: ${msg.content}`)
+                .join('\n');
+            fullMessage = `对话历史:\n${historyContext}\n\n当前用户消息: ${message}\n\n请基于以上对话历史回答用户的问题。`;
+        }
+
+        const response = await callAIService(fullMessage);
         
-        res.status(200).json({
-            response: aiResponse
-        });
+        console.log('AI回复:', response);
+        
+        res.status(200).json({ response });
         
     } catch (error) {
-        console.error('AI chat error:', error);
-        res.status(500).json({ 
-            error: 'AI service failed', 
-            detail: error.message,
-            stack: error.stack 
-        });
+        console.error('AI聊天API错误:', error);
+        res.status(500).json({ error: error.message });
     }
 }
 
