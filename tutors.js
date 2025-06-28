@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             score: '高考134',
             format: 'both',
             price: '¥???/2小时',
-            description: 'Keep looking, don't settle.',
+            description: 'Keep looking, don\'t settle.',
             isPremium: false
         }
     ];
@@ -102,7 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 生成助学人卡片HTML
     function createTutorCard(tutor) {
         let formatText, formatClass;
         if (tutor.format === 'online') {
@@ -119,66 +118,51 @@ document.addEventListener('DOMContentLoaded', function() {
         const avatarClass = tutor.isPremium ? 'tutor-avatar premium' : 'tutor-avatar';
         const verificationBadge = tutor.isPremium ? '<div class="verification-badge"></div>' : '';
         
-        // 改为DOM方式，确保description为纯文本
-        const card = document.createElement('div');
-        card.className = 'tutor-card-full';
-        card.innerHTML = `
-            <div class="tutor-header">
-                <div style="position: relative;">
-                    <img src="${tutor.avatar}" alt="${tutor.name}" class="${avatarClass}" onerror="this.src='images/tutor1.jpg'">
-                    ${verificationBadge}
+        return `
+            <div class="tutor-card-full">
+                <div class="tutor-header">
+                    <div style="position: relative;">
+                        <img src="${tutor.avatar}" alt="${tutor.name}" class="${avatarClass}" onerror="this.src='images/tutor1.jpg'">
+                        ${verificationBadge}
+                    </div>
+                    <div class="tutor-basic-info">
+                        <h3>${tutor.name}</h3>
+                        <p class="tutor-subject">${tutor.subject}</p>
+                    </div>
                 </div>
-                <div class="tutor-basic-info">
-                    <h3>${tutor.name}</h3>
-                    <p class="tutor-subject">${tutor.subject}</p>
+                <div class="tutor-details">
+                    <div class="tutor-detail-item">
+                        <span class="detail-label">学科成绩</span>
+                        <span class="detail-value tutor-score">${tutor.score}</span>
+                    </div>
+                    <div class="tutor-detail-item">
+                        <span class="detail-label">助学形式</span>
+                        <span class="detail-value tutor-format ${formatClass}">${formatText}</span>
+                    </div>
+                    <div class="tutor-detail-item">
+                        <span class="detail-label">参考报价</span>
+                        <span class="detail-value tutor-price">${tutor.price}</span>
+                    </div>
                 </div>
-            </div>
-            <div class="tutor-details">
-                <div class="tutor-detail-item">
-                    <span class="detail-label">学科成绩</span>
-                    <span class="detail-value tutor-score">${tutor.score}</span>
+                <div class="tutor-description">
+                    <p>${tutor.description}</p>
                 </div>
-                <div class="tutor-detail-item">
-                    <span class="detail-label">助学形式</span>
-                    <span class="detail-value tutor-format ${formatClass}">${formatText}</span>
+                <div class="tutor-contact">
+                    <button class="contact-btn js-contact-btn">
+                        联系助学人
+                    </button>
                 </div>
-                <div class="tutor-detail-item">
-                    <span class="detail-label">参考报价</span>
-                    <span class="detail-value tutor-price">${tutor.price}</span>
-                </div>
-            </div>
-            <div class="tutor-description">
-                <p></p>
-            </div>
-            <div class="tutor-contact">
-                <button class="contact-btn js-contact-btn">
-                    联系助学人
-                </button>
             </div>
         `;
-        // 用textContent插入简介
-        card.querySelector('.tutor-description p').textContent = tutor.description;
-        return card.outerHTML;
     }
 
-    // 显示所有助学人
     function displayAllTutors() {
         const tutorsGrid = document.getElementById('tutorsGrid');
         if (!tutorsGrid) return;
-        
         const sortedTutors = sortTutorsByName(tutors);
-        
-        // 调试信息：输出排序后的助学人信息
-        console.log('排序后的助学人信息：');
-        sortedTutors.forEach((tutor, index) => {
-            console.log(`${index + 1}. ${tutor.name} - ${tutor.subject} - 头像: ${tutor.avatar}`);
-        });
-        
         tutorsGrid.innerHTML = '';
-        
         sortedTutors.forEach(tutor => {
-            const tutorCardHTML = createTutorCard(tutor);
-            tutorsGrid.innerHTML += tutorCardHTML;
+            tutorsGrid.innerHTML += createTutorCard(tutor);
         });
     }
 
