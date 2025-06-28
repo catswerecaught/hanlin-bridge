@@ -73,24 +73,14 @@ async function callAIService(message) {
             return await callGemini(message);
         } catch (error) {
             console.error('Gemini调用失败:', error);
-            // 如果 Gemini 失败，尝试 OpenAI
-            if (OPENAI_API_KEY) {
-                try {
-                    return await callOpenAI(message);
-                } catch (openaiError) {
-                    console.error('OpenAI调用失败:', openaiError);
-                    return await callBackupAI(message);
-                }
-            } else {
-                return await callBackupAI(message);
-            }
+            throw new Error('Gemini API 调用失败: ' + error.message);
         }
     } else if (OPENAI_API_KEY) {
         try {
             return await callOpenAI(message);
         } catch (error) {
             console.error('OpenAI调用失败:', error);
-            return await callBackupAI(message);
+            throw new Error('OpenAI API 调用失败: ' + error.message);
         }
     } else {
         return await callBackupAI(message);

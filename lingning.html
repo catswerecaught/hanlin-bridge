@@ -88,24 +88,6 @@
                         </div>
                         <h1>灵凝 AI </h1>
                         <p>专为Pro用户打造的智能助学工具。</p>
-                        <div class="feature-grid">
-                            <div class="feature-item">
-                                <img src="images/lingning-feature-1.png" alt="学习辅导" class="feature-icon">
-                                <span>学习辅导</span>
-                            </div>
-                            <div class="feature-item">
-                                <img src="images/lingning-feature-2.png" alt="知识问答" class="feature-icon">
-                                <span>知识问答</span>
-                            </div>
-                            <div class="feature-item">
-                                <img src="images/lingning-feature-3.png" alt="创意写作" class="feature-icon">
-                                <span>创意写作</span>
-                            </div>
-                            <div class="feature-item">
-                                <img src="images/lingning-feature-4.png" alt="代码编程" class="feature-icon">
-                                <span>代码编程</span>
-                            </div>
-                        </div>
                         <div class="cost-info">
                             <p>每次对话消耗 <strong>35积分</strong></p>
                         </div>
@@ -121,13 +103,15 @@
             <!-- 输入区域 -->
             <div class="chat-input-container" id="chatInputContainer">
                 <div class="chat-input-wrapper">
-                    <div class="chat-input-box">
-                        <textarea 
-                            id="chatInput" 
-                            placeholder="输入您的问题..." 
-                            rows="1"
-                            maxlength="4000"
-                        ></textarea>
+                    <div class="chat-input-row">
+                        <div class="chat-input-box">
+                            <textarea 
+                                id="chatInput" 
+                                placeholder="输入您的问题..." 
+                                rows="1"
+                                maxlength="4000"
+                            ></textarea>
+                        </div>
                         <button class="send-btn" id="sendBtn" disabled>
                             <img src="images/lingning-send-icon.png" alt="发送" class="send-icon">
                         </button>

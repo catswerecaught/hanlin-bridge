@@ -1,72 +1,57 @@
-// 灵凝页面功能
+// 灵凝AI聊天功能
 document.addEventListener('DOMContentLoaded', function() {
-    // 全局变量
-    let currentChatId = null;
-    let chatHistory = [];
-    let userBalance = 0;
-    
-    // DOM 元素
-    const newChatBtn = document.getElementById('newChatBtn');
-    const chatHistoryContainer = document.getElementById('chatHistory');
-    const welcomeScreen = document.getElementById('welcomeScreen');
+    const chatContainer = document.getElementById('chatContainer');
     const chatMessages = document.getElementById('chatMessages');
+    const welcomeScreen = document.getElementById('welcomeScreen');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const charCount = document.getElementById('charCount');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatHistory = document.getElementById('chatHistory');
     const userInfo = document.getElementById('userInfo');
     const insufficientPointsModal = document.getElementById('insufficientPointsModal');
-    const insufficientPointsCloseBtn = document.getElementById('insufficientPointsCloseBtn');
     const currentPointsSpan = document.getElementById('currentPoints');
+    
+    let currentChatId = null;
+    let chatHistoryData = [];
+    let userBalance = 0;
     
     // 初始化
     init();
     
     function init() {
-        // 检查用户登录状态
-        const user = getLoginUser();
-        if (!user) {
-            showLoginModal(true);
-            return;
-        }
+        loadUserInfo();
+        loadChatHistory();
+        renderChatHistory();
         
-        // 更新用户信息
-        updateUserInfo(user);
-        
-        // 获取用户积分
-        fetchUserBalance(user.username);
-        
-        // 加载聊天历史
-        loadChatHistory(user.username);
-        
-        // 绑定事件
-        bindEvents();
-        
-        // 自动调整输入框高度
-        autoResizeTextarea();
-    }
-    
-    function bindEvents() {
-        // 新对话按钮
-        newChatBtn.addEventListener('click', startNewChat);
-        
-        // 发送按钮
-        sendBtn.addEventListener('click', sendMessage);
-        
-        // 输入框事件
+        // 事件监听
         chatInput.addEventListener('input', handleInputChange);
         chatInput.addEventListener('keydown', handleKeyDown);
+        sendBtn.addEventListener('click', sendMessage);
+        newChatBtn.addEventListener('click', startNewChat);
         
-        // 积分不足模态框
-        insufficientPointsCloseBtn.addEventListener('click', () => {
+        // 关闭积分不足弹窗
+        document.getElementById('insufficientPointsCloseBtn').addEventListener('click', function() {
             insufficientPointsModal.classList.remove('show');
         });
-        
-        // 点击模态框外部关闭
-        insufficientPointsModal.addEventListener('click', (e) => {
-            if (e.target === insufficientPointsModal) {
-                insufficientPointsModal.classList.remove('show');
-            }
-        });
+    }
+    
+    function loadUserInfo() {
+        const user = getLoginUser();
+        if (user) {
+            // 加载用户积分
+            fetch(`/api/balance?user=${user.username}`)
+                .then(response => response.json())
+                .then(data => {
+                    userBalance = data.amount || 0;
+                    updateUserInfo(user);
+                    currentPointsSpan.textContent = userBalance;
+                })
+                .catch(error => {
+                    console.error('加载用户积分失败:', error);
+                    userBalance = 0;
+                });
+        }
     }
     
     function updateUserInfo(user) {
@@ -75,59 +60,100 @@ document.addEventListener('DOMContentLoaded', function() {
         const userPoints = userInfo.querySelector('.user-points');
         
         userAvatar.src = user.avatar || 'images/login-default.png';
-        userName.textContent = user.name;
+        userName.textContent = user.username;
         userPoints.textContent = `积分: ${userBalance}`;
     }
     
-    async function fetchUserBalance(username) {
-        try {
-            const response = await fetch(`/api/balance?user=${username}`);
-            if (response.ok) {
-                const data = await response.json();
-                userBalance = data.amount || 0;
-                updateUserInfo(getLoginUser());
-                currentPointsSpan.textContent = userBalance;
+    function loadChatHistory() {
+        const user = getLoginUser();
+        if (user) {
+            const saved = localStorage.getItem(`chatHistory_${user.username}`);
+            if (saved) {
+                try {
+                    chatHistoryData = JSON.parse(saved);
+                } catch (e) {
+                    chatHistoryData = [];
+                }
             }
-        } catch (error) {
-            console.error('获取用户积分失败:', error);
         }
     }
     
-    function loadChatHistory(username) {
-        // 从localStorage加载聊天历史
-        const savedHistory = localStorage.getItem(`chatHistory_${username}`);
-        if (savedHistory) {
-            try {
-                chatHistory = JSON.parse(savedHistory);
-                renderChatHistory();
-            } catch (error) {
-                console.error('加载聊天历史失败:', error);
-                chatHistory = [];
-            }
+    function saveChatHistory() {
+        const user = getLoginUser();
+        if (user) {
+            localStorage.setItem(`chatHistory_${user.username}`, JSON.stringify(chatHistoryData));
         }
     }
     
     function renderChatHistory() {
-        chatHistoryContainer.innerHTML = '';
+        chatHistory.innerHTML = '';
         
-        chatHistory.forEach((chat, index) => {
-            const historyItem = document.createElement('div');
-            historyItem.className = 'chat-history-item';
-            if (chat.id === currentChatId) {
-                historyItem.classList.add('active');
-            }
+        chatHistoryData.forEach(chat => {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-history-item';
+            chatItem.dataset.chatId = chat.id;
             
-            historyItem.innerHTML = `
-                <img src="images/lingning-chat-icon.png" alt="对话" class="chat-history-icon">
-                <span>${chat.title || '新对话'}</span>
-            `;
+            const chatContent = document.createElement('div');
+            chatContent.className = 'chat-history-content';
+            chatContent.textContent = chat.title;
             
-            historyItem.addEventListener('click', () => {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'chat-delete-btn';
+            deleteBtn.innerHTML = '⋮';
+            deleteBtn.title = '删除对话';
+            
+            const deleteMenu = document.createElement('div');
+            deleteMenu.className = 'delete-menu';
+            deleteMenu.innerHTML = '<div class="delete-option">删除对话</div>';
+            
+            chatItem.appendChild(chatContent);
+            chatItem.appendChild(deleteBtn);
+            chatItem.appendChild(deleteMenu);
+            
+            // 点击聊天项
+            chatContent.addEventListener('click', () => {
                 loadChat(chat.id);
             });
             
-            chatHistoryContainer.appendChild(historyItem);
+            // 点击三个点按钮显示删除菜单
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 隐藏其他所有删除菜单
+                document.querySelectorAll('.delete-menu').forEach(menu => {
+                    if (menu !== deleteMenu) {
+                        menu.classList.remove('show');
+                    }
+                });
+                // 切换当前删除菜单
+                deleteMenu.classList.toggle('show');
+            });
+            
+            // 删除对话
+            deleteMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteChat(chat.id);
+            });
+            
+            // 点击其他地方隐藏删除菜单
+            document.addEventListener('click', (e) => {
+                if (!deleteBtn.contains(e.target) && !deleteMenu.contains(e.target)) {
+                    deleteMenu.classList.remove('show');
+                }
+            });
+            
+            chatHistory.appendChild(chatItem);
         });
+    }
+    
+    function deleteChat(chatId) {
+        chatHistoryData = chatHistoryData.filter(chat => chat.id !== chatId);
+        saveChatHistory();
+        renderChatHistory();
+        
+        if (currentChatId === chatId) {
+            currentChatId = null;
+            showWelcomeScreen();
+        }
     }
     
     function startNewChat() {
@@ -139,20 +165,17 @@ document.addEventListener('DOMContentLoaded', function() {
             timestamp: Date.now()
         };
         
-        chatHistory.unshift(newChat);
+        chatHistoryData.unshift(newChat);
         saveChatHistory();
         renderChatHistory();
         
-        // 显示欢迎界面
         showWelcomeScreen();
     }
     
     function loadChat(chatId) {
         currentChatId = chatId;
-        const chat = chatHistory.find(c => c.id === chatId);
-        
+        const chat = chatHistoryData.find(c => c.id === chatId);
         if (chat) {
-            renderChatHistory();
             renderMessages(chat.messages);
         }
     }
@@ -178,23 +201,12 @@ document.addEventListener('DOMContentLoaded', function() {
             chatMessages.appendChild(messageElement);
         });
         
-        // 滚动到底部
         scrollToBottom();
     }
     
     function createMessageElement(message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${message.role}`;
-        
-        const avatar = document.createElement('img');
-        avatar.className = 'message-avatar';
-        
-        if (message.role === 'user') {
-            const user = getLoginUser();
-            avatar.src = user.avatar || 'images/login-default.png';
-        } else {
-            avatar.src = 'images/lingning-ai-avatar.png';
-        }
         
         const content = document.createElement('div');
         content.className = 'message-content';
@@ -203,22 +215,32 @@ document.addEventListener('DOMContentLoaded', function() {
         text.className = 'message-text';
         text.textContent = message.content;
         
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = formatTime(message.timestamp);
+        
         content.appendChild(text);
-        messageDiv.appendChild(avatar);
+        content.appendChild(time);
         messageDiv.appendChild(content);
         
         return messageDiv;
+    }
+    
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('zh-CN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
     }
     
     function handleInputChange() {
         const text = chatInput.value.trim();
         sendBtn.disabled = !text;
         
-        // 更新字符计数
         const count = chatInput.value.length;
         charCount.textContent = `${count}/4000`;
         
-        // 自动调整高度
         autoResizeTextarea();
     }
     
@@ -295,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('AI API调用失败:', error);
             let errorMessage = '抱歉，AI服务暂时不可用，请稍后重试。';
             
-            // 显示具体错误信息
             if (error.message.includes('429')) {
                 errorMessage = 'AI服务暂时繁忙，请稍后再试。';
             } else if (error.message.includes('401')) {
@@ -304,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMessage = 'AI服务访问被拒绝，请联系管理员。';
             } else if (error.message.includes('500')) {
                 errorMessage = 'AI服务内部错误，请稍后重试。';
-            } else if (error.message.includes('OpenAI API key not found')) {
+            } else if (error.message.includes('API key not found')) {
                 errorMessage = 'AI服务配置错误，请联系管理员。';
             }
             
@@ -315,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function addMessageToChat(message) {
-        const chat = chatHistory.find(c => c.id === currentChatId);
+        const chat = chatHistoryData.find(c => c.id === currentChatId);
         if (chat) {
             chat.messages.push(message);
             saveChatHistory();
@@ -332,8 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function callAIAPI(message) {
-        // 这里需要替换为实际的AI API调用
-        // 示例：调用OpenAI API或其他AI服务
         const response = await fetch('/api/ai-chat', {
             method: 'POST',
             headers: {
@@ -383,19 +402,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateChatTitle(firstMessage) {
-        const chat = chatHistory.find(c => c.id === currentChatId);
+        const chat = chatHistoryData.find(c => c.id === currentChatId);
         if (chat && chat.title === '新对话') {
-            // 使用第一条消息的前20个字符作为标题
             chat.title = firstMessage.length > 20 ? firstMessage.substring(0, 20) + '...' : firstMessage;
             saveChatHistory();
             renderChatHistory();
-        }
-    }
-    
-    function saveChatHistory() {
-        const user = getLoginUser();
-        if (user) {
-            localStorage.setItem(`chatHistory_${user.username}`, JSON.stringify(chatHistory));
         }
     }
     
@@ -410,15 +421,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return JSON.parse(localStorage.getItem('loginUser'));
         } catch {
             return null;
-        }
-    }
-    
-    function showLoginModal(show) {
-        const modal = document.getElementById('loginModal');
-        if (show) {
-            modal.classList.add('show');
-        } else {
-            modal.classList.remove('show');
         }
     }
 }); 
