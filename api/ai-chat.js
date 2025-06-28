@@ -1,6 +1,4 @@
 // AI聊天API接口 - 详细诊断版本
-import { GoogleGenAI } from "@google/genai";
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
@@ -99,25 +97,44 @@ async function callAIService(message) {
     }
 }
 
-// Google Gemini API 调用（使用官方SDK）
+// Google Gemini API 调用（使用 REST API）
 async function callGemini(message) {
     try {
-        console.log('调用 Google Gemini API (SDK)...');
-        const ai = new GoogleGenAI({});
+        console.log('调用 Google Gemini API (REST)...');
+        const apiKey = process.env.GEMINI_API_KEY;
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: message,
+        const requestBody = {
+            contents: [
+                {
+                    role: 'user',
+                    parts: [{ text: message }]
+                }
+            ]
+        };
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
         });
         
-        console.log('Gemini SDK Response:', response);
+        const responseText = await response.text();
+        console.log('Gemini REST Response:', response.status, responseText);
         
-        if (response && response.text) {
-            return response.text;
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status} - ${responseText}`);
+        }
+        
+        const data = JSON.parse(responseText);
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+            return data.candidates[0].content.parts[0].text;
         }
         throw new Error('Gemini API response format error');
     } catch (err) {
-        console.error('Gemini SDK调用失败:', err);
+        console.error('Gemini REST调用失败:', err);
         throw new Error('Gemini API 调用失败: ' + err.message);
     }
 }
