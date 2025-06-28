@@ -11,6 +11,16 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
+        // === 自我介绍问题拦截 ===
+        const introKeywords = [
+            '你是谁', '你叫什么', '你是哪个AI', '你是哪个助手', '你是什么',
+            'who are you', 'what are you', 'your name', '你来自哪里', '你是谁开发的', '你是谁训练的', '你是谁创造的', '你是谁的产品', '你是谁的机器人', '你是谁的人工智能'
+        ];
+        const lowerMsg = message.toLowerCase();
+        if (introKeywords.some(k => message.includes(k) || lowerMsg.includes(k))) {
+            return res.status(200).json({ response: '我是灵凝，翰林桥的AI智能助手。' });
+        }
+
         console.log('=== AI聊天请求 ===');
         console.log('用户:', user);
         console.log('消息:', message);
