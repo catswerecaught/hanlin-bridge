@@ -62,7 +62,7 @@ function getCardType(amount) {
 async function callAIService(message) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     
-    console.log('=== OpenAI API 调用开始 ===');
+    console.log('=== AI服务调用开始 ===');
     
     if (!OPENAI_API_KEY) {
         throw new Error('OpenAI API key not found in environment variables');
@@ -71,60 +71,108 @@ async function callAIService(message) {
     console.log('API Key found, length:', OPENAI_API_KEY.length);
     console.log('API Key starts with:', OPENAI_API_KEY.substring(0, 20) + '...');
     
-    const requestBody = {
-        model: 'gpt-3.5-turbo',
-        messages: [
-            {
-                role: 'system',
-                content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
-            },
-            {
-                role: 'user',
-                content: message
-            }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-    };
-    
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
-    
+    // 首先尝试OpenAI
     try {
-        console.log('Sending request to OpenAI...');
-        
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-        
-        const responseText = await response.text();
-        console.log('Response body:', responseText);
-        
-        if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status} - ${responseText}`);
-        }
-        
-        const data = JSON.parse(responseText);
-        console.log('Parsed response data:', JSON.stringify(data, null, 2));
-        
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-            throw new Error('Invalid response format from OpenAI');
-        }
-        
-        console.log('Successfully extracted response content');
-        return data.choices[0].message.content;
-        
+        return await callOpenAI(message);
     } catch (error) {
-        console.error('OpenAI API call failed:', error);
-        throw error; // 直接抛出错误，不返回模拟响应
+        console.log('OpenAI调用失败，尝试备用服务...');
+        
+        // 如果OpenAI失败，尝试其他AI服务
+        try {
+            return await callBackupAI(message);
+        } catch (backupError) {
+            console.error('所有AI服务都失败了:', backupError);
+            throw new Error('所有AI服务暂时不可用，请稍后重试');
+        }
     }
+}
+
+async function callOpenAI(message) {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    
+    // 尝试不同的免费模型
+    const models = [
+        'gpt-3.5-turbo',
+        'gpt-3.5-turbo-16k',
+        'gpt-4',
+        'gpt-4-turbo-preview'
+    ];
+    
+    for (const model of models) {
+        try {
+            console.log(`尝试使用模型: ${model}`);
+            
+            const requestBody = {
+                model: model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个智能学习助手，专门帮助中国学生解答学习问题。请用中文回答，回答要简洁明了、准确有用。'
+                    },
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ],
+                max_tokens: 300, // 减少token使用
+                temperature: 0.7
+            };
+            
+            console.log(`调用OpenAI API (${model})...`);
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            console.log(`OpenAI Response status (${model}):`, response.status);
+            
+            const responseText = await response.text();
+            console.log(`OpenAI Response body (${model}):`, responseText);
+            
+            if (response.ok) {
+                const data = JSON.parse(responseText);
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('Invalid response format from OpenAI');
+                }
+                
+                console.log(`OpenAI API调用成功 (${model})`);
+                return data.choices[0].message.content;
+            } else {
+                const errorData = JSON.parse(responseText);
+                console.log(`模型 ${model} 失败:`, errorData.error?.message);
+                
+                // 如果是余额不足，尝试下一个模型
+                if (errorData.error?.code === 'insufficient_quota') {
+                    console.log(`模型 ${model} 余额不足，尝试下一个模型...`);
+                    continue;
+                }
+                
+                // 其他错误直接抛出
+                throw new Error(`OpenAI API error: ${response.status} - ${responseText}`);
+            }
+            
+        } catch (error) {
+            console.error(`模型 ${model} 调用失败:`, error);
+            
+            // 如果是余额不足，尝试下一个模型
+            if (error.message.includes('insufficient_quota')) {
+                console.log(`模型 ${model} 余额不足，尝试下一个模型...`);
+                continue;
+            }
+            
+            // 其他错误直接抛出
+            throw error;
+        }
+    }
+    
+    // 所有模型都失败了
+    throw new Error('所有OpenAI模型都无法使用，可能是账户配置问题');
 }
 
 function getMockResponse(message) {
