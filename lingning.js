@@ -293,7 +293,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('AI API调用失败:', error);
-            aiMessageElement.querySelector('.message-text').textContent = '抱歉，AI服务暂时不可用，请稍后重试。';
+            let errorMessage = '抱歉，AI服务暂时不可用，请稍后重试。';
+            
+            // 显示具体错误信息
+            if (error.message.includes('429')) {
+                errorMessage = 'AI服务暂时繁忙，请稍后再试。';
+            } else if (error.message.includes('401')) {
+                errorMessage = 'AI服务认证失败，请联系管理员。';
+            } else if (error.message.includes('403')) {
+                errorMessage = 'AI服务访问被拒绝，请联系管理员。';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'AI服务内部错误，请稍后重试。';
+            } else if (error.message.includes('OpenAI API key not found')) {
+                errorMessage = 'AI服务配置错误，请联系管理员。';
+            }
+            
+            aiMessageElement.querySelector('.message-text').textContent = errorMessage;
         }
         
         scrollToBottom();
