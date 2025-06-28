@@ -94,48 +94,41 @@ async function callAIService(message) {
     }
 }
 
-// Google Gemini API 调用（优先用最新模型）
+// Google Gemini API 调用（仅用 gemini-pro）
 async function callGemini(message, apiKey) {
-    const models = [
-        'gemini-1.5-pro-latest',
-        'gemini-pro'
-    ];
-    for (const model of models) {
-        try {
-            console.log(`调用 Google Gemini API，模型: ${model}`);
-            const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-            const requestBody = {
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [{ text: message }]
-                    }
-                ]
-            };
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-            const responseText = await response.text();
-            console.log(`Gemini Response (${model}):`, response.status, responseText);
-            if (!response.ok) {
-                throw new Error(`Gemini API error: ${response.status} - ${responseText}`);
-            }
-            const data = JSON.parse(responseText);
-            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
-                return data.candidates[0].content.parts[0].text;
-            }
-            throw new Error('Gemini API response format error');
-        } catch (err) {
-            console.error(`Gemini模型 ${model} 调用失败:`, err.message);
-            // 尝试下一个模型
-            continue;
+    const model = 'gemini-pro';
+    try {
+        console.log(`调用 Google Gemini API，模型: ${model}`);
+        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+        const requestBody = {
+            contents: [
+                {
+                    role: 'user',
+                    parts: [{ text: message }]
+                }
+            ]
+        };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        const responseText = await response.text();
+        console.log(`Gemini Response (${model}):`, response.status, responseText);
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status} - ${responseText}`);
         }
+        const data = JSON.parse(responseText);
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+            return data.candidates[0].content.parts[0].text;
+        }
+        throw new Error('Gemini API response format error');
+    } catch (err) {
+        console.error(`Gemini模型 ${model} 调用失败:`, err.message);
+        throw new Error('Gemini-pro 调用失败，请确认您的 API Key 是通过 Google AI Studio 生成，且账号/地区支持 Gemini API。\n详细错误: ' + err.message);
     }
-    throw new Error('所有Gemini模型都无法使用，请检查API Key权限或模型名称');
 }
 
 async function callOpenAI(message) {
