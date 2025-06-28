@@ -401,4 +401,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     setupTrendAccessControl();
+
+    // 灵凝页面访问控制：普通会员和Pro会员都可以访问
+    function setupLingningAccessControl() {
+        // 只在非 lingning.html 页面拦截
+        if (window.location.pathname.endsWith('lingning.html')) return;
+        var navLinks = document.querySelectorAll('.main-nav ul li a');
+        var lingningLink = Array.from(navLinks).find(a => a.textContent.trim() === '灵凝');
+        if (!lingningLink) return;
+        lingningLink.addEventListener('click', function(e) {
+            var user = getLoginUser();
+            if (!user || (user.vip !== '普通会员' && user.vip !== 'Pro会员')) {
+                e.preventDefault();
+                alert('请先登录成为会员');
+            }
+        });
+    }
+    setupLingningAccessControl();
 });

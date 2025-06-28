@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵凝 - 翰林桥</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="lingning.css?v=2">
+</head>
+<body>
+    <header class="main-header">
+        <div class="main-nav-container">
+            <a href="index.html" class="logo"><img id="site-logo" src="images/logo.png" alt="翰林桥 Logo"></a>
+            <nav class="main-nav">
+                <ul>
+                    <li class="nav-highlight"></li>
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="tutors.html">助学人</a></li>
+                    <li><a href="trend.html">趋势</a></li>
+                    <li><a href="lingning.html" class="active">灵凝</a></li>
+                    <li><a href="help.html">帮助</a></li>
+                    <li><a href="cooperation.html">合作</a></li>
+                </ul>
+            </nav>
+            <div class="user-avatar" id="userAvatar">
+                <img src="images/login-default.png" alt="登录" id="avatarImg">
+            </div>
+        </div>
+    </header>
+
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-content">
+            <span class="login-close-btn" id="loginCloseBtn">&times;</span>
+            <h2>登录</h2>
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="用户名/账号" autocomplete="username" required>
+                <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required>
+                <button type="submit">登录</button>
+            </form>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- 积分不足提示模态框 -->
+    <div class="insufficient-points-modal" id="insufficientPointsModal">
+        <div class="insufficient-points-content">
+            <span class="insufficient-points-close-btn" id="insufficientPointsCloseBtn">&times;</span>
+            <h2>积分不足</h2>
+            <p>每次使用AI需要消耗35积分，您的积分不足。</p>
+            <p>当前积分：<span id="currentPoints">0</span></p>
+            <button class="insufficient-points-btn" onclick="window.location.href='profile.html'">前往充值</button>
+        </div>
+    </div>
+
+    <main class="lingning-container">
+        <!-- 侧边栏 -->
+        <aside class="lingning-sidebar" id="lingningSidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatBtn">
+                    <img src="images/lingning-new-chat.png" alt="新对话" class="new-chat-icon">
+                    新对话
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="chat-history" id="chatHistory">
+                    <!-- 聊天历史记录将在这里动态生成 -->
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info" id="userInfo">
+                    <img src="images/login-default.png" alt="用户头像" class="user-avatar-small">
+                    <span class="user-name">未登录</span>
+                    <span class="user-points">积分: 0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主聊天区域 -->
+        <section class="lingning-main">
+            <div class="chat-container" id="chatContainer">
+                <!-- 欢迎界面 -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <div class="welcome-icon">
+                            <img src="images/lingning-ai-icon.png" alt="AI助手" class="ai-icon">
+                        </div>
+                        <h1>灵凝 AI 助手</h1>
+                        <p>您的智能学习伙伴，随时为您解答问题</p>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <img src="images/lingning-feature-1.png" alt="学习辅导" class="feature-icon">
+                                <span>学习辅导</span>
+                            </div>
+                            <div class="feature-item">
+                                <img src="images/lingning-feature-2.png" alt="知识问答" class="feature-icon">
+                                <span>知识问答</span>
+                            </div>
+                            <div class="feature-item">
+                                <img src="images/lingning-feature-3.png" alt="创意写作" class="feature-icon">
+                                <span>创意写作</span>
+                            </div>
+                            <div class="feature-item">
+                                <img src="images/lingning-feature-4.png" alt="代码编程" class="feature-icon">
+                                <span>代码编程</span>
+                            </div>
+                        </div>
+                        <div class="cost-info">
+                            <p>每次对话消耗 <strong>35积分</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聊天消息区域 -->
+                <div class="chat-messages" id="chatMessages" style="display: none;">
+                    <!-- 消息将在这里动态生成 -->
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-container" id="chatInputContainer">
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-box">
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="输入您的问题..." 
+                            rows="1"
+                            maxlength="4000"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" disabled>
+                            <img src="images/lingning-send-icon.png" alt="发送" class="send-icon">
+                        </button>
+                    </div>
+                    <div class="input-footer">
+                        <span class="char-count" id="charCount">0/4000</span>
+                        <span class="cost-reminder">每次对话消耗35积分</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="users.js"></script>
+    <script src="script.js?v=3"></script>
+    <script src="lingning.js?v=1"></script>
+</body>
+</html> 
