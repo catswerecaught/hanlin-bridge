@@ -331,6 +331,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('AI服务暂时繁忙，请稍后再试');
+            }
             throw new Error('AI API调用失败');
         }
         

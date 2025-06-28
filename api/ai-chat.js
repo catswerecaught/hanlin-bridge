@@ -67,8 +67,8 @@ async function callAIService(message) {
     console.log('API Key found, attempting to call OpenAI API...');
     console.log('API Key starts with:', OPENAI_API_KEY.substring(0, 10) + '...');
     
-    // 重试机制
-    const maxRetries = 3;
+    // 重试机制 - 减少等待时间避免Vercel超时
+    const maxRetries = 2;
     let lastError;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -87,9 +87,8 @@ async function callAIService(message) {
                         content: message
                     }
                 ],
-                max_tokens: 800, // 减少token数量
-                temperature: 0.7,
-                timeout: 30000 // 30秒超时
+                max_tokens: 600, // 进一步减少token数量
+                temperature: 0.7
             };
             
             console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -105,11 +104,10 @@ async function callAIService(message) {
             });
             
             console.log('OpenAI response status:', response.status);
-            console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
             
             if (response.status === 429) {
-                // 速率限制，等待后重试
-                const retryAfter = response.headers.get('Retry-After') || 60;
+                // 速率限制，但只等待很短时间避免Vercel超时
+                const retryAfter = Math.min(parseInt(response.headers.get('Retry-After') || '5'), 5);
                 console.log(`Rate limited. Waiting ${retryAfter} seconds before retry...`);
                 await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
                 lastError = new Error(`Rate limited on attempt ${attempt}`);
@@ -124,7 +122,6 @@ async function callAIService(message) {
             
             const data = await response.json();
             console.log('OpenAI API success, response received');
-            console.log('Response data:', JSON.stringify(data, null, 2));
             
             return data.choices[0].message.content;
             
@@ -132,9 +129,9 @@ async function callAIService(message) {
             console.error(`OpenAI API call failed on attempt ${attempt}:`, error);
             lastError = error;
             
-            // 如果是速率限制错误，等待后重试
+            // 如果是速率限制错误，等待很短时间后重试
             if (error.message.includes('429') && attempt < maxRetries) {
-                const waitTime = Math.pow(2, attempt) * 1000; // 指数退避
+                const waitTime = Math.min(Math.pow(2, attempt) * 1000, 3000); // 最多等待3秒
                 console.log(`Waiting ${waitTime}ms before retry...`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 continue;
