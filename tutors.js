@@ -119,45 +119,46 @@ document.addEventListener('DOMContentLoaded', function() {
         const avatarClass = tutor.isPremium ? 'tutor-avatar premium' : 'tutor-avatar';
         const verificationBadge = tutor.isPremium ? '<div class="verification-badge"></div>' : '';
         
-        return `
-            <div class="tutor-card-full">
-                <div class="tutor-header">
-                    <div style="position: relative;">
-                        <img src="${tutor.avatar}" alt="${tutor.name}" class="${avatarClass}" onerror="this.src='images/tutor1.jpg'">
-                        ${verificationBadge}
-                    </div>
-                    <div class="tutor-basic-info">
-                        <h3>${tutor.name}</h3>
-                        <p class="tutor-subject">${tutor.subject}</p>
-                    </div>
+        // 改为DOM方式，确保description为纯文本
+        const card = document.createElement('div');
+        card.className = 'tutor-card-full';
+        card.innerHTML = `
+            <div class="tutor-header">
+                <div style="position: relative;">
+                    <img src="${tutor.avatar}" alt="${tutor.name}" class="${avatarClass}" onerror="this.src='images/tutor1.jpg'">
+                    ${verificationBadge}
                 </div>
-                
-                <div class="tutor-details">
-                    <div class="tutor-detail-item">
-                        <span class="detail-label">学科成绩</span>
-                        <span class="detail-value tutor-score">${tutor.score}</span>
-                    </div>
-                    <div class="tutor-detail-item">
-                        <span class="detail-label">助学形式</span>
-                        <span class="detail-value tutor-format ${formatClass}">${formatText}</span>
-                    </div>
-                    <div class="tutor-detail-item">
-                        <span class="detail-label">参考报价</span>
-                        <span class="detail-value tutor-price">${tutor.price}</span>
-                    </div>
-                </div>
-                
-                <div class="tutor-description">
-                    <p>${tutor.description}</p>
-                </div>
-                
-                <div class="tutor-contact">
-                    <button class="contact-btn js-contact-btn">
-                        联系助学人
-                    </button>
+                <div class="tutor-basic-info">
+                    <h3>${tutor.name}</h3>
+                    <p class="tutor-subject">${tutor.subject}</p>
                 </div>
             </div>
+            <div class="tutor-details">
+                <div class="tutor-detail-item">
+                    <span class="detail-label">学科成绩</span>
+                    <span class="detail-value tutor-score">${tutor.score}</span>
+                </div>
+                <div class="tutor-detail-item">
+                    <span class="detail-label">助学形式</span>
+                    <span class="detail-value tutor-format ${formatClass}">${formatText}</span>
+                </div>
+                <div class="tutor-detail-item">
+                    <span class="detail-label">参考报价</span>
+                    <span class="detail-value tutor-price">${tutor.price}</span>
+                </div>
+            </div>
+            <div class="tutor-description">
+                <p></p>
+            </div>
+            <div class="tutor-contact">
+                <button class="contact-btn js-contact-btn">
+                    联系助学人
+                </button>
+            </div>
         `;
+        // 用textContent插入简介
+        card.querySelector('.tutor-description p').textContent = tutor.description;
+        return card.outerHTML;
     }
 
     // 显示所有助学人
