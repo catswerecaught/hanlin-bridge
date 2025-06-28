@@ -186,4 +186,12 @@ function getMockResponse(message) {
     
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
     return `${randomResponse}\n\n（注：当前为模拟响应。AI服务正在处理中，请稍后再试。如果问题持续存在，请联系客服。）`;
+}
+
+// 备用AI服务函数（目前只返回模拟响应）
+async function callBackupAI(message) {
+    console.log('使用备用AI服务...');
+    // 这里可以实现其他AI服务的调用
+    // 暂时返回模拟响应
+    return getMockResponse(message);
 } 
