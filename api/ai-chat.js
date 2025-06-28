@@ -60,31 +60,70 @@ function getCardType(amount) {
 }
 
 async function callAIService(message) {
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     
     console.log('=== AI服务调用开始 ===');
     
-    if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not found in environment variables');
-    }
-    
-    console.log('API Key found, length:', OPENAI_API_KEY.length);
-    console.log('API Key starts with:', OPENAI_API_KEY.substring(0, 20) + '...');
-    
-    // 首先尝试OpenAI
-    try {
-        return await callOpenAI(message);
-    } catch (error) {
-        console.log('OpenAI调用失败，尝试备用服务...');
-        
-        // 如果OpenAI失败，尝试其他AI服务
+    if (GEMINI_API_KEY) {
         try {
-            return await callBackupAI(message);
-        } catch (backupError) {
-            console.error('所有AI服务都失败了:', backupError);
-            throw new Error('所有AI服务暂时不可用，请稍后重试');
+            return await callGemini(message, GEMINI_API_KEY);
+        } catch (error) {
+            console.error('Gemini调用失败:', error);
+            // 如果 Gemini 失败，尝试 OpenAI
+            if (OPENAI_API_KEY) {
+                try {
+                    return await callOpenAI(message);
+                } catch (openaiError) {
+                    console.error('OpenAI调用失败:', openaiError);
+                    return await callBackupAI(message);
+                }
+            } else {
+                return await callBackupAI(message);
+            }
         }
+    } else if (OPENAI_API_KEY) {
+        try {
+            return await callOpenAI(message);
+        } catch (error) {
+            console.error('OpenAI调用失败:', error);
+            return await callBackupAI(message);
+        }
+    } else {
+        return await callBackupAI(message);
     }
+}
+
+// Google Gemini API 调用
+async function callGemini(message, apiKey) {
+    console.log('调用 Google Gemini API...');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    const requestBody = {
+        contents: [
+            {
+                role: 'user',
+                parts: [{ text: message }]
+            }
+        ]
+    };
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+    const responseText = await response.text();
+    console.log('Gemini Response:', response.status, responseText);
+    if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status} - ${responseText}`);
+    }
+    const data = JSON.parse(responseText);
+    // Gemini 返回格式适配
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+        return data.candidates[0].content.parts[0].text;
+    }
+    throw new Error('Gemini API response format error');
 }
 
 async function callOpenAI(message) {
