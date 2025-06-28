@@ -82,13 +82,13 @@ document.addEventListener('DOMContentLoaded', function() {
             isPremium: false
         },
         {
-            name: '正在招募中',
-            subject: '未知',
+            name: '李学长',
+            subject: '英语',
             avatar: 'images/tutor9.jpg',
-            score: '未知',
+            score: '高考134',
             format: 'both',
             price: '¥???/2小时',
-            description: '暂无',
+            description: 'Keep looking, don't settle.',
             isPremium: false
         }
     ];
