@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
             name: '李学长',
             subject: '数学·头部助学人',
             avatar: 'images/tutor3.jpg',
-            score: '春考131，二模138,高考142',
+            score: '春考131，二模138，高考142',
             format: 'both',
             price: '¥???/2小时',
             description: '拒绝"刷题化"单一教学模式，结合学生该学科学习情况提供针对性资源，分享自身学习过程中的心得、技巧、易错点，培养活跃性思维。',
