@@ -88,12 +88,11 @@
                 </ul>
                 <p class="disclaimer">*All the above texts are for entertainment purposes only and are not guaranteed to be true.</p>
             </div>
+            <footer class="page-footer" id="pageFooter" style="display: none;">
+                <button id="back-to-top" class="back-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Back to top</button>
+            </footer>
         </section>
     </main>
-    
-    <footer class="page-footer">
-        <button id="back-to-top" class="back-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Back to top</button>
-    </footer>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="users.js"></script>
@@ -110,6 +109,11 @@
             
             const header = document.querySelector('.main-header');
             if (header) header.classList.add('cooperation-active');
+            
+            // 确保页脚初始隐藏
+            const pageFooter = document.getElementById('pageFooter');
+            if (pageFooter) pageFooter.style.display = 'none';
+            
             // 删除页面滚动锁定，允许滚动
             document.body.classList.remove('no-scroll');
         });
@@ -127,6 +131,7 @@
                     if (articleSection) {
                         heroSection.style.display = 'none';
                         articleSection.style.display = 'block';
+                        document.getElementById('pageFooter').style.display = 'block'; // 显示页脚
                         document.body.classList.remove('no-scroll'); // 允许页面滚动
                         // 强制页面回到顶部，避免默认锚点或布局偏移
                         window.scrollTo({ top: 0, behavior: 'auto' });
@@ -144,6 +149,7 @@
                     if (articleSection && heroSection) {
                         articleSection.style.display = 'none';
                         heroSection.style.display = 'block';
+                        document.getElementById('pageFooter').style.display = 'none'; // 隐藏页脚
                         document.body.classList.add('no-scroll'); // 返回后重新锁定滚动
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
