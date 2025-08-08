@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>合作 - 翰林桥</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=3">
-    <link rel="stylesheet" href="cooperation.css?v=1.2">
+    <link rel="stylesheet" href="cooperation.css?v=1.6">
 </head>
 <body>
     <header class="main-header">
@@ -41,30 +44,131 @@
     </div>
 
     <main class="cooperation-content">
-        <div class="founder-section">
-            <div class="founder-card">
-                <div class="founder-image-container">
-                    <img src="images/founder.jpg" alt="陶悠然" class="founder-image">
-                    <div class="verification-badge">
-                        <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <text x="18" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">V</text>
-                        </svg>
-                    </div>
-                </div>
-                <div class="founder-info">
-                    <h1 class="founder-name">陶先生</h1>
-                    <p class="founder-title">平台创始人兼负责人</p>
-                    <div class="founder-description">
-                        <p>致力于连接求学者与助学者，构建知识传承的桥梁。秉持"薪火相传"的教育理念，为每一个学习者提供个性化的成长路径。</p>
-                        <p>在自媒体领域拥有丰富经验。</p>
-                    </div>
+        <!-- Hero Section -->
+        <section class="hero-section" id="heroSection">
+            <div class="hero-image-container">
+                <img src="images/cooperation-hero.jpg?v=2" alt="翰林桥合作计划" class="hero-image">
+            </div>
+            <div class="hero-overlay">
+                <h1 class="hero-title">We'll Never Tire of Winning Under Founder Tao</h1>
+                <a href="#article" class="hero-scroll-btn">Read details</a>
+            </div>
+        </section>
+
+        <!-- Article Section -->
+        <section class="article-section" id="article" style="display:none;">
+            <div class="article-header">
+                <a href="#" class="back-to-articles">Back</a>
+                <div class="article-kicker">ARTICALS</div>
+                <h2 class="article-title">We'll Never Tire of Winning Under Founder Tao</h2>
+                <div class="article-meta">
+                    <span class="article-author">Hanlin Bridge</span>
+                    <span class="article-date">August 8, 2025</span>
                 </div>
             </div>
-        </div>
+            <div class="article-content">
+                <p class="article-lead">The winning never stops as Founder Oliver Tao and his team continue to make progress optimizing the defect of the past and shepherding the Hanlin Bridge into its new Golden Age.</p>
+                
+                <p><strong>Here is a non-comprehensive list of wins in seven weeks:</strong></p>
+                
+                <ul class="bullet-list">
+                    <li><span class="bullet-point"></span>Furnish graduates with paramountly secure, convenient, and efficient part-time employment, concurrently offering invaluable social experience and substantial income.</li>
+                    
+                    <li><span class="bullet-point"></span>Grant high school students exceptional learning opportunities, enabling them to glean insights from peer mentors and acquire knowledge and distinctive problem-solving methodologies beyond the scope of conventional tutorial classes.</li>
+                    
+                    <li><span class="bullet-point"></span>Surpassed the century mark in services rendered to students, serving a diverse multi-grade demographic.</li>
+                    
+                    <li><span class="bullet-point"></span>The official portal delivers streamlined pedagogical resources and complimentary AI-driven tools, empowering both instructors and the internal team.</li>
+                    
+                    <li><span class="bullet-point"></span>Graduate instructors demonstrate superb pedagogical prowess, featuring four elite tutors ranked within the top 5% academically. This is reflected in an impressive 92% customer satisfaction rate and exceptional student retention.</li>
+                    
+                    <li><span class="bullet-point"></span>Customer service personnel proactively mediate between clients and graduates to resolve disputes and clarify misunderstandings. Standardized protocols ensure the security of all parties' assets.</li>
+                    
+                    <li><span class="bullet-point"></span>Maintain a position at the vanguard: Consistently disseminate insights on integrating cutting-edge AI into pedagogy to elevate instructional quality.</li>
+                </ul>
+                <p class="disclaimer">*All the above texts are for entertainment purposes only and are not guaranteed to be true.</p>
+            </div>
+        </section>
     </main>
-
+    
+    <footer class="page-footer">
+        <button id="back-to-top" class="back-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Back to top</button>
+    </footer>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="users.js"></script>
     <script src="script.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Back to top button functionality
+            document.getElementById('back-to-top').addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            const header = document.querySelector('.main-header');
+            if (header) header.classList.add('cooperation-active');
+            // 删除页面滚动锁定，允许滚动
+            document.body.classList.remove('no-scroll');
+        });
+    </script>
+    <script>
+        // 添加合作页面特定的交互逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            const heroSection = document.getElementById('heroSection');
+            const articleSection = document.getElementById('article');
+            const backButton = document.querySelector('.back-to-articles');
+
+            // 点击hero区域，显示文章
+            if (heroSection) {
+                heroSection.addEventListener('click', function() {
+                    if (articleSection) {
+                        heroSection.style.display = 'none';
+                        articleSection.style.display = 'block';
+                        document.body.classList.remove('no-scroll'); // 允许页面滚动
+                        // 强制页面回到顶部，避免默认锚点或布局偏移
+                        window.scrollTo({ top: 0, behavior: 'auto' });
+                        document.documentElement.scrollTop = 0;
+                        document.body.scrollTop = 0;
+                        setTimeout(() => { window.scrollTo(0, 0); }, 0);
+                    }
+                });
+            }
+
+            // 点击返回按钮，回到hero区域
+            if (backButton) {
+                backButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (articleSection && heroSection) {
+                        articleSection.style.display = 'none';
+                        heroSection.style.display = 'block';
+                        document.body.classList.add('no-scroll'); // 返回后重新锁定滚动
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            }
+
+            // 点击文章链接时不触发hero点击事件
+            const heroScrollBtn = document.querySelector('.hero-scroll-btn');
+            if (heroScrollBtn) {
+                heroScrollBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (articleSection && heroSection) {
+                        heroSection.style.display = 'none';
+                        articleSection.style.display = 'block';
+                        document.body.classList.remove('no-scroll');
+                        // 彻底阻止锚点默认滚动并强制回顶
+                        window.scrollTo({ top: 0, behavior: 'auto' });
+                        document.documentElement.scrollTop = 0;
+                        document.body.scrollTop = 0;
+                        setTimeout(() => { window.scrollTo(0, 0); }, 0);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html> 

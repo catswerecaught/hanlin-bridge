@@ -1,128 +1,338 @@
-/* 合作页面样式 */
-.cooperation-content {
-    min-height: calc(100vh - 52px);
-    background-image: url('images/cooperation-bg.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 40px;
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
 
-.founder-section {
-    max-width: 1000px;
+/* 合作页面样式 - 白宫风格 */
+
+body, html {
+    margin: 0;
+    padding: 0;
     width: 100%;
-    /* margin-top: -40px; */ /* Removed to restore gap with navbar */
+    height: auto;
+    min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow-x: hidden; /* 禁止左右滚动 */
+    overflow-y: visible; /* 允许垂直滚动 */
+    background-color: #fff; /* 设置白色背景消除灰色区域 */
 }
 
-.founder-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 40px;
-    display: flex;
-    gap: 40px;
-    align-items: flex-start;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+/* 页面滚动锁定：仅在展示 hero 时给 body 加上 .no-scroll */
+body.no-scroll {
+    overflow: hidden !important;
+    height: 100vh;
 }
 
-.founder-image-container {
+/* Change header background only on cooperation page */
+header.main-header.cooperation-active {
+    background-color: #001b44 !important; /* 深蓝色 */
+    transition: background-color 0.3s ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Hero Section Styles */
+.hero-section {
     position: relative;
-    flex-shrink: 0;
-    width: 200px;
-    height: 200px;
+    width: 100%;
+    height: calc(100vh - 68px); /* Match actual header height */
+    overflow: hidden;
+    cursor: pointer;
+    background-color: #001b44; /* Fallback color */
 }
 
-.founder-image {
+.hero-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    border-radius: 50%;
+}
+
+.hero-image {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    border: 4px solid white;
+    display: block;
 }
 
-.verification-badge {
+.hero-image-container::after {
+    content: '';
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    border: 3px solid white;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%; /* 从图片下方40%开始模糊 */
+    background: linear-gradient(to bottom, 
+                               rgba(0, 0, 0, 0) 0%,
+                               rgba(0, 0, 0, 0.3) 30%,
+                               rgba(0, 27, 68, 0.9) 100%);
+    pointer-events: none;
 }
 
-.verification-badge svg {
-    width: 24px;
-    height: 24px;
+.hero-overlay {
+    position: absolute;
+    top: 70%; /* 继续向下移动 */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    color: white;
+    text-align: center;
+    width: 90%;
+    pointer-events: none; /* Let clicks go through to the section */
 }
 
-.founder-info {
-    flex: 1;
-}
-
-.founder-name {
-    font-size: 32px;
+.hero-title {
+    font-family: 'Merriweather', Georgia, serif; /* Match article title font */
+    font-size: 4rem; /* 缩小主标题 */
     font-weight: 700;
-    color: var(--text-color);
-    margin: 0 0 8px 0;
-    line-height: 1.2;
+    color: #fff;
+    margin: 0;
+    line-height: 1.1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
-.founder-title {
-    font-size: 18px;
-    color: var(--primary-blue);
+.hero-scroll-btn {
+    display: block;
+    margin-top: 30px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.35rem; /* 副标题更大 */
+    font-weight: 400;
+    pointer-events: auto; /* Make the button clickable */
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+}
+
+.hero-scroll-btn:hover {
+    text-decoration: underline;
+}
+
+/* Article Section Styles */
+.article-section {
+    display: none;
+    background-color: #fff;
+    padding: 0;
+    min-height: calc(100vh - 68px); /* 至少占满视窗可视高度 */
+    height: auto; /* 自适应内容高度，使用页面滚动 */
+    overflow-y: auto; /* 允许垂直滚动 */
+    overflow-x: hidden; /* 禁止水平滚动 */
+}
+
+/* 页脚样式 */
+.page-footer {
+    background-color: #001b44;
+    padding: 20px 0;
+    text-align: center;
+    width: 100%;
+    margin-top: 40px;
+}
+
+.article-header {
+    /* 上浅下深的深蓝渐变，与参考图一致 */
+    background: linear-gradient(to bottom, #0c2548 0%, #072544 30%, #001b44 70%, #001634 100%);
+    color: white;
+    padding: 20px 10%; /* 减小上下内边距，整体上移 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    border-top: 1px solid #aaaaaa; /* 顶部灰色细线 */
+    justify-content: center;
+    min-height: 300px; /* 确保有足够高度来居中 */
+}
+
+.back-to-top-btn {
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 30px;
+    padding: 8px 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-to-top-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 文章页标题上方的居中提示文字 */
+.article-kicker {
+    text-align: center;
+    color: #ffffff;
+    font-size: 1rem; /* 与作者span一致 */
+    letter-spacing: 0.12em;
+    opacity: 0.9;
+    margin: 6px auto 10px;
+}
+
+.back-to-articles {
+    color: #fff;
+    text-decoration: underline;
+    font-size: 1rem;
     font-weight: 600;
-    margin: 0 0 24px 0;
+    display: inline-block;
+    position: absolute;
+    top: 16px;
+    left: 16px; /* 更靠左 */
 }
 
-.founder-description {
-    color: var(--secondary-text-color);
+.back-to-articles:hover {
+    text-decoration: underline;
+}
+
+.article-title {
+    font-family: 'Merriweather', Georgia, serif; /* 更接近白宫风格且数字不塌陷 */
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin: 20px auto; /* 居中 */
+    max-width: 900px;
+    text-align: center; /* 文本居中 */
+    line-height: 1.2;
+    color: #fff;
+    font-variant-numeric: lining-nums; /* 使用等高数字 */
+    font-feature-settings: "lnum" 1, "liga" 0; /* 关闭连字，启用等高数字 */
+}
+
+.article-meta {
+    display: flex;
+    justify-content: center; /* 居中 */
+    align-items: center;
+    gap: 0;
+    color: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    margin-top: 15px;
+}
+
+.article-author::after {
+    content: '|';
+    margin: 0 15px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 300;
+}
+
+.article-content {
+    padding: 2rem 20%;
     line-height: 1.6;
+    font-size: 1.2rem; /* 增加整体字体大小 */
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.founder-description p {
-    margin: 0 0 16px 0;
-    font-size: 16px;
+.article-content .bullet-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 1.5rem;
 }
 
-.founder-description p:last-child {
-    margin-bottom: 0;
+.article-content .bullet-list li {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.article-content .bullet-point {
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    width: 8px;
+    height: 8px;
+    background-color: #aaaaaa; /* 浅灰色圆形标识 */
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.disclaimer {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #777;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.article-lead {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: 300;
+}
+
+.article-content h3 {
+    font-size: 1.8rem;
+    margin: 40px 0 20px;
+    color: #001b44;
+}
+
+.article-content p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.article-content ul {
+    margin-bottom: 30px;
+    padding-left: 20px;
+}
+
+.article-content li {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.cta-box {
+    margin-top: 60px;
+    padding: 30px;
+    background-color: #f5f8ff;
+    border-radius: 8px;
+    border-left: 4px solid #001b44;
+    text-align: center;
+}
+
+.cta-box h4 {
+    font-size: 1.4rem;
+    margin: 0 0 10px 0;
+    color: #001b44;
+}
+
+.cta-button {
+    background-color: #001b44;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.cta-button:hover {
+    background-color: #002b69;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .founder-card {
-        flex-direction: column;
-        text-align: center;
-        padding: 30px;
-        align-items: center;
+    .hero-title {
+        font-size: 3rem;
     }
     
-    .founder-image-container {
-        width: 150px;
-        height: 150px;
-        margin-bottom: 20px;
+    .hero-overlay {
+        bottom: 10%;
+        padding: 0 5%;
     }
     
-    .founder-image {
-        /* No changes needed here, it will inherit 100% width/height */
+    .article-header {
+        padding: 30px 5%;
     }
     
-    .founder-name {
-        font-size: 28px;
+    .article-title {
+        font-size: 1.8rem;
     }
     
-    .founder-title {
-        font-size: 16px;
+    .article-content {
+        padding: 30px 5%;
+    }
+    
+    .article-lead {
+        font-size: 1.2rem;
     }
 } 
