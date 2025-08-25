@@ -47,15 +47,15 @@
 
     <main class="customize-content">
         <div class="customize-header">
-            <h1>定制服务</h1>
-            <p>更多内容持续更新中。</p>
+            <h1>定制服务中心</h1>
+            <p>内部测试中，更多功能敬请期待。</p>
         </div>
 
         <div class="services-container">
             <div class="services-scroll">
                 <div class="service-card" id="askQuestionCard">
                     <div class="card-header">
-                        <span class="card-subtitle">想知道更多关于创始人的信息？</span>
+                        <span class="card-subtitle">想知道更多关于陶的信息？</span>
                         <h3>"问一问"活动进行中。</h3>
                     </div>
                     <div class="card-image">
@@ -79,8 +79,8 @@
                 
                 <div class="service-card" id="discountCard">
                     <div class="card-header">
-                        <span class="card-subtitle">立省百万</span>
-                        <h3>如何折抵你的学费？</h3>
+                        <span class="card-subtitle">等不及啦</span>
+                        <h3>更多功能还在开发中...</h3>
                     </div>
                     <div class="card-image">
                         <div class="discount-visual"></div>
@@ -98,9 +98,9 @@
                 </div>
                 <div class="modal-body">
                     <div class="question-section">
-                        <h3>向陶先生提问</h3>
-                        <p>匿名提问，您的问题将直接发送给创始人陶先生</p>
-                        <textarea id="questionInput" placeholder="请输入您想问的问题..." rows="6"></textarea>
+                        <h3>向陶提问</h3>
+                        <p>匿名提问，您的问题将直接发送给陶先生</p>
+                        <textarea id="questionInput" placeholder="请输入您想问的问题：" rows="6"></textarea>
                         <button id="submitQuestion" class="submit-btn">提交问题</button>
                         
                         <div id="questionResult" class="result-section" style="display: none;">
@@ -118,7 +118,7 @@
                         <h3>查看回答</h3>
                         <p>输入您的查询密钥查看陶先生的回答</p>
                         <div class="key-input-group">
-                            <input type="text" id="keyInput" placeholder="请输入查询密钥 (格式: xxxx-xxxx-xxxx)">
+                            <input type="text" id="keyInput" placeholder="请输入查询密钥">
                             <button id="checkAnswer" class="check-btn">查看回答</button>
                         </div>
                         
@@ -194,8 +194,8 @@
                     return;
                 }
                 
-                if (question.length > 1000) {
-                    alert('问题长度不能超过1000字符');
+                if (question.length > 200) {
+                    alert('问题长度不能超过200字符');
                     return;
                 }
                 

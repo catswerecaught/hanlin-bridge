@@ -15,16 +15,33 @@ class AdminQAPanel {
     }
 
     checkAdminAccess() {
-        // 获取当前登录用户
-        const currentUsername = localStorage.getItem('currentUser');
-        if (!currentUsername) return;
+        // 获取当前登录用户（以 loginUser 为准）
+        let storedUser = null;
+        try {
+            storedUser = JSON.parse(localStorage.getItem('loginUser'));
+        } catch (e) {
+            storedUser = null;
+        }
+        if (!storedUser || typeof storedUser !== 'object') {
+            // 未登录，保持面板隐藏
+            const panel = document.getElementById('adminQAPanel');
+            if (panel) panel.style.display = 'none';
+            return;
+        }
 
-        this.currentUser = users.find(user => user.username === currentUsername);
-        
+        // 与全局 users 同步最新信息（如权限、会员）
+        const synced = Array.isArray(window.users)
+            ? window.users.find(u => u.username === storedUser.username)
+            : null;
+        this.currentUser = synced ? { ...synced } : storedUser;
+
         // 检查是否为超级管理员
+        const panel = document.getElementById('adminQAPanel');
         if (this.currentUser && this.currentUser.supreme === true) {
-            document.getElementById('adminQAPanel').style.display = 'block';
+            if (panel) panel.style.display = 'block';
             this.loadQuestions();
+        } else {
+            if (panel) panel.style.display = 'none';
         }
     }
 
