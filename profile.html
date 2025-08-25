@@ -209,11 +209,25 @@
         <div id="teachingProgressList"></div>
         <button id="newProgressBtn" style="margin-top:18px;margin-bottom:18px;display:none;">+ 新建教学进度</button>
         <div id="teachingProgressForm" style="display:none;"></div>
+        
+        <!-- 问一问管理面板 - 仅对陶先生显示 -->
+        <div id="adminQAPanel" style="display:none;margin-top:32px;">
+          <h2 style="font-size:1.35em;font-weight:700;color:#007aff;margin-bottom:18px;">问一问管理</h2>
+          <div id="qaStatsBar" style="display:flex;gap:16px;margin-bottom:20px;font-size:14px;">
+            <span id="totalQuestions" style="color:#666;">总问题: 0</span>
+            <span id="pendingQuestions" style="color:#ff9500;">待回答: 0</span>
+            <span id="answeredQuestions" style="color:#34c759;">已回答: 0</span>
+          </div>
+          <div id="questionsList" style="max-height:400px;overflow-y:auto;border:1px solid #e1e8ed;border-radius:12px;background:#fff;">
+            <div id="questionsLoading" style="padding:20px;text-align:center;color:#666;">加载中...</div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
   <script src="users.js"></script>
   <script src="script.js?v=3"></script>
   <script src="profile.js"></script>
+  <script src="admin-qa.js"></script>
 </body>
 </html> 
