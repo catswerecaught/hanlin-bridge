@@ -1,0 +1,427 @@
+/* 定制页面样式 - 极简高端设计 */
+.customize-content {
+    padding-top: 0;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+.customize-header {
+    padding: 0 20px;
+    text-align: left;
+    max-width: 1200px;
+    margin: -12px auto 0;
+}
+
+.customize-header h1 {
+    font-size: 2.2rem;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.customize-header p {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
+}
+
+.services-container {
+    width: 100%;
+    margin: 16px 0 0 0;
+    padding: 0;
+}
+
+.services-scroll {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 0 20px 20px;
+    margin: 0 auto;
+    max-width: 1200px;
+    scroll-behavior: smooth;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.services-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.services-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 0;
+}
+
+.services-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 0;
+}
+
+.services-scroll::-webkit-scrollbar-thumb:hover {
+    background: transparent;
+}
+
+.service-card {
+    min-width: 400px;
+    height: 500px;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    flex: 1;
+}
+
+.card-subtitle {
+    font-size: 0.9rem;
+    color: #888;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.card-header h3 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    line-height: 1.4;
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-image {
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+/* Device Mockup for Ask Question Card */
+.device-mockup {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.laptop {
+    width: 200px;
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.tablet {
+    width: 80px;
+    height: 100px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 6px;
+    position: absolute;
+    bottom: 40px;
+    right: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.phone {
+    width: 50px;
+    height: 80px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 12px;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Tech Support Avatar */
+.tech-support-avatar {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.tech-support-avatar::after {
+    content: "👨‍💻";
+    font-size: 4rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Discount Visual */
+.discount-visual {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.discount-visual::after {
+    content: "💰";
+    font-size: 4rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: white;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.close-btn {
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: #666;
+}
+
+.modal-body {
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.question-section,
+.answer-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.question-section h3,
+.answer-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.3rem;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.question-section p,
+.answer-section p {
+    margin: 0 0 20px 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+#questionInput {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 20px;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    min-height: 120px;
+}
+
+#keyInput {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 0;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    height: 54px;
+}
+
+#questionInput:focus,
+#keyInput:focus {
+    outline: none;
+    border-color: #007aff;
+}
+
+.submit-btn,
+.check-btn {
+    padding: 16px 24px;
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 54px;
+    white-space: nowrap;
+}
+
+.submit-btn:hover,
+.check-btn:hover {
+    background: #0056cc;
+    transform: translateY(-1px);
+}
+
+.key-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.key-input-group input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.result-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.result-section h4 {
+    margin: 0 0 12px 0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.key-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e1e8ed;
+}
+
+.key-display span {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: #007aff;
+    font-weight: 600;
+    flex: 1;
+}
+
+.copy-btn {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+}
+
+.copy-btn:hover {
+    background: #e0e0e0;
+}
+
+.key-note {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 12px;
+}
+
+.question-display,
+.answer-display {
+    margin-bottom: 20px;
+}
+
+.question-display h4,
+.answer-display h4 {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.answer-time {
+    font-size: 0.9rem;
+    color: #888;
+    display: block;
+    margin-top: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .service-card {
+        min-width: 320px;
+    }
+    
+    .modal-body {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 24px;
+    }
+    
+    .key-input-group {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .key-input-group input {
+        margin-bottom: 12px;
+    }
+}

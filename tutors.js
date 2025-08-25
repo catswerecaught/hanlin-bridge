@@ -32,14 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
             isPremium: true // 头部助学人
         },
         {
-            name: '王学长',
-            subject: '历史·头部助学人',
+            name: '正在招募中',
+            subject: '暂无数据',
             avatar: 'images/tutor4.jpg',
-            score: '高考A+',
+            score: '暂无数据',
             format: 'both',
             price: '¥???/2小时',
-            description: '究天人之际，通古今之变，知应试之要。',
-            isPremium: true
+            description: '暂无数据',
+            isPremium: false
         },
         {
             name: '翁学姐',
