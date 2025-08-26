@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const qnForm = document.getElementById('qnForm');
   const submitBtn = document.getElementById('submitQnBtn');
   const submitStatus = document.getElementById('submitStatus');
+  const successSection = document.getElementById('successSection');
+  const countdownEl = document.getElementById('countdown');
 
   let currentQn = null;
   let currentCode = '';
@@ -250,12 +252,31 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await parseJSONSafe(resp);
       if (!resp.ok) throw new Error(data?.error || '提交失败');
-      setSubmitStatus('提交成功，感谢参与！');
+      showSuccessAndRedirect();
     } catch (e) {
       setSubmitStatus(e.message || '提交失败，请稍后再试', true);
     } finally {
       submitBtn.disabled = false;
     }
+  }
+
+  function showSuccessAndRedirect() {
+    // Hide questionnaire section and show success
+    qnSection.style.display = 'none';
+    successSection.style.display = 'block';
+    
+    // Start 5-second countdown
+    let seconds = 5;
+    const updateCountdown = () => {
+      countdownEl.textContent = `将在 ${seconds} 秒后返回`;
+      if (seconds <= 0) {
+        window.location.href = 'https://oceantie.top/customize.html';
+        return;
+      }
+      seconds--;
+      setTimeout(updateCountdown, 1000);
+    };
+    updateCountdown();
   }
 
   enterBtn.addEventListener('click', () => {

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问卷编辑器 - 翰林桥</title>
+  <link rel="stylesheet" href="style.css?v=3">
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .editor-container { display: flex; height: 100vh; }
+    
+    /* 左侧边栏 */
+    .sidebar { width: 280px; background: #fff; border-right: 1px solid #e1e8ed; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 16px; border-bottom: 1px solid #e1e8ed; }
+    .sidebar-tabs { display: flex; }
+    .sidebar-tab { flex: 1; padding: 8px 12px; text-align: center; cursor: pointer; color: #666; border-bottom: 2px solid transparent; }
+    .sidebar-tab.active { color: #007aff; border-bottom-color: #007aff; }
+    
+    .question-types { padding: 16px; }
+    .type-category { margin-bottom: 24px; }
+    .type-category-title { font-weight: 600; color: #333; margin-bottom: 12px; display: flex; align-items: center; }
+    .type-category-title::before { content: '▼'; margin-right: 8px; font-size: 12px; }
+    .type-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    .type-item:hover { background: #f0f9ff; }
+    .type-item.selected { background: #e3f2fd; color: #1976d2; }
+    .type-icon { width: 16px; height: 16px; margin-right: 8px; }
+    
+    /* 主编辑区 */
+    .main-editor { flex: 1; display: flex; flex-direction: column; }
+    .editor-header { background: #fff; padding: 16px 24px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; }
+    .editor-title { font-size: 18px; font-weight: 600; color: #333; }
+    .editor-actions { display: flex; gap: 12px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: #007aff; color: #fff; }
+    .btn-success { background: #34c759; color: #fff; }
+    
+    .editor-content { flex: 1; padding: 24px; overflow-y: auto; }
+    .form-section { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
+    .form-input, .form-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .form-input:focus, .form-textarea:focus { outline: none; border-color: #007aff; }
+    
+    /* 问题编辑区 */
+    .question-editor { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 2px solid #e1e8ed; position: relative; }
+    .question-editor.active { border-color: #007aff; }
+    .question-number { position: absolute; top: -10px; left: 16px; background: #ff6b6b; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .question-title { font-weight: 600; color: #333; margin-bottom: 16px; }
+    .question-controls { display: flex; gap: 8px; margin-bottom: 16px; }
+    .control-btn { padding: 4px 8px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .control-btn:hover { background: #f5f5f5; }
+    .control-btn.active { background: #007aff; color: #fff; border-color: #007aff; }
+    
+    .option-list { margin-top: 12px; }
+    .option-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .option-input { flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; margin-left: 8px; }
+    .option-delete { margin-left: 8px; color: #ff3b30; cursor: pointer; }
+    .add-option { color: #007aff; cursor: pointer; font-size: 14px; margin-top: 8px; }
+    
+    .question-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
+    .action-btn { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: #666; }
+    .action-btn:hover { color: #333; }
+  </style>
+</head>
+<body>
+  <div class="editor-container">
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-tabs">
+          <div class="sidebar-tab active">题型</div>
+          <div class="sidebar-tab">逻辑</div>
+          <div class="sidebar-tab">主题</div>
+        </div>
+      </div>
+      
+      <div class="question-types">
+        <div class="type-category">
+          <div class="type-category-title">选择题</div>
+          <div class="type-item" data-type="radio">
+            <span class="type-icon">○</span>
+            <span>单选</span>
+          </div>
+          <div class="type-item" data-type="checkbox">
+            <span class="type-icon">☑</span>
+            <span>多选</span>
+          </div>
+          <div class="type-item" data-type="select">
+            <span class="type-icon">▼</span>
+            <span>下拉选择</span>
+          </div>
+        </div>
+        
+        <div class="type-category">
+          <div class="type-category-title">填空题</div>
+          <div class="type-item" data-type="text">
+            <span class="type-icon">📝</span>
+            <span>单行文本</span>
+          </div>
+          <div class="type-item" data-type="textarea">
+            <span class="type-icon">📄</span>
+            <span>多行文本</span>
+          </div>
+          <div class="type-item" data-type="number">
+            <span class="type-icon">🔢</span>
+            <span>数字</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 主编辑区 -->
+    <div class="main-editor">
+      <div class="editor-header">
+        <div class="editor-title" id="questionnaireTitle">测试问卷</div>
+        <div class="editor-actions">
+          <button class="btn btn-primary" id="previewBtn">预览</button>
+          <button class="btn btn-success" id="saveBtn">完成编辑</button>
+        </div>
+      </div>
+      
+      <div class="editor-content">
+        <!-- 问卷基本信息 -->
+        <div class="form-section">
+          <div class="form-group">
+            <label class="form-label">问卷标题</label>
+            <input type="text" class="form-input" id="titleInput" value="测试问卷" placeholder="请输入问卷标题">
+          </div>
+          <div class="form-group">
+            <label class="form-label">问卷说明</label>
+            <textarea class="form-textarea" id="descInput" placeholder="请输入问卷说明，告诉用户填写目的和注意事项">测试问卷说明</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">校验码</label>
+            <input type="text" class="form-input" id="codeInput" placeholder="格式：xxxx-xxxx-xxxx">
+          </div>
+        </div>
+        
+        <!-- 问题列表 -->
+        <div id="questionsList">
+          <!-- 示例问题 -->
+          <div class="question-editor active" data-question-id="1">
+            <div class="question-number">*1</div>
+            <div class="question-actions">
+              <button class="action-btn" title="复制">📋</button>
+              <button class="action-btn" title="删除">🗑️</button>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">题目</label>
+              <input type="text" class="form-input question-title-input" value="标题" placeholder="请输入问题标题">
+            </div>
+            
+            <div class="question-controls">
+              <button class="control-btn active" data-required="true">必填</button>
+              <button class="control-btn" data-action="add-help">添加说明</button>
+            </div>
+            
+            <div class="option-list">
+              <div class="option-item">
+                <span>○</span>
+                <input type="text" class="option-input" value="选项1" placeholder="选项内容">
+                <span class="option-delete">×</span>
+              </div>
+              <div class="option-item">
+                <span>○</span>
+                <input type="text" class="option-input" value="选项2" placeholder="选项内容">
+                <span class="option-delete">×</span>
+              </div>
+              <div class="add-option">+ 添加选项</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 添加问题按钮 -->
+        <div style="text-align: center; margin-top: 24px;">
+          <button class="btn btn-primary" id="addQuestionBtn">+ 添加问题</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="questionnaire-editor.js"></script>
+</body>
+</html>

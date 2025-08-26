@@ -19,7 +19,7 @@
     .qn-textarea { min-height: 96px; resize: vertical; }
     .qn-help { color: #888; font-size: 13px; margin-top: 6px; }
     .qn-actions { margin-top: 22px; text-align: right; }
-    .qn-submit { background: #34c759; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+    .qn-submit { background: #007aff; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
     .qn-status { margin-top: 12px; font-size: 14px; color: #666; }
     .qn-radio-group, .qn-checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
     @media (max-width: 600px) { .qn-radio-group, .qn-checkbox-group { grid-template-columns: 1fr; } }
@@ -81,6 +81,15 @@
         <button id="submitQnBtn" class="qn-submit">提交答卷</button>
       </div>
       <div id="submitStatus" class="qn-status"></div>
+    </div>
+
+    <div id="successSection" style="display:none;">
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;color:#34c759;margin-bottom:20px;">✓</div>
+        <h2 style="color:#111;margin-bottom:12px;">提交成功，感谢参与！</h2>
+        <p style="color:#666;margin-bottom:30px;">您的答卷已成功提交</p>
+        <div id="countdown" style="color:#007aff;font-size:16px;">将在 5 秒后返回</div>
+      </div>
     </div>
   </main>
 
