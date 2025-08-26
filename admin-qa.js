@@ -52,6 +52,14 @@ class AdminQAPanel {
     async loadQuestions() {
         try {
             const response = await fetch('/api/questions?admin=true');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+            const ct = response.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`非JSON响应: ${text.slice(0, 120)}`);
+            }
             const data = await response.json();
             
             if (data.questions) {
@@ -176,6 +184,14 @@ class AdminQAPanel {
                 body: JSON.stringify({ key, answer })
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+            const ct = response.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`非JSON响应: ${text.slice(0, 120)}`);
+            }
             const data = await response.json();
 
             if (data.success) {
