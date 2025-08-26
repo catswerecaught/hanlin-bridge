@@ -37,38 +37,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载现有问卷
   async function loadExistingQuestionnaire(id) {
     try {
-      // 这里应该从API加载，暂时用模拟数据
-      if (id === 'demo-001') {
-        currentQuestionnaire = {
-          id: 'demo-001',
-          title: '悠然问卷示例',
-          description: '这是一个示例问卷',
-          code: 'abcd-ef12-3456',
-          published: false,
-          fields: [
-            {
-              id: '1',
-              type: 'text',
-              name: 'name',
-              label: '姓名',
-              required: true
-            },
-            {
-              id: '2',
-              type: 'radio',
-              name: 'grade',
-              label: '年级',
-              required: true,
-              options: ['高一', '高二', '高三']
-            }
-          ]
-        };
-        
-        // 更新界面
-        titleInput.value = currentQuestionnaire.title;
-        descInput.value = currentQuestionnaire.description;
-        codeInput.value = currentQuestionnaire.code;
-        document.getElementById('questionnaireTitle').textContent = currentQuestionnaire.title;
+      // 尝试从API加载
+      const response = await fetch(`/api/questionnaires?id=${id}`);
+      if (response.ok) {
+        const questionnaire = await response.json();
+        currentQuestionnaire = questionnaire;
+        document.getElementById('qnTitle').value = questionnaire.title || '';
+        document.getElementById('qnDesc').value = questionnaire.description || '';
+        document.getElementById('qnCode').value = questionnaire.code || '';
+        renderQuestions();
+        return;
+      }
+    } catch (error) {
+      console.log('API加载失败，尝试本地数据:', error);
+    }
+    
+    // 降级到localStorage
+    try {
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      const questionnaire = savedQuestionnaires.find(q => q.id === id);
+      
+      if (questionnaire) {
+        currentQuestionnaire = questionnaire;
+        document.getElementById('qnTitle').value = questionnaire.title || '';
+        document.getElementById('qnDesc').value = questionnaire.description || '';
+        document.getElementById('qnCode').value = questionnaire.code || '';
         renderQuestions();
       }
     } catch (error) {
@@ -283,7 +276,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // 保存到localStorage，模拟API调用
+      // 尝试保存到API
+      const response = await fetch('/api/questionnaires', {
+        method: currentQuestionnaire.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...currentQuestionnaire,
+          id: currentQuestionnaire.id || `qn-${Date.now()}`,
+          createdAt: currentQuestionnaire.createdAt || new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        alert('问卷保存成功！');
+        window.close();
+        return;
+      }
+    } catch (error) {
+      console.log('API保存失败，使用本地保存:', error);
+    }
+
+    // 降级到localStorage
+    try {
       const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
       
       if (currentQuestionnaire.id) {
@@ -301,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
       
-      alert('问卷保存成功！');
+      alert('问卷保存成功（本地保存）！');
       window.close();
     } catch (error) {
       console.error('保存失败:', error);

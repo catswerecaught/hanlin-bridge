@@ -91,7 +91,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载问卷列表
   async function loadQuestionnaires() {
     try {
-      // 从localStorage加载问卷
+      loadingState.innerHTML = '<div>加载中...</div>';
+      
+      // 从API加载问卷列表
+      const response = await fetch('/api/questionnaires?admin=true');
+      if (response.ok) {
+        const data = await response.json();
+        questionnaires = data.questionnaires || [];
+      } else {
+        throw new Error('API加载失败');
+      }
+      
+      renderQuestionnaires();
+      loadingState.style.display = 'none';
+    } catch (error) {
+      console.error('加载问卷失败:', error);
+      // 降级到localStorage
       const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
       questionnaires = [
         {
@@ -106,9 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ...savedQuestionnaires
       ];
       renderQuestionnaires();
-    } catch (error) {
-      console.error('加载问卷失败:', error);
-      loadingState.innerHTML = '<div style="color:#ff3b30;">加载失败，请刷新重试</div>';
+      loadingState.innerHTML = '<div style="color:#ff9500;">使用本地数据，API暂不可用</div>';
     }
   }
 
@@ -122,22 +135,53 @@ document.addEventListener('DOMContentLoaded', () => {
         code: formData.get('code'),
         published: false,
         createdAt: editingQnId ? questionnaires.find(q => q.id === editingQnId)?.createdAt : new Date().toISOString(),
-        fields: [] // 暂时为空，后续添加字段编辑功能
+        responseCount: 0,
+        fields: []
       };
 
-      if (editingQnId) {
-        const index = questionnaires.findIndex(q => q.id === editingQnId);
-        if (index >= 0) questionnaires[index] = { ...questionnaires[index], ...qnData };
+      // 尝试保存到API
+      const response = await fetch('/api/questionnaires', {
+        method: editingQnId ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(qnData)
+      });
+
+      if (response.ok) {
+        // API保存成功，重新加载列表
+        await loadQuestionnaires();
       } else {
-        questionnaires.push(qnData);
+        throw new Error('API保存失败');
       }
 
-      renderQuestionnaires();
       hideModal();
       alert(editingQnId ? '问卷更新成功' : '问卷创建成功');
     } catch (error) {
-      console.error('保存问卷失败:', error);
-      alert('保存失败，请重试');
+      console.error('保存失败:', error);
+      // 降级到localStorage
+      if (editingQnId) {
+        const index = questionnaires.findIndex(q => q.id === editingQnId);
+        if (index >= 0) {
+          questionnaires[index] = { ...questionnaires[index], ...qnData };
+        }
+      } else {
+        questionnaires.push(qnData);
+      }
+      
+      // 同步到localStorage
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      const localIndex = savedQuestionnaires.findIndex(q => q.id === qnData.id);
+      if (localIndex >= 0) {
+        savedQuestionnaires[localIndex] = qnData;
+      } else {
+        savedQuestionnaires.push(qnData);
+      }
+      localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
+
+      renderQuestionnaires();
+      hideModal();
+      alert((editingQnId ? '问卷更新成功' : '问卷创建成功') + '（本地保存）');
     }
   }
 
@@ -155,21 +199,45 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(`questionnaire-editor.html?id=${id}`, '_blank');
   };
 
-  window.togglePublish = (id) => {
+  window.togglePublish = async (id) => {
     const qn = questionnaires.find(q => q.id === id);
     if (qn) {
-      qn.published = !qn.published;
+      const newStatus = !qn.published;
       
-      // 同步更新localStorage
-      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
-      const index = savedQuestionnaires.findIndex(q => q.id === id);
-      if (index >= 0) {
-        savedQuestionnaires[index].published = qn.published;
-        localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
+      try {
+        // 尝试通过API更新发布状态
+        const response = await fetch('/api/questionnaires', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...qn,
+            published: newStatus
+          })
+        });
+
+        if (response.ok) {
+          qn.published = newStatus;
+          renderQuestionnaires();
+          alert(qn.published ? '问卷已发布' : '问卷已取消发布');
+        } else {
+          throw new Error('API更新失败');
+        }
+      } catch (error) {
+        console.error('发布状态更新失败:', error);
+        // 降级到localStorage
+        qn.published = newStatus;
+        const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+        const index = savedQuestionnaires.findIndex(q => q.id === id);
+        if (index >= 0) {
+          savedQuestionnaires[index].published = qn.published;
+          localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
+        }
+        
+        renderQuestionnaires();
+        alert((qn.published ? '问卷已发布' : '问卷已取消发布') + '（本地保存）');
       }
-      
-      renderQuestionnaires();
-      alert(qn.published ? '问卷已发布' : '问卷已取消发布');
     }
   };
 
@@ -178,16 +246,32 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(`questionnaire-responses.html?id=${id}`, '_blank');
   };
 
-  window.deleteQuestionnaire = (id) => {
+  window.deleteQuestionnaire = async (id) => {
     if (confirm('确定要删除这个问卷吗？此操作不可撤销。')) {
-      questionnaires = questionnaires.filter(q => q.id !== id);
-      // 同步更新localStorage
-      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
-      const updatedQuestionnaires = savedQuestionnaires.filter(q => q.id !== id);
-      localStorage.setItem('questionnaires', JSON.stringify(updatedQuestionnaires));
-      
-      renderQuestionnaires();
-      alert('问卷已删除');
+      try {
+        // 尝试通过API删除
+        const response = await fetch(`/api/questionnaires?id=${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          questionnaires = questionnaires.filter(q => q.id !== id);
+          renderQuestionnaires();
+          alert('问卷已删除');
+        } else {
+          throw new Error('API删除失败');
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+        // 降级到localStorage
+        questionnaires = questionnaires.filter(q => q.id !== id);
+        const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+        const updatedQuestionnaires = savedQuestionnaires.filter(q => q.id !== id);
+        localStorage.setItem('questionnaires', JSON.stringify(updatedQuestionnaires));
+        
+        renderQuestionnaires();
+        alert('问卷已删除（本地删除）');
+      }
     }
   };
 
