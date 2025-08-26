@@ -41,11 +41,11 @@ function getClientIP(req) {
 }
 
 export default async function handler(req, res) {
-    const apiUrl = process.env.KV_REST_API_URL;
-    const apiToken = process.env.KV_REST_API_TOKEN;
+    const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
     
     if (!apiUrl || !apiToken) {
-        return res.status(500).json({ error: 'KV_REST_API_URL or KV_REST_API_TOKEN not set' });
+        return res.status(500).json({ error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set' });
     }
 
     const { method } = req;
