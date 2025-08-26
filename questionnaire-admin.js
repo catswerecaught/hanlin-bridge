@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <div class="actions">
             <button class="btn-success" onclick="editQuestionnaire('${qn.id}')">编辑</button>
+            <button class="btn-primary" onclick="viewResponses('${qn.id}')" title="查看答卷统计">查看答卷</button>
             <button class="btn-primary" onclick="togglePublish('${qn.id}')">${qn.published ? '取消发布' : '发布'}</button>
             <button class="btn-danger" onclick="deleteQuestionnaire('${qn.id}')">删除</button>
           </div>
@@ -90,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载问卷列表
   async function loadQuestionnaires() {
     try {
-      // 这里暂时用模拟数据，后续连接真实API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 从localStorage加载问卷
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
       questionnaires = [
         {
           id: 'demo-001',
@@ -100,8 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
           code: 'abcd-ef12-3456',
           published: true,
           createdAt: new Date().toISOString(),
-          responseCount: 3
-        }
+          responseCount: 10
+        },
+        ...savedQuestionnaires
       ];
       renderQuestionnaires();
     } catch (error) {
@@ -141,7 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 全局函数供HTML调用
   window.editQuestionnaire = (id) => {
-    // 打开编辑器页面
+    const qn = questionnaires.find(q => q.id === id);
+    if (!qn) return;
+    
+    if (qn.published) {
+      alert('已发布的问卷不能修改，这会影响作答统计。请先取消发布后再编辑。');
+      return;
+    }
+    
+    // 打开编辑器页面并传递问卷ID
     window.open(`questionnaire-editor.html?id=${id}`, '_blank');
   };
 
@@ -154,9 +164,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  window.viewResponses = (id) => {
+    // 打开答卷统计页面
+    window.open(`questionnaire-responses.html?id=${id}`, '_blank');
+  };
+
   window.deleteQuestionnaire = (id) => {
     if (confirm('确定要删除这个问卷吗？此操作不可撤销。')) {
       questionnaires = questionnaires.filter(q => q.id !== id);
+      // 同步更新localStorage
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      const updatedQuestionnaires = savedQuestionnaires.filter(q => q.id !== id);
+      localStorage.setItem('questionnaires', JSON.stringify(updatedQuestionnaires));
+      
       renderQuestionnaires();
       alert('问卷已删除');
     }

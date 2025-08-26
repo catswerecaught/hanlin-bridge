@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // 从URL获取问卷ID
+  const urlParams = new URLSearchParams(window.location.search);
+  const questionnaireId = urlParams.get('id');
+  
   let currentQuestionnaire = {
-    id: '',
+    id: questionnaireId || '',
     title: '测试问卷',
     description: '测试问卷说明',
     code: '',
@@ -17,6 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
+  // 如果有ID，加载现有问卷
+  if (questionnaireId) {
+    loadExistingQuestionnaire(questionnaireId);
+  }
+
   const titleInput = document.getElementById('titleInput');
   const descInput = document.getElementById('descInput');
   const codeInput = document.getElementById('codeInput');
@@ -24,6 +33,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const addQuestionBtn = document.getElementById('addQuestionBtn');
   const saveBtn = document.getElementById('saveBtn');
   const previewBtn = document.getElementById('previewBtn');
+
+  // 加载现有问卷
+  async function loadExistingQuestionnaire(id) {
+    try {
+      // 这里应该从API加载，暂时用模拟数据
+      if (id === 'demo-001') {
+        currentQuestionnaire = {
+          id: 'demo-001',
+          title: '悠然问卷示例',
+          description: '这是一个示例问卷',
+          code: 'abcd-ef12-3456',
+          published: false,
+          fields: [
+            {
+              id: '1',
+              type: 'text',
+              name: 'name',
+              label: '姓名',
+              required: true
+            },
+            {
+              id: '2',
+              type: 'radio',
+              name: 'grade',
+              label: '年级',
+              required: true,
+              options: ['高一', '高二', '高三']
+            }
+          ]
+        };
+        
+        // 更新界面
+        titleInput.value = currentQuestionnaire.title;
+        descInput.value = currentQuestionnaire.description;
+        codeInput.value = currentQuestionnaire.code;
+        document.getElementById('questionnaireTitle').textContent = currentQuestionnaire.title;
+        renderQuestions();
+      }
+    } catch (error) {
+      console.error('加载问卷失败:', error);
+    }
+  }
 
   // 生成随机校验码
   function generateCode() {
@@ -232,8 +283,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // 这里应该调用API保存到Upstash KV
-      console.log('保存问卷:', currentQuestionnaire);
+      // 保存到localStorage，模拟API调用
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      
+      if (currentQuestionnaire.id) {
+        // 更新现有问卷
+        const index = savedQuestionnaires.findIndex(q => q.id === currentQuestionnaire.id);
+        if (index >= 0) {
+          savedQuestionnaires[index] = currentQuestionnaire;
+        }
+      } else {
+        // 创建新问卷
+        currentQuestionnaire.id = generateQuestionId();
+        currentQuestionnaire.createdAt = new Date().toISOString();
+        savedQuestionnaires.push(currentQuestionnaire);
+      }
+      
+      localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
+      
       alert('问卷保存成功！');
       window.close();
     } catch (error) {

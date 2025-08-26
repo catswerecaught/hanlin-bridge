@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答卷统计 - 翰林桥</title>
+  <link rel="stylesheet" href="style.css?v=3">
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .responses-container { max-width: 1200px; margin: 20px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    
+    .responses-header { padding: 20px 24px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; }
+    .responses-title { font-size: 20px; font-weight: 600; color: #333; margin: 0; }
+    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+    
+    .search-bar { padding: 16px 24px; border-bottom: 1px solid #e1e8ed; display: flex; gap: 12px; align-items: center; }
+    .search-input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; }
+    .search-btn { padding: 8px 16px; background: #007aff; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .filter-checkbox { display: flex; align-items: center; gap: 6px; }
+    .export-btn { padding: 8px 16px; background: #34c759; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    
+    .responses-table { width: 100%; border-collapse: collapse; }
+    .responses-table th, .responses-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+    .responses-table th { background: #f8f9fa; font-weight: 600; color: #333; font-size: 14px; }
+    .responses-table tr:hover { background: #f8f9fa; }
+    .view-response-btn { color: #007aff; text-decoration: none; cursor: pointer; }
+    .view-response-btn:hover { text-decoration: underline; }
+    
+    .pagination { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .pagination-info { color: #666; font-size: 14px; }
+    .pagination-controls { display: flex; gap: 8px; align-items: center; }
+    .page-btn { padding: 6px 12px; border: 1px solid #ddd; background: #fff; cursor: pointer; border-radius: 4px; }
+    .page-btn:hover { background: #f5f5f5; }
+    .page-btn.active { background: #007aff; color: #fff; border-color: #007aff; }
+    
+    /* 答卷详情模态框 */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+    .modal-content { background: #fff; margin: 2% auto; padding: 0; border-radius: 12px; max-width: 800px; max-height: 90vh; overflow: hidden; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+    .response-detail { margin-bottom: 24px; }
+    .response-meta { background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+    .response-meta-item { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .response-meta-item:last-child { margin-bottom: 0; }
+    .question-response { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; }
+    .question-response:last-child { border-bottom: none; }
+    .question-label { font-weight: 600; color: #333; margin-bottom: 8px; }
+    .question-answer { color: #666; line-height: 1.5; }
+    .required-mark { color: #ff3b30; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+    .nav-btn { padding: 8px 16px; border: 1px solid #ddd; background: #fff; cursor: pointer; border-radius: 6px; }
+    .nav-btn:hover { background: #f5f5f5; }
+    .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .star-btn { background: none; border: none; cursor: pointer; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="responses-container">
+    <div class="responses-header">
+      <h1 class="responses-title" id="questionnaireTitle">第1题：姓名</h1>
+      <button class="close-btn" onclick="window.close()">&times;</button>
+    </div>
+    
+    <div class="search-bar">
+      <select class="search-input" style="flex:none;width:120px;">
+        <option>词频分析</option>
+        <option>搜索答案文本</option>
+      </select>
+      <input type="text" class="search-input" placeholder="搜索答案文本" id="searchInput">
+      <button class="search-btn">搜索</button>
+      <label class="filter-checkbox">
+        <input type="checkbox" id="filterEmpty"> 过滤空选项
+      </label>
+      <button class="export-btn">导出Excel</button>
+    </div>
+    
+    <table class="responses-table">
+      <thead>
+        <tr>
+          <th>序号</th>
+          <th>提交答卷时间</th>
+          <th>答案文本</th>
+          <th>查看答卷</th>
+        </tr>
+      </thead>
+      <tbody id="responsesTableBody">
+        <!-- 示例数据 -->
+        <tr>
+          <td>1</td>
+          <td>6月15日 12:29</td>
+          <td>徐彤佳</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(1)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>6月15日 12:56</td>
+          <td>王泽宇</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(2)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>6月15日 12:58</td>
+          <td>邬岳琦</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(3)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>6月15日 13:35</td>
+          <td>翁闻婕</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(4)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>6月15日 14:00</td>
+          <td>杜星烟</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(5)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>6月15日 19:46</td>
+          <td>李润林</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(6)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>6月20日 21:23</td>
+          <td>顾鑫杰</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(7)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>6月21日 09:23</td>
+          <td>包郁乔</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(8)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>6月28日 20:12</td>
+          <td>李其兴</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(9)">查看答卷</a></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>7月15日 10:03</td>
+          <td>倪思亮</td>
+          <td><a href="#" class="view-response-btn" onclick="viewResponse(10)">查看答卷</a></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="pagination">
+      <div class="pagination-info">共10条</div>
+      <div class="pagination-controls">
+        <span>每页</span>
+        <select style="padding:4px;border:1px solid #ddd;border-radius:4px;">
+          <option>10</option>
+          <option>20</option>
+          <option>50</option>
+        </select>
+        <span>条</span>
+        <button class="page-btn">«</button>
+        <button class="page-btn">‹</button>
+        <span>1/1</span>
+        <button class="page-btn">›</button>
+        <button class="page-btn">»</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 答卷详情模态框 -->
+  <div id="responseModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="responseModalTitle">序号：1</h3>
+        <button class="close-btn" onclick="closeResponseModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="response-meta">
+          <div class="response-meta-item">
+            <span>来源IP：</span>
+            <span id="responseIP">101.87.108.178 (上海-上海)</span>
+          </div>
+          <div class="response-meta-item">
+            <span>填写时间：</span>
+            <span id="responseTime">2025/6/15 12:29:14</span>
+          </div>
+          <div class="response-meta-item">
+            <span>来源渠道：</span>
+            <span id="responseSource">微信</span>
+          </div>
+        </div>
+        
+        <div id="responseDetails">
+          <!-- 示例答卷详情 -->
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>1. 姓名</div>
+            <div class="question-answer">徐彤佳</div>
+          </div>
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>2. 助学科目 （建议选择最弱的学科）</div>
+            <div class="question-answer">数学</div>
+          </div>
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>3. 助学科目分数 （主科填一模+二模+青考+高考成绩，小三门填等级考成绩）</div>
+            <div class="question-answer">117 124 115</div>
+          </div>
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>4. 助学形式</div>
+            <div class="question-answer">均可</div>
+          </div>
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>5. 你在暑期大约能为一位学生助学几次？ （即单人总课时）</div>
+            <div class="question-answer">12</div>
+          </div>
+          <div class="question-response">
+            <div class="question-label"><span class="required-mark">* </span>6. 你的助学宣传语 （50字以内） 暂时未想好请填"暂无"</div>
+            <div class="question-answer">我到数学的乐趣，挖掘数学的潜能</div>
+          </div>
+        </div>
+        
+        <div class="nav-buttons">
+          <button class="nav-btn" id="prevBtn" onclick="viewPrevResponse()">上一份</button>
+          <button class="star-btn" onclick="toggleStar()">☆ 是否</button>
+          <button class="nav-btn" id="nextBtn" onclick="viewNextResponse()">下一份</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="questionnaire-responses.js"></script>
+</body>
+</html>
