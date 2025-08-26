@@ -1,7 +1,7 @@
 // 悠然问卷答卷提交 API
-const QN_KEY_PREFIX = 'qn:'; // qn:<id>
-const QN_CODE_KEY_PREFIX = 'qn:code:'; // qn:code:<code> -> { questionnaireId, enabled }
-const QN_RESP_KEY_PREFIX = 'qn:resp:'; // qn:resp:<qnId>:<respId>
+const QUESTIONNAIRES_KEY_PREFIX = 'questionnaire-';
+const CODES_KEY_PREFIX = 'qn-code-';
+const RESPONSES_KEY_PREFIX = 'qn-response-';
 
 function isValidCode(code) {
   return /^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i.test(code);
@@ -24,74 +24,136 @@ function unwrapKV(result) {
 }
 
 export default async function handler(req, res) {
+  // 设置CORS头
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const apiUrl = process.env.KV_REST_API_URL;
   const apiToken = process.env.KV_REST_API_TOKEN;
   if (!apiUrl || !apiToken) {
     return res.status(500).json({ error: 'KV_REST_API_URL or KV_REST_API_TOKEN not set' });
   }
 
-  const { method } = req;
+  const { method, query } = req;
+
   try {
-    if (method !== 'POST') {
-      res.setHeader('Allow', ['POST']);
+    if (method === 'GET') {
+      // 获取问卷的答卷列表（管理员）
+      const { questionnaireId } = query;
+      if (!questionnaireId) {
+        return res.status(400).json({ error: '缺少问卷ID' });
+      }
+
+      // 获取所有相关答卷
+      const listResponse = await fetch(`${apiUrl}/keys/${RESPONSES_KEY_PREFIX}${questionnaireId}:*`, {
+        headers: { 'Authorization': `Bearer ${apiToken}` }
+      });
+
+      if (!listResponse.ok) {
+        return res.status(200).json({ responses: [] });
+      }
+
+      const listData = await listResponse.json();
+      const keys = listData.result || [];
+      const responses = [];
+
+      for (const key of keys) {
+        try {
+          const respResponse = await fetch(`${apiUrl}/get/${key}`, {
+            headers: { 'Authorization': `Bearer ${apiToken}` }
+          });
+          
+          if (respResponse.ok) {
+            const respData = await respResponse.json();
+            const response = unwrapKV(respData.result);
+            if (response) {
+              responses.push({
+                id: key.split(':').pop(),
+                ...response
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error loading response ${key}:`, error);
+        }
+      }
+
+      return res.status(200).json({ responses });
+
+    } else if (method === 'POST') {
+      // 提交答卷
+      const { code, answers } = req.body;
+      if (!code || !isValidCode(code)) {
+        return res.status(400).json({ error: '校验码格式无效' });
+      }
+      if (!answers || typeof answers !== 'object') {
+        return res.status(400).json({ error: '答案数据无效' });
+      }
+
+      // 读取校验码映射
+      const codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      });
+      if (!codeRes.ok) return res.status(404).json({ error: '校验码无效或不存在' });
+      const codeJson = await codeRes.json();
+      if (!codeJson || codeJson.result == null) {
+        return res.status(404).json({ error: '校验码无效或不存在' });
+      }
+      const codeObj = unwrapKV(codeJson.result);
+      const qnId = codeObj?.questionnaireId;
+      const enabled = codeObj?.enabled !== false;
+      if (!qnId || !enabled) {
+        return res.status(404).json({ error: '校验码未启用或未绑定问卷' });
+      }
+
+      // 读取问卷，确认已发布
+      const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      });
+      if (!qnRes.ok) return res.status(404).json({ error: '问卷不存在' });
+      const qnJson = await qnRes.json();
+      if (!qnJson || qnJson.result == null) return res.status(404).json({ error: '问卷不存在' });
+      const qn = unwrapKV(qnJson.result) || {};
+      if (qn.published !== true) return res.status(403).json({ error: '问卷未发布' });
+
+      // 生成答卷ID并存储
+      const respId = genId();
+      const respData = {
+        questionnaireId: qnId,
+        code,
+        answers,
+        submittedAt: new Date().toISOString(),
+        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1'
+      };
+
+      const storeRes = await fetch(`${apiUrl}/set/${RESPONSES_KEY_PREFIX}${qnId}:${respId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(respData)
+      });
+
+      if (!storeRes.ok) {
+        throw new Error('Failed to store response');
+      }
+
+      return res.status(200).json({
+        success: true,
+        responseId: respId,
+        message: '答卷提交成功'
+      });
+
+    } else {
+      res.setHeader('Allow', ['GET', 'POST']);
       return res.status(405).json({ error: `Method ${method} Not Allowed` });
     }
-
-    let body = req.body;
-    if (!body) {
-      let raw = '';
-      await new Promise(resolve => { req.on('data', c => raw += c); req.on('end', resolve); });
-      try { body = JSON.parse(raw); } catch { body = {}; }
-    }
-
-    const { code, questionnaireId, answers, meta } = body || {};
-    if (!code || !isValidCode(code)) return res.status(400).json({ error: '校验码无效' });
-    if (!questionnaireId) return res.status(400).json({ error: '缺少问卷ID' });
-    if (!answers || typeof answers !== 'object') return res.status(400).json({ error: '答案格式无效' });
-
-    // 校验校验码映射
-    const codeRes = await fetch(`${apiUrl}/get/${QN_CODE_KEY_PREFIX}${code}`, {
-      headers: { Authorization: `Bearer ${apiToken}` }
-    });
-    if (!codeRes.ok) return res.status(404).json({ error: '校验码无效或不存在' });
-    const codeJson = await codeRes.json();
-    if (!codeJson || codeJson.result == null) return res.status(404).json({ error: '校验码无效或不存在' });
-    const codeObj = unwrapKV(codeJson.result);
-    const mappedId = codeObj?.questionnaireId;
-    const enabled = codeObj?.enabled !== false; // 默认启用
-    if (!mappedId || !enabled) return res.status(403).json({ error: '校验码未启用或未绑定问卷' });
-    if (String(mappedId) !== String(questionnaireId)) return res.status(400).json({ error: '问卷ID与校验码不匹配' });
-
-    // 验证问卷存在且已发布
-    const qnRes = await fetch(`${apiUrl}/get/${QN_KEY_PREFIX}${questionnaireId}`, {
-      headers: { Authorization: `Bearer ${apiToken}` }
-    });
-    if (!qnRes.ok) return res.status(404).json({ error: '问卷不存在' });
-    const qnJson = await qnRes.json();
-    if (!qnJson || qnJson.result == null) return res.status(404).json({ error: '问卷不存在' });
-    const qn = unwrapKV(qnJson.result) || {};
-    if (qn.published !== true) return res.status(403).json({ error: '问卷未发布' });
-
-    const respId = genId();
-    const record = {
-      questionnaireId,
-      code,
-      answers,
-      meta: meta || {},
-      ts: new Date().toISOString(),
-    };
-
-    const kvRes = await fetch(`${apiUrl}/set/${QN_RESP_KEY_PREFIX}${questionnaireId}:${respId}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ value: record })
-    });
-    if (!kvRes.ok) return res.status(500).json({ error: '写入答卷失败' });
-
-    return res.status(200).json({ success: true, respId });
   } catch (err) {
     console.error('Questionnaire Responses API Error:', err);
     return res.status(500).json({ error: '服务器内部错误' });
