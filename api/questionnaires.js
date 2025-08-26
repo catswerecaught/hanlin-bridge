@@ -17,6 +17,18 @@ function unwrapKV(result) {
   return data;
 }
 
+// 带超时的 fetch，防止外部请求长时间挂起
+async function fetchWithTimeout(resource, options = {}, timeout = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(resource, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export default async function handler(req, res) {
   // 设置CORS头
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -75,7 +87,7 @@ export default async function handler(req, res) {
 // 获取所有问卷（管理员）
 async function getAllQuestionnaires(apiUrl, apiToken, res) {
   try {
-    const listResponse = await fetch(`${apiUrl}/scan`, {
+    let listResponse = await fetchWithTimeout(`${apiUrl}/scan`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiToken}`,
@@ -83,15 +95,31 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
       },
       body: JSON.stringify({
         prefix: QUESTIONNAIRES_KEY_PREFIX,
-        count: 100
+        limit: 100
       })
     });
     
+    // 若 /scan 不可用，兼容性回退到 /keys
     if (!listResponse.ok) {
-      throw new Error('Failed to fetch questionnaires list');
+      console.warn(`[getAllQuestionnaires] /scan failed: ${listResponse.status} ${listResponse.statusText}`);
+      const legacy = await fetchWithTimeout(`${apiUrl}/keys/${QUESTIONNAIRES_KEY_PREFIX}*`, {
+        headers: { 'Authorization': `Bearer ${apiToken}` }
+      }).catch(() => null);
+      if (!legacy || !legacy.ok) {
+        const status = legacy ? `${legacy.status} ${legacy.statusText}` : 'no response';
+        console.warn(`[getAllQuestionnaires] /keys fallback failed: ${status}`);
+        return res.status(200).json({ questionnaires: [] });
+      }
+      listResponse = legacy;
     }
     
-    const listData = await listResponse.json();
+    let listData;
+    try {
+      listData = await listResponse.json();
+    } catch (e) {
+      console.warn('[getAllQuestionnaires] listResponse JSON parse failed, returning empty list');
+      return res.status(200).json({ questionnaires: [] });
+    }
     const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
     
     const questionnaires = [];
@@ -300,34 +328,64 @@ async function createQuestionnaire(body, apiUrl, apiToken, res) {
 // 更新问卷
 async function updateQuestionnaire(body, apiUrl, apiToken, res) {
   try {
+    console.log('[updateQuestionnaire] 收到更新问卷请求', JSON.stringify(body));
+    
+    if (!body || typeof body !== 'object') {
+      console.log('[updateQuestionnaire] 请求体为空或无效');
+      return res.status(400).json({ error: '请求体无效' });
+    }
+    
     const { id, title, description, code, published, fields } = body;
     
     if (!id) {
+      console.log('[updateQuestionnaire] 缺失问卷ID');
       return res.status(400).json({ error: '问卷ID不能为空' });
     }
     
+    console.log(`[updateQuestionnaire] 尝试获取现有问卷: ${id}`);
     // 获取现有问卷
     const existingRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
     if (!existingRes.ok) {
+      console.log(`[updateQuestionnaire] 获取现有问卷失败，状态码: ${existingRes.status}`);
       return res.status(404).json({ error: '问卷不存在' });
     }
     
     const existingJson = await existingRes.json();
+    console.log('[updateQuestionnaire] 现有问卷数据原始响应:', JSON.stringify(existingJson));
+    
+    if (!existingJson || !existingJson.result) {
+      console.log('[updateQuestionnaire] 现有问卷数据为空或无效');
+      return res.status(404).json({ error: '问卷不存在或数据无效' });
+    }
+    
     const existingData = unwrapKV(existingJson.result) || {};
+    console.log('[updateQuestionnaire] 解析后的现有问卷数据:', JSON.stringify({
+      id: id,
+      title: existingData.title,
+      published: existingData.published,
+      fieldsCount: Array.isArray(existingData.fields) ? existingData.fields.length : 0
+    }));
     
     // 更新数据
     const updatedData = {
       ...existingData,
-      title: title || existingData.title,
+      title: title !== undefined ? title : existingData.title,
       description: description !== undefined ? description : existingData.description,
       code: code !== undefined ? code : existingData.code,
-      published: published !== undefined ? published : existingData.published,
+      published: published !== undefined ? !!published : !!existingData.published, // 确保是布尔值
       fields: fields !== undefined ? fields : existingData.fields,
       updatedAt: new Date().toISOString()
     };
+    
+    console.log('[updateQuestionnaire] 准备保存更新后的问卷数据:', JSON.stringify({
+      id: id,
+      title: updatedData.title,
+      published: updatedData.published,
+      fieldsCount: Array.isArray(updatedData.fields) ? updatedData.fields.length : 0
+    }));
     
     // 存储更新的问卷
     const storeResponse = await fetch(`${apiUrl}/set/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
@@ -340,17 +398,20 @@ async function updateQuestionnaire(body, apiUrl, apiToken, res) {
     });
     
     if (!storeResponse.ok) {
-      throw new Error('Failed to update questionnaire');
+      console.log(`[updateQuestionnaire] 存储更新后的问卷失败，状态码: ${storeResponse.status}`);
+      throw new Error(`Failed to update questionnaire: ${storeResponse.status} ${storeResponse.statusText}`);
     }
     
     // 更新校验码映射（如果有变化）
     if (code && isValidCode(code) && code !== existingData.code) {
+      console.log(`[updateQuestionnaire] 校验码变更，旧码: ${existingData.code}, 新码: ${code}`);
       // 删除旧的校验码映射
       if (existingData.code && isValidCode(existingData.code)) {
-        await fetch(`${apiUrl}/del/${CODES_KEY_PREFIX}${existingData.code}`, {
+        const deleteCodeRes = await fetch(`${apiUrl}/del/${CODES_KEY_PREFIX}${existingData.code}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${apiToken}` }
         });
+        console.log(`[updateQuestionnaire] 删除旧校验码映射状态: ${deleteCodeRes.status}`);
       }
       
       // 创建新的校验码映射
@@ -360,7 +421,7 @@ async function updateQuestionnaire(body, apiUrl, apiToken, res) {
         createdAt: new Date().toISOString()
       };
       
-      await fetch(`${apiUrl}/set/${CODES_KEY_PREFIX}${code}`, {
+      const setCodeRes = await fetch(`${apiUrl}/set/${CODES_KEY_PREFIX}${code}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiToken}`,
@@ -368,8 +429,10 @@ async function updateQuestionnaire(body, apiUrl, apiToken, res) {
         },
         body: JSON.stringify(codeData)
       });
+      console.log(`[updateQuestionnaire] 创建新校验码映射状态: ${setCodeRes.status}`);
     }
     
+    console.log(`[updateQuestionnaire] 问卷更新成功: ${id}`);
     return res.status(200).json({ 
       success: true,
       id,
@@ -377,7 +440,7 @@ async function updateQuestionnaire(body, apiUrl, apiToken, res) {
     });
   } catch (error) {
     console.error('Error in updateQuestionnaire:', error);
-    return res.status(500).json({ error: '更新问卷失败' });
+    return res.status(500).json({ error: '更新问卷失败: ' + (error.message || '未知错误') });
   }
 }
 
@@ -426,7 +489,4 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
   }
 }
 
-// 校验码格式验证
-function isValidCode(code) {
-  return /^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i.test(code);
-}
+ 

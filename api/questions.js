@@ -2,6 +2,18 @@
 const QUESTIONS_KEY_PREFIX = 'question-';
 const ANSWERS_KEY_PREFIX = 'answer-';
 
+// 带超时的 fetch，防止外部请求长时间挂起
+async function fetchWithTimeout(resource, options = {}, timeout = 15000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const res = await fetch(resource, { ...options, signal: controller.signal });
+        return res;
+    } finally {
+        clearTimeout(id);
+    }
+}
+
 // 生成查询密钥
 function generateKey() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -84,63 +96,85 @@ export default async function handler(req, res) {
             });
 
         } else if (method === 'GET') {
-            const { key, admin } = req.query;
+            const { key, admin, limit } = req.query;
 
             if (admin === 'true') {
-                // 管理员查看所有问题
-                const listResponse = await fetch(`${apiUrl}/keys/${QUESTIONS_KEY_PREFIX}*`, {
+                // 管理员查看所有问题（使用 /scan 替代已弃用的 /keys）
+                const count = Math.max(1, Math.min(Number(limit) || 200, 500));
+                let listResponse = await fetchWithTimeout(`${apiUrl}/scan`, {
+                    method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${apiToken}`
-                    }
+                        'Authorization': `Bearer ${apiToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prefix: QUESTIONS_KEY_PREFIX, limit: count })
                 });
 
+                // 若 /scan 不可用，兼容性回退到 /keys
                 if (!listResponse.ok) {
-                    throw new Error('Failed to fetch questions list');
+                    const legacy = await fetchWithTimeout(`${apiUrl}/keys/${QUESTIONS_KEY_PREFIX}*`, {
+                        headers: { 'Authorization': `Bearer ${apiToken}` }
+                    }).catch(() => null);
+                    if (!legacy || !legacy.ok) {
+                        const status = legacy ? `${legacy.status} ${legacy.statusText}` : 'no response';
+                        throw new Error(`Failed to fetch questions list via /scan and /keys fallback (${status})`);
+                    }
+                    listResponse = legacy;
                 }
 
-                const keysData = await listResponse.json();
+                const listData = await listResponse.json();
+                const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
                 const questions = [];
 
-                // 获取每个问题的详细信息
-                for (const questionKey of keysData.result || []) {
-                    const getResponse = await fetch(`${apiUrl}/get/${questionKey}`, {
-                        headers: {
-                            'Authorization': `Bearer ${apiToken}`
-                        }
-                    });
-
-                    if (getResponse.ok) {
-                        const questionData = await getResponse.json();
-                        if (questionData.result) {
-                            const parsedData = typeof questionData.result === 'string' 
-                                ? JSON.parse(questionData.result) 
-                                : questionData.result;
-                            
-                            // 获取对应的答案
-                            const answerKey = questionKey.replace(QUESTIONS_KEY_PREFIX, ANSWERS_KEY_PREFIX);
-                            const answerResponse = await fetch(`${apiUrl}/get/${answerKey}`, {
+                // 获取每个问题的详细信息（分批并行，减少整体耗时）
+                const chunkSize = 20;
+                for (let i = 0; i < keys.length; i += chunkSize) {
+                    const batch = keys.slice(i, i + chunkSize);
+                    await Promise.all(batch.map(async (questionKey) => {
+                        try {
+                            const getResponse = await fetchWithTimeout(`${apiUrl}/get/${questionKey}`, {
                                 headers: {
                                     'Authorization': `Bearer ${apiToken}`
                                 }
                             });
 
-                            let answer = null;
-                            if (answerResponse.ok) {
-                                const answerData = await answerResponse.json();
-                                if (answerData.result) {
-                                    answer = typeof answerData.result === 'string' 
-                                        ? JSON.parse(answerData.result) 
-                                        : answerData.result;
+                            if (getResponse.ok) {
+                                const questionData = await getResponse.json();
+                                if (questionData.result) {
+                                    const parsedData = typeof questionData.result === 'string'
+                                        ? JSON.parse(questionData.result)
+                                        : questionData.result;
+
+                                    // 获取对应的答案
+                                    const answerKey = questionKey.replace(QUESTIONS_KEY_PREFIX, ANSWERS_KEY_PREFIX);
+                                    const answerResponse = await fetchWithTimeout(`${apiUrl}/get/${answerKey}`, {
+                                        headers: {
+                                            'Authorization': `Bearer ${apiToken}`
+                                        }
+                                    });
+
+                                    let answer = null;
+                                    if (answerResponse.ok) {
+                                        const answerData = await answerResponse.json();
+                                        if (answerData.result) {
+                                            answer = typeof answerData.result === 'string'
+                                                ? JSON.parse(answerData.result)
+                                                : answerData.result;
+                                        }
+                                    }
+
+                                    questions.push({
+                                        ...parsedData,
+                                        answer: answer ? answer.answer : null,
+                                        answerTime: answer ? answer.timestamp : null
+                                    });
                                 }
                             }
-
-                            questions.push({
-                                ...parsedData,
-                                answer: answer ? answer.answer : null,
-                                answerTime: answer ? answer.timestamp : null
-                            });
+                        } catch (e) {
+                            // 单个key失败不影响整体
+                            console.error('Failed to load question item:', questionKey, e);
                         }
-                    }
+                    }));
                 }
 
                 // 按时间排序，最新的在前

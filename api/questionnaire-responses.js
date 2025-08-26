@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   // 设置CORS头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -49,9 +49,18 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: '缺少问卷ID' });
       }
 
-      // 获取所有相关答卷
-      const listResponse = await fetch(`${apiUrl}/keys/${RESPONSES_KEY_PREFIX}${questionnaireId}-*`, {
-        headers: { 'Authorization': `Bearer ${apiToken}` }
+      console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
+      // 使用scan替代keys获取答卷列表
+      const listResponse = await fetch(`${apiUrl}/scan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prefix: `${RESPONSES_KEY_PREFIX}${questionnaireId}-`,
+          limit: 100
+        })
       });
 
       if (!listResponse.ok) {
@@ -59,7 +68,8 @@ export default async function handler(req, res) {
       }
 
       const listData = await listResponse.json();
-      const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
+      console.log(`[获取答卷列表] 返回结果:`, JSON.stringify(listData));
+      const keys = Array.isArray(listData.keys) ? listData.keys : (Array.isArray(listData.result) ? listData.result : []);
       const responses = [];
 
       for (const key of keys) {
@@ -131,7 +141,7 @@ export default async function handler(req, res) {
         ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1'
       };
 
-      const storeRes = await fetch(`${apiUrl}/set/${RESPONSES_KEY_PREFIX}${qnId}:${respId}`, {
+      const storeRes = await fetch(`${apiUrl}/set/${RESPONSES_KEY_PREFIX}${qnId}-${respId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiToken}`,

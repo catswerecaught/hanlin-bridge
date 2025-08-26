@@ -1,5 +1,4 @@
-console.log('KV_REST_API_URL:', process.env.KV_REST_API_URL);
-console.log('KV_REST_API_TOKEN:', process.env.KV_REST_API_TOKEN);
+// Removed verbose env logging to avoid leaking secrets in logs
 
 const TREND_KEY = 'trend-doc-data';
 
