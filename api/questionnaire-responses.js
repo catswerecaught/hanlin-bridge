@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       }
 
       // 获取所有相关答卷
-      const listResponse = await fetch(`${apiUrl}/keys/${RESPONSES_KEY_PREFIX}${questionnaireId}:*`, {
+      const listResponse = await fetch(`${apiUrl}/keys/${RESPONSES_KEY_PREFIX}${questionnaireId}-*`, {
         headers: { 'Authorization': `Bearer ${apiToken}` }
       });
 
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       }
 
       const listData = await listResponse.json();
-      const keys = listData.result || [];
+      const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
       const responses = [];
 
       for (const key of keys) {
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
             const response = unwrapKV(respData.result);
             if (response) {
               responses.push({
-                id: key.split(':').pop(),
+                id: key.split('-').pop(),
                 ...response
               });
             }

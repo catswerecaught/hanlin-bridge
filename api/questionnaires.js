@@ -75,8 +75,16 @@ export default async function handler(req, res) {
 // 获取所有问卷（管理员）
 async function getAllQuestionnaires(apiUrl, apiToken, res) {
   try {
-    const listResponse = await fetch(`${apiUrl}/keys/${QUESTIONNAIRES_KEY_PREFIX}*`, {
-      headers: { 'Authorization': `Bearer ${apiToken}` }
+    const listResponse = await fetch(`${apiUrl}/scan`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prefix: QUESTIONNAIRES_KEY_PREFIX,
+        count: 100
+      })
     });
     
     if (!listResponse.ok) {
@@ -84,7 +92,7 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
     }
     
     const listData = await listResponse.json();
-    const keys = listData.result || [];
+    const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
     
     const questionnaires = [];
     
@@ -119,60 +127,87 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
 // 通过校验码获取问卷
 async function getQuestionnaireByCode(code, apiUrl, apiToken, res) {
   try {
+    console.log(`[getQuestionnaireByCode] 开始获取问卷，校验码: ${code}`);
+    
     if (!isValidCode(code)) {
+      console.log(`[getQuestionnaireByCode] 校验码格式无效: ${code}`);
       return res.status(400).json({ error: '校验码格式无效' });
     }
     
     // 读取校验码映射
+    console.log(`[getQuestionnaireByCode] 尝试获取校验码映射: ${CODES_KEY_PREFIX}${code}`);
     const codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
     if (!codeRes.ok) {
+      console.log(`[getQuestionnaireByCode] 校验码获取失败，状态: ${codeRes.status}`);
       return res.status(404).json({ error: '校验码无效或不存在' });
     }
     
     const codeJson = await codeRes.json();
-    if (!codeJson || codeJson.result == null) {
+    console.log(`[getQuestionnaireByCode] 校验码响应:`, JSON.stringify(codeJson));
+    
+    if (!codeJson || !codeJson.result) {
+      console.log(`[getQuestionnaireByCode] 校验码映射数据为空或无效`);
       return res.status(404).json({ error: '校验码无效或不存在' });
     }
     
     const codeObj = unwrapKV(codeJson.result);
+    console.log(`[getQuestionnaireByCode] 解析后的校验码数据:`, JSON.stringify(codeObj));
+    
     const qnId = codeObj?.questionnaireId;
     const enabled = codeObj?.enabled !== false;
     
     if (!qnId || !enabled) {
+      console.log(`[getQuestionnaireByCode] 校验码未启用或未绑定问卷: ${code}, qnId=${qnId}, enabled=${enabled}`);
       return res.status(404).json({ error: '校验码未启用或未绑定问卷' });
     }
     
     // 读取问卷
+    console.log(`[getQuestionnaireByCode] 尝试获取问卷: ${QUESTIONNAIRES_KEY_PREFIX}${qnId}`);
     const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
     if (!qnRes.ok) {
+      console.log(`[getQuestionnaireByCode] 问卷获取失败，状态: ${qnRes.status}`);
       return res.status(404).json({ error: '问卷不存在' });
     }
     
     const qnJson = await qnRes.json();
-    if (!qnJson || qnJson.result == null) {
+    console.log(`[getQuestionnaireByCode] 问卷响应:`, JSON.stringify(qnJson));
+    
+    if (!qnJson || !qnJson.result) {
+      console.log(`[getQuestionnaireByCode] 问卷数据为空或无效`);
       return res.status(404).json({ error: '问卷不存在' });
     }
     
     const qn = unwrapKV(qnJson.result) || {};
+    console.log(`[getQuestionnaireByCode] 解析后的问卷数据:`, JSON.stringify({
+      id: qnId,
+      title: qn.title,
+      published: qn.published,
+      fields: Array.isArray(qn.fields) ? qn.fields.length : 0
+    }));
+    
     if (qn.published !== true) {
+      console.log(`[getQuestionnaireByCode] 问卷未发布: ${qnId}`);
       return res.status(403).json({ error: '问卷未发布' });
     }
     
-    return res.status(200).json({
+    const responseData = {
       id: qnId,
       title: qn.title || '未命名问卷',
       description: qn.description || '',
       fields: Array.isArray(qn.fields) ? qn.fields : []
-    });
+    };
+    
+    console.log(`[getQuestionnaireByCode] 返回问卷数据成功: ${qnId}`);
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Error in getQuestionnaireByCode:', error);
-    return res.status(500).json({ error: '获取问卷失败' });
+    return res.status(500).json({ error: '获取问卷失败: ' + (error.message || '未知错误') });
   }
 }
 
