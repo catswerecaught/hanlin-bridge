@@ -602,4 +602,10 @@ document.addEventListener('DOMContentLoaded', function() {
       renderBalanceCard(balance);
     })();
   }
+
+  // 显示问卷管理面板（仅管理员）
+  const questionnairePanel = document.getElementById('adminQuestionnairePanel');
+  if (questionnairePanel && user.supreme === true) {
+    questionnairePanel.style.display = 'block';
+  }
 }); 
