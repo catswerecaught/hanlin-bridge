@@ -8,37 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let responses = [];
   let currentResponseIndex = 0;
   
-  // 模拟答卷数据
-  const mockResponses = [
-    {
-      id: 1,
-      ip: '101.87.108.178 (上海-上海)',
-      time: '2025/6/15 12:29:14',
-      source: '微信',
-      answers: {
-        name: '徐彤佳',
-        subject: '数学',
-        scores: '117 124 115',
-        format: '均可',
-        sessions: '12',
-        slogan: '我到数学的乐趣，挖掘数学的潜能'
-      }
-    },
-    {
-      id: 2,
-      ip: '192.168.1.100 (北京-北京)',
-      time: '2025/6/15 12:56:00',
-      source: '网页',
-      answers: {
-        name: '王泽宇',
-        subject: '英语',
-        scores: '120 118 125',
-        format: '线上',
-        sessions: '8',
-        slogan: '英语学习，从基础开始'
-      }
-    }
-  ];
+  // 从API或localStorage加载答卷数据
+  let mockResponses = [];
   
   // 初始化页面
   function initPage() {
@@ -49,31 +20,74 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // 加载问卷数据
-  function loadQuestionnaireData(id) {
-    // 模拟加载问卷数据
-    currentQuestionnaire = {
-      id: id,
-      title: '助学人员登记问卷',
-      fields: [
-        { name: 'name', label: '姓名', required: true },
-        { name: 'subject', label: '助学科目 （建议选择最弱的学科）', required: true },
-        { name: 'scores', label: '助学科目分数 （主科填一模+二模+青考+高考成绩，小三门填等级考成绩）', required: true },
-        { name: 'format', label: '助学形式', required: true },
-        { name: 'sessions', label: '你在暑期大约能为一位学生助学几次？ （即单人总课时）', required: true },
-        { name: 'slogan', label: '你的助学宣传语 （50字以内） 暂时未想好请填"暂无"', required: true }
-      ]
-    };
-    
-    // 更新页面标题
-    const questionTitle = currentQuestionnaire.fields[questionIndex];
-    if (questionTitle) {
-      document.getElementById('questionnaireTitle').textContent = 
-        `第${parseInt(questionIndex) + 1}题：${questionTitle.label}`;
+  async function loadQuestionnaireData(id) {
+    try {
+      // 尝试从localStorage加载问卷
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      let questionnaire = savedQuestionnaires.find(q => q.id === id);
+      
+      // 如果没找到，使用示例问卷
+      if (!questionnaire && id === 'demo-001') {
+        questionnaire = {
+          id: 'demo-001',
+          title: '悠然问卷示例',
+          fields: [
+            { name: 'name', label: '姓名', type: 'text', required: true },
+            { name: 'subject', label: '助学科目', type: 'text', required: true },
+            { name: 'scores', label: '成绩', type: 'text', required: true }
+          ]
+        };
+      }
+      
+      if (questionnaire) {
+        currentQuestionnaire = questionnaire;
+        
+        // 更新页面标题
+        if (currentQuestionnaire.fields && currentQuestionnaire.fields[questionIndex]) {
+          const questionTitle = currentQuestionnaire.fields[questionIndex];
+          document.getElementById('questionnaireTitle').textContent = 
+            `第${parseInt(questionIndex) + 1}题：${questionTitle.label}`;
+        } else {
+          document.getElementById('questionnaireTitle').textContent = currentQuestionnaire.title;
+        }
+      }
+    } catch (error) {
+      console.error('加载问卷数据失败:', error);
+      document.getElementById('questionnaireTitle').textContent = '问卷加载失败';
     }
   }
   
   // 加载答卷数据
-  function loadResponses() {
+  async function loadResponses() {
+    try {
+      // 尝试从API加载答卷数据
+      if (questionnaireId) {
+        const resp = await fetch(`/api/questionnaire-responses?questionnaireId=${questionnaireId}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          mockResponses = data.responses || [];
+        }
+      }
+    } catch (error) {
+      console.log('使用本地数据，API暂不可用:', error);
+      // 如果是示例问卷，提供一些示例数据
+      if (questionnaireId === 'demo-001') {
+        mockResponses = [
+          {
+            id: 1,
+            ip: '127.0.0.1 (本地)',
+            time: new Date().toISOString(),
+            source: '网页',
+            answers: {
+              name: '测试用户1',
+              subject: '数学',
+              scores: '85'
+            }
+          }
+        ];
+      }
+    }
+    
     responses = mockResponses;
     renderResponsesTable();
   }

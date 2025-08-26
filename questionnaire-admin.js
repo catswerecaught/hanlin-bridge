@@ -159,6 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const qn = questionnaires.find(q => q.id === id);
     if (qn) {
       qn.published = !qn.published;
+      
+      // 同步更新localStorage
+      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+      const index = savedQuestionnaires.findIndex(q => q.id === id);
+      if (index >= 0) {
+        savedQuestionnaires[index].published = qn.published;
+        localStorage.setItem('questionnaires', JSON.stringify(savedQuestionnaires));
+      }
+      
       renderQuestionnaires();
       alert(qn.published ? '问卷已发布' : '问卷已取消发布');
     }
