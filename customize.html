@@ -23,7 +23,7 @@
                     <li><a href="lingning.html">灵凝</a></li>
                     <li><a href="customize.html" class="active">定制</a></li>
                     <li><a href="help.html">帮助</a></li>
-                    <li><a href="cooperation.html">合作</a></li>
+                    <li><a href="cooperation.html">新闻</a></li>
                 </ul>
             </nav>
             <div class="user-avatar" id="userAvatar">
@@ -79,8 +79,8 @@
                 
                 <div class="service-card" id="discountCard">
                     <div class="card-header">
-                        <span class="card-subtitle">等不及啦</span>
-                        <h3>更多功能还在开发中...</h3>
+                        <span class="card-subtitle">定制问卷</span>
+                        <h3>点击进入“悠然问卷”。</h3>
                     </div>
                     <div class="card-image">
                         <div class="discount-visual"></div>
@@ -339,7 +339,7 @@
             });
             
             document.getElementById('discountCard').addEventListener('click', function() {
-                alert('学费折抵服务即将上线，敬请期待！');
+                window.location.href = 'questionnaire.html';
             });
         });
     </script>

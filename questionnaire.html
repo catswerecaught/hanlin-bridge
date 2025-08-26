@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>悠然问卷 - 翰林桥</title>
+  <link rel="stylesheet" href="style.css?v=3">
+  <style>
+    .qn-container { max-width: 860px; margin: 28px auto 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; }
+    .qn-title { font-size: 22px; font-weight: 800; color: #111; margin: 4px 0 6px 0; }
+    .qn-desc { color: #666; margin-bottom: 18px; }
+    .code-gate { display: flex; gap: 10px; align-items: center; }
+    .code-input { flex: 1; padding: 12px 14px; border: 2px solid #e1e8ed; border-radius: 12px; font-size: 16px; }
+    .code-btn { padding: 12px 18px; border: none; background: #007aff; color: #fff; border-radius: 10px; font-weight: 700; cursor: pointer; }
+    .qn-field { margin: 16px 0; }
+    .qn-label { font-weight: 700; margin-bottom: 8px; color: #222; display: block; }
+    .qn-required { color: #ff3b30; margin-left: 6px; font-weight: 700; }
+    .qn-input, .qn-textarea, .qn-select { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; }
+    .qn-textarea { min-height: 96px; resize: vertical; }
+    .qn-help { color: #888; font-size: 13px; margin-top: 6px; }
+    .qn-actions { margin-top: 22px; text-align: right; }
+    .qn-submit { background: #34c759; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+    .qn-status { margin-top: 12px; font-size: 14px; color: #666; }
+    .qn-radio-group, .qn-checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+    @media (max-width: 600px) { .qn-radio-group, .qn-checkbox-group { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <div class="main-nav-container">
+      <a href="index.html" class="logo"><img id="site-logo" src="images/logo.png" alt="翰林桥 Logo"></a>
+      <nav class="main-nav">
+        <ul>
+          <li class="nav-highlight"></li>
+          <li><a href="index.html">首页</a></li>
+          <li><a href="tutors.html">助学人</a></li>
+          <li><a href="trend.html">趋势</a></li>
+          <li><a href="lingning.html">灵凝</a></li>
+          <li><a href="customize.html">定制</a></li>
+          <li><a href="help.html">帮助</a></li>
+          <li><a href="cooperation.html">新闻</a></li>
+        </ul>
+      </nav>
+      <div class="user-avatar" id="userAvatar">
+        <img src="images/login-default.png" alt="登录" id="avatarImg">
+      </div>
+    </div>
+  </header>
+
+  <div class="login-modal" id="loginModal">
+    <div class="login-modal-content">
+      <span class="login-close-btn" id="loginCloseBtn">&times;</span>
+      <h2>登录</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="用户名/账号" autocomplete="username" required>
+        <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required>
+        <button type="submit">登录</button>
+      </form>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <main class="qn-container">
+    <div id="gateSection">
+      <h1 class="qn-title">悠然问卷</h1>
+      <p class="qn-desc">请输入收到的校验码，进入问卷作答。</p>
+      <div class="code-gate">
+        <input id="codeInput" class="code-input" type="text" placeholder="请输入校验码（格式：xxxx-xxxx-xxxx）">
+        <button id="enterBtn" class="code-btn">进入问卷</button>
+      </div>
+      <div id="gateStatus" class="qn-status"></div>
+    </div>
+
+    <div id="questionnaireSection" style="display:none;">
+      <div id="qnHeader">
+        <div id="qnTitle" class="qn-title"></div>
+        <div id="qnDesc" class="qn-desc"></div>
+      </div>
+      <form id="qnForm"></form>
+      <div class="qn-actions">
+        <button id="submitQnBtn" class="qn-submit">提交答卷</button>
+      </div>
+      <div id="submitStatus" class="qn-status"></div>
+    </div>
+  </main>
+
+  <script src="users.js"></script>
+  <script src="script.js?v=3"></script>
+  <script src="questionnaire.js"></script>
+</body>
+</html>
