@@ -105,7 +105,8 @@ export default async function handler(req, res) {
       
       for (const pattern of keyPatterns) {
         console.log('正在扫描模式:', pattern);
-        const scanUrl = `${apiUrl}/scan?pattern=${encodeURIComponent(pattern)}&count=100`;
+        // 修正扫描请求URL格式
+        const scanUrl = `${apiUrl}/keys/${encodeURIComponent(pattern)}*?count=100`;
         const scanResp = await fetch(scanUrl, {
           headers: { 'Authorization': `Bearer ${apiToken}` }
         });
