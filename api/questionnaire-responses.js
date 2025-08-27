@@ -94,42 +94,36 @@ export default async function handler(req, res) {
       }
 
       console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
-      // 扫描所有可能的键格式
-      console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
+      // 精确匹配Upstash实际存储格式
       const keyPatterns = [
-        `qn-response-qn-${questionnaireId}-*`,
-        `qn:resp:${questionnaireId.replace('qn-','')}:*`
+        `qn-response-qn-${questionnaireId}-*`  // 确认的实际存储格式
       ];
+      console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
       console.log('使用的键模式:', keyPatterns);
-      
+
       const responses = [];
       
       for (const pattern of keyPatterns) {
-        try {
-          console.log('正在扫描模式:', pattern);
-          const res = await fetch(`${apiUrl}/keys/${pattern}`, {
-            headers: { 'Authorization': `Bearer ${apiToken}` }
-          });
-          
-          console.log('扫描结果状态:', res.status);
-          if (res.ok) {
-            const data = await res.json();
-            console.log('扫描到的键:', data.result);
-            const keys = Array.isArray(data.result) ? data.result : [];
-            
-            for (const key of keys) {
-              console.log('正在获取键:', key);
-              const resp = await handleUpstashResponse(key);
-              if (resp) {
-                responses.push({
-                  id: key.split(/[-:]/).pop(),
-                  ...resp
-                });
-              }
-            }
+        console.log('正在扫描模式:', pattern);
+        const scanUrl = `${apiUrl}/scan?pattern=${encodeURIComponent(pattern)}&count=100`;
+        const scanResp = await fetch(scanUrl, {
+          headers: { 'Authorization': `Bearer ${apiToken}` }
+        });
+        
+        console.log('扫描结果状态:', scanResp.status);
+        const scanData = await scanResp.json();
+        console.log('扫描到的键:', scanData.result || []);
+        const keys = Array.isArray(scanData.result) ? scanData.result : [];
+        
+        for (const key of keys) {
+          console.log('正在获取键:', key);
+          const resp = await handleUpstashResponse(key);
+          if (resp) {
+            responses.push({
+              id: key.split(/[-:]/).pop(),
+              ...resp
+            });
           }
-        } catch (error) {
-          console.error(`Error scanning pattern ${pattern}:`, error);
         }
       }
       
