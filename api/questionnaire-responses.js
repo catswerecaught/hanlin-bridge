@@ -66,44 +66,52 @@ const handleUpstashResponse = async (key) => {
   return respData.result;
 };
 
-async function getResponsesForQuestionnaire(questionnaireId, apiUrl, apiToken) {
-  console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
-  // 精确匹配Upstash实际存储格式
-  const keyPatterns = [
-    `qn-response-qn-${questionnaireId}-*`  // 确认的实际存储格式
-  ];
-  console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
-  console.log('使用的键模式:', keyPatterns);
-
-  const responses = [];
-  
-  for (const pattern of keyPatterns) {
-    console.log('正在扫描模式:', pattern);
-    // 修正扫描请求URL格式
-    const scanUrl = `${apiUrl}/keys/${encodeURIComponent(pattern)}*?count=100`;
-    const scanResp = await fetch(scanUrl, {
+async function fetchResponses(apiUrl, apiToken, questionnaireId) {
+  try {
+    console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
+    
+    // 使用正确的键前缀和格式
+    const keyPattern = `${RESPONSES_KEY_PREFIX}${questionnaireId}-*`;
+    console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
+    console.log('使用的键模式:', [keyPattern]);
+    
+    // 获取所有匹配的键
+    const scanRes = await fetch(`${apiUrl}/keys/${encodeURIComponent(keyPattern)}`, {
       headers: { 'Authorization': `Bearer ${apiToken}` }
     });
     
-    console.log('扫描结果状态:', scanResp.status);
-    const scanData = await scanResp.json();
-    console.log('扫描到的键:', scanData.result || []);
-    const keys = Array.isArray(scanData.result) ? scanData.result : [];
-    
-    for (const key of keys) {
-      console.log('正在获取键:', key);
-      const resp = await handleUpstashResponse(key);
-      if (resp) {
-        responses.push({
-          id: key.split(/[-:]/).pop(),
-          ...resp
-        });
-      }
+    if (!scanRes.ok) {
+      console.log('扫描结果状态:', scanRes.status);
+      return [];
     }
+    
+    const keysData = await scanRes.json();
+    const keys = keysData.result || [];
+    console.log('扫描到的键:', keys);
+    
+    // 批量获取所有响应数据
+    const responses = await Promise.all(
+      keys.map(async key => {
+        const resp = await fetch(`${apiUrl}/get/${key}`, {
+          headers: { 'Authorization': `Bearer ${apiToken}` }
+        });
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          return unwrapKV(data.result);
+        }
+        return null;
+      })
+    );
+    
+    // 过滤无效响应
+    const validResponses = responses.filter(Boolean);
+    console.log('最终响应数据:', validResponses);
+    return validResponses;
+  } catch (error) {
+    console.error('获取答卷失败:', error);
+    return [];
   }
-  
-  console.log('最终响应数据:', responses);
-  return responses;
 }
 
 export default async function handler(req, res) {
@@ -147,7 +155,7 @@ export default async function handler(req, res) {
       }
 
       // 获取问卷响应数据
-      const responses = await getResponsesForQuestionnaire(questionnaireId, apiUrl, apiToken);
+      const responses = await fetchResponses(apiUrl, apiToken, questionnaireId);
       
       return res.status(200).json({
         success: true,
