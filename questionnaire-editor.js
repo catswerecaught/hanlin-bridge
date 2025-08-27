@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentQuestionnaire = { 
           id: qnId,
           ...questionnaire,
-          // Preserve original code if exists
-          code: questionnaire.code || currentQuestionnaire?.code || generateCode() 
+          // Always preserve original code when editing
+          code: questionnaire.code
         };
         
         // Safely set values
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (descEl) descEl.value = currentQuestionnaire.description || '';
         if (codeEl) {
           codeEl.value = currentQuestionnaire.code || '';
-          codeEl.readOnly = true; // Make code field read-only
+          codeEl.readOnly = true; // Make code field read-only for existing questionnaires
         }
         
         renderQuestions();
