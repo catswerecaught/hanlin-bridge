@@ -272,6 +272,28 @@ export default async function handler(req, res) {
         throw new Error('Failed to store response');
       }
 
+      // 更新问卷的答卷数量
+      try {
+        const currentCount = qn.responseCount || 0;
+        const updatedQn = {
+          ...qn,
+          responseCount: currentCount + 1,
+          updatedAt: new Date().toISOString()
+        };
+        
+        await fetch(`${apiUrl}/set/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatedQn)
+        });
+      } catch (updateError) {
+        console.error('更新答卷数量失败:', updateError);
+        // 不影响答卷提交成功，只记录错误
+      }
+
       return res.status(200).json({
         success: true,
         code: 200,

@@ -64,11 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const descEl = document.getElementById('descInput');
         const codeEl = document.getElementById('codeInput');
         
-        if (titleEl) titleEl.value = currentQuestionnaire.title || '';
-        if (descEl) descEl.value = currentQuestionnaire.description || '';
+        if (titleEl) {
+          titleEl.value = currentQuestionnaire.title || '';
+          // 触发input事件以更新数据
+          titleEl.dispatchEvent(new Event('input'));
+        }
+        if (descEl) {
+          descEl.value = currentQuestionnaire.description || '';
+          descEl.dispatchEvent(new Event('input'));
+        }
         if (codeEl) {
           codeEl.value = currentQuestionnaire.code || '';
           codeEl.readOnly = true; // Make code field read-only for existing questionnaires
+          codeEl.dispatchEvent(new Event('input'));
         }
         
         renderQuestions();
@@ -84,6 +92,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const questionnaire = savedQuestionnaires.find(q => q.id === id);
       if (questionnaire) {
         currentQuestionnaire = questionnaire;
+        
+        // 填充表单字段
+        const titleEl = document.getElementById('titleInput');
+        const descEl = document.getElementById('descInput');
+        const codeEl = document.getElementById('codeInput');
+        
+        if (titleEl) {
+          titleEl.value = currentQuestionnaire.title || '';
+          titleEl.dispatchEvent(new Event('input'));
+        }
+        if (descEl) {
+          descEl.value = currentQuestionnaire.description || '';
+          descEl.dispatchEvent(new Event('input'));
+        }
+        if (codeEl) {
+          codeEl.value = currentQuestionnaire.code || '';
+          codeEl.readOnly = true;
+          codeEl.dispatchEvent(new Event('input'));
+        }
+        
         renderQuestions();
       }
     } catch (error) {
@@ -220,8 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 问题操作
     document.querySelectorAll('.action-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const action = e.target.dataset.action;
-        const questionId = e.target.closest('.question-editor').dataset.questionId;
+        const action = e.currentTarget.dataset.action;
+        const questionId = e.currentTarget.closest('.question-editor').dataset.questionId;
         
         if (action === 'delete') {
           if (confirm('确定要删除这个问题吗？')) {

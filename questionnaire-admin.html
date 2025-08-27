@@ -9,11 +9,48 @@
     .admin-container { max-width: 1200px; margin: 28px auto 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e1e8ed; padding-bottom: 16px; }
     .admin-title { font-size: 24px; font-weight: 800; color: #111; margin: 0; }
-    .btn-primary { background: #007aff; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-    .btn-outline { background: transparent; border: 1px solid #007aff; color: #007aff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-    .btn-outline:hover { background: #007aff; color: #fff; }
-    .btn-outline.btn-danger { border-color: #ff3b30; color: #ff3b30; }
-    .btn-outline.btn-danger:hover { background: #ff3b30; color: #fff; }
+    .btn-primary { 
+      background: #007aff; 
+      color: #fff; 
+      border: none; 
+      padding: 8px 16px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: scale(1);
+    }
+    .btn-primary:hover {
+      background: #0056cc;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+    .btn-outline { 
+      background: transparent; 
+      border: 1px solid #007aff; 
+      color: #007aff; 
+      padding: 6px 12px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 12px; 
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: scale(1);
+    }
+    .btn-outline:hover { 
+      background: #007aff; 
+      color: #fff; 
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    }
+    .btn-outline.btn-danger { 
+      border-color: #ff3b30; 
+      color: #ff3b30; 
+    }
+    .btn-outline.btn-danger:hover { 
+      background: #ff3b30; 
+      color: #fff; 
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
+    }
     .actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .qn-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     .qn-table th, .qn-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e8ed; }
