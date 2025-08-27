@@ -38,26 +38,38 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadExistingQuestionnaire(id) {
     try {
       // Wait for DOM to be fully ready
-      if (!document.getElementById('qnTitle') || 
-          !document.getElementById('qnDesc') || 
-          !document.getElementById('qnCode')) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      await new Promise(resolve => {
+        if (document.getElementById('qnTitle') && 
+            document.getElementById('qnDesc') && 
+            document.getElementById('qnCode')) {
+          resolve();
+        } else {
+          setTimeout(resolve, 100);
+        }
+      });
 
       // Try API first
       const response = await fetch(`/api/questionnaires?id=${id}`);
       if (response.ok) {
         const { id: qnId, ...questionnaire } = await response.json();
-        currentQuestionnaire = { id: qnId, ...questionnaire };
+        currentQuestionnaire = { 
+          id: qnId,
+          ...questionnaire,
+          // Preserve original code if exists
+          code: questionnaire.code || currentQuestionnaire?.code || generateCode() 
+        };
         
         // Safely set values
         const titleEl = document.getElementById('qnTitle');
         const descEl = document.getElementById('qnDesc');
         const codeEl = document.getElementById('qnCode');
         
-        if (titleEl) titleEl.value = questionnaire.title || '';
-        if (descEl) descEl.value = questionnaire.description || '';
-        if (codeEl) codeEl.value = questionnaire.code || '';
+        if (titleEl) titleEl.value = currentQuestionnaire.title || '';
+        if (descEl) descEl.value = currentQuestionnaire.description || '';
+        if (codeEl) {
+          codeEl.value = currentQuestionnaire.code || '';
+          codeEl.readOnly = true; // Make code field read-only
+        }
         
         renderQuestions();
         return;

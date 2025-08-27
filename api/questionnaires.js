@@ -513,9 +513,11 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
+    let qnData = null;
     if (qnRes.ok) {
       const qnJson = await qnRes.json();
-      const qnData = unwrapKV(qnJson.result);
+      console.log('Upstash GET response:', qnJson);
+      qnData = unwrapKV(qnJson.result);
       
       // 删除校验码映射
       if (qnData?.code && isValidCode(qnData.code)) {
@@ -525,14 +527,16 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
           headers: { 'Authorization': `Bearer ${apiToken}` }
         });
         
+        const codeDelJson = await codeDelRes.json();
+        console.log('Upstash DEL code response:', codeDelJson);
+        
         if (!codeDelRes.ok) {
-          console.log(`[deleteQuestionnaire] 删除校验码失败: ${codeDelRes.status}`);
-          // 继续删除问卷，不中断流程
+          console.log(`[deleteQuestionnaire] 删除校验码失败: ${codeDelRes.status}`, codeDelJson);
         }
       }
     } else {
-      console.log(`[deleteQuestionnaire] 问卷不存在: ${id}`);
-      // 继续尝试删除，可能只是缓存不一致
+      const error = await qnRes.json().catch(() => ({}));
+      console.log(`[deleteQuestionnaire] 问卷不存在: ${id}`, error);
     }
     
     // 删除问卷
@@ -545,9 +549,12 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
       }
     });
     
+    const delJson = await deleteResponse.json();
+    console.log('Upstash DEL questionnaire response:', delJson);
+    
     if (!deleteResponse.ok) {
-      console.log(`[deleteQuestionnaire] 删除问卷失败: ${deleteResponse.status}`);
-      throw new Error(`Failed to delete questionnaire: ${deleteResponse.status}`);
+      console.log(`[deleteQuestionnaire] 删除问卷失败: ${deleteResponse.status}`, delJson);
+      throw new Error(`Failed to delete questionnaire: ${deleteResponse.status} - ${JSON.stringify(delJson)}`);
     }
     
     console.log(`[deleteQuestionnaire] 问卷删除成功: ${id}`);
@@ -559,7 +566,8 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
     console.error('[deleteQuestionnaire] 错误:', error);
     return res.status(500).json({ 
       error: '删除问卷失败',
-      detail: error.message
+      detail: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 }
