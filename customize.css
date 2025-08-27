@@ -279,14 +279,14 @@
 /* Discount Visual */
 .discount-visual {
     width: 100%;
-    height: 300px;
+    aspect-ratio: 1 / 1;
     background-image: url('images/surveycon.png');
-    background-size: 80%;
-    background-position: center bottom;
+    background-size: contain;
+    background-position: center;
     background-repeat: no-repeat;
     position: relative;
     align-self: center;
-    margin-top: 35px;
+    margin-top: 0;
 }
 
 /* Modal Styles */
