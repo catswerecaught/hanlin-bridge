@@ -527,7 +527,13 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
           headers: { 'Authorization': `Bearer ${apiToken}` }
         });
         
-        const codeDelJson = await codeDelRes.json();
+        // 安全处理空响应
+        let codeDelJson = {};
+        try {
+          codeDelJson = await codeDelRes.json().catch(() => ({}));
+        } catch (e) {
+          console.log('Upstash DEL code response is empty');
+        }
         console.log('Upstash DEL code response:', codeDelJson);
         
         if (!codeDelRes.ok) {
@@ -549,7 +555,13 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
       }
     });
     
-    const delJson = await deleteResponse.json();
+    // 安全处理空响应
+    let delJson = {};
+    try {
+      delJson = await deleteResponse.json().catch(() => ({}));
+    } catch (e) {
+      console.log('Upstash DEL questionnaire response is empty');
+    }
     console.log('Upstash DEL questionnaire response:', delJson);
     
     if (!deleteResponse.ok) {
