@@ -82,7 +82,7 @@ export default async function handler(req, res) {
                     'Authorization': `Bearer ${apiToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(questionData)
+                body: JSON.stringify({ value: questionData })
             });
 
             if (!storeResponse.ok) {
@@ -271,7 +271,7 @@ export default async function handler(req, res) {
                     'Authorization': `Bearer ${apiToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(answerData)
+                body: JSON.stringify({ value: answerData })
             });
 
             if (!storeResponse.ok) {
@@ -292,7 +292,7 @@ export default async function handler(req, res) {
                     'Authorization': `Bearer ${apiToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(parsedQuestion)
+                body: JSON.stringify({ value: parsedQuestion })
             });
 
             if (!updateResponse.ok) {

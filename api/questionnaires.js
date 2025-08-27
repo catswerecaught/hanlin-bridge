@@ -39,11 +39,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const apiUrl = process.env.KV_REST_API_URL;
-  const apiToken = process.env.KV_REST_API_TOKEN;
+  const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   
   if (!apiUrl || !apiToken) {
-    return res.status(500).json({ error: 'KV_REST_API_URL or KV_REST_API_TOKEN not set' });
+    return res.status(500).json({ error: 'Upstash env not set: please set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN' });
   }
 
   const { method, query, body } = req;
@@ -108,7 +108,17 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
       if (!legacy || !legacy.ok) {
         const status = legacy ? `${legacy.status} ${legacy.statusText}` : 'no response';
         console.warn(`[getAllQuestionnaires] /keys fallback failed: ${status}`);
-        return res.status(200).json({ questionnaires: [] });
+        // 继续尝试读取旧前缀 'qn:'
+        // KEYS qn:* 仅用于兼容旧数据
+        const legacyQn = await fetchWithTimeout(`${apiUrl}/keys/qn:*`, {
+          headers: { 'Authorization': `Bearer ${apiToken}` }
+        }).catch(() => null);
+        if (!legacyQn || !legacyQn.ok) {
+          const status2 = legacyQn ? `${legacyQn.status} ${legacyQn.statusText}` : 'no response';
+          console.warn(`[getAllQuestionnaires] legacy prefix qn:* keys failed: ${status2}`);
+          return res.status(200).json({ questionnaires: [] });
+        }
+        listResponse = legacyQn;
       }
       listResponse = legacy;
     }
@@ -120,7 +130,21 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
       console.warn('[getAllQuestionnaires] listResponse JSON parse failed, returning empty list');
       return res.status(200).json({ questionnaires: [] });
     }
-    const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
+    let keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
+    
+    // 如果没有读取到任何问卷且我们还未尝试旧前缀，则补充尝试一次 'qn:' 前缀
+    if ((!keys || keys.length === 0)) {
+      const legacyQn = await fetchWithTimeout(`${apiUrl}/keys/qn:*`, {
+        headers: { 'Authorization': `Bearer ${apiToken}` }
+      }).catch(() => null);
+      if (legacyQn && legacyQn.ok) {
+        try {
+          const legacyData = await legacyQn.json();
+          const legacyKeys = Array.isArray(legacyData.keys) ? legacyData.keys : (legacyData.result || []);
+          keys = legacyKeys;
+        } catch {}
+      }
+    }
     
     const questionnaires = [];
     
@@ -135,7 +159,9 @@ async function getAllQuestionnaires(apiUrl, apiToken, res) {
           const questionnaire = unwrapKV(qnData.result);
           if (questionnaire) {
             questionnaires.push({
-              id: key.replace(QUESTIONNAIRES_KEY_PREFIX, ''),
+              id: key.startsWith(QUESTIONNAIRES_KEY_PREFIX)
+                ? key.replace(QUESTIONNAIRES_KEY_PREFIX, '')
+                : key.replace('qn:', ''),
               ...questionnaire
             });
           }
@@ -164,21 +190,36 @@ async function getQuestionnaireByCode(code, apiUrl, apiToken, res) {
     
     // 读取校验码映射
     console.log(`[getQuestionnaireByCode] 尝试获取校验码映射: ${CODES_KEY_PREFIX}${code}`);
-    const codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
+    let codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
+    // 兼容旧前缀 'qn:code:'
     if (!codeRes.ok) {
-      console.log(`[getQuestionnaireByCode] 校验码获取失败，状态: ${codeRes.status}`);
-      return res.status(404).json({ error: '校验码无效或不存在' });
+      console.log(`[getQuestionnaireByCode] 首次读取失败，尝试旧前缀 qn:code:`);
+      codeRes = await fetch(`${apiUrl}/get/qn:code:${code}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      });
+      if (!codeRes.ok) {
+        console.log(`[getQuestionnaireByCode] 校验码获取失败，状态: ${codeRes.status}`);
+        return res.status(404).json({ error: '校验码无效或不存在' });
+      }
     }
     
     const codeJson = await codeRes.json();
     console.log(`[getQuestionnaireByCode] 校验码响应:`, JSON.stringify(codeJson));
     
     if (!codeJson || !codeJson.result) {
-      console.log(`[getQuestionnaireByCode] 校验码映射数据为空或无效`);
-      return res.status(404).json({ error: '校验码无效或不存在' });
+      // 再次尝试按旧前缀解析
+      const codeRes2 = await fetch(`${apiUrl}/get/qn:code:${code}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      }).catch(() => null);
+      if (!codeRes2 || !codeRes2.ok) {
+        console.log(`[getQuestionnaireByCode] 校验码映射数据为空或无效`);
+        return res.status(404).json({ error: '校验码无效或不存在' });
+      }
+      const cj2 = await codeRes2.json();
+      codeJson.result = cj2.result;
     }
     
     const codeObj = unwrapKV(codeJson.result);
@@ -194,13 +235,19 @@ async function getQuestionnaireByCode(code, apiUrl, apiToken, res) {
     
     // 读取问卷
     console.log(`[getQuestionnaireByCode] 尝试获取问卷: ${QUESTIONNAIRES_KEY_PREFIX}${qnId}`);
-    const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
+    let qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
     if (!qnRes.ok) {
-      console.log(`[getQuestionnaireByCode] 问卷获取失败，状态: ${qnRes.status}`);
-      return res.status(404).json({ error: '问卷不存在' });
+      // 兼容旧前缀 'qn:'
+      qnRes = await fetch(`${apiUrl}/get/qn:${qnId}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      });
+      if (!qnRes.ok) {
+        console.log(`[getQuestionnaireByCode] 问卷获取失败，状态: ${qnRes.status}`);
+        return res.status(404).json({ error: '问卷不存在' });
+      }
     }
     
     const qnJson = await qnRes.json();
@@ -242,12 +289,18 @@ async function getQuestionnaireByCode(code, apiUrl, apiToken, res) {
 // 通过ID获取问卷
 async function getQuestionnaireById(id, apiUrl, apiToken, res) {
   try {
-    const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
+    let qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
     
     if (!qnRes.ok) {
-      return res.status(404).json({ error: '问卷不存在' });
+      // 兼容旧前缀 'qn:'
+      qnRes = await fetch(`${apiUrl}/get/qn:${id}`, {
+        headers: { Authorization: `Bearer ${apiToken}` }
+      });
+      if (!qnRes.ok) {
+        return res.status(404).json({ error: '问卷不存在' });
+      }
     }
     
     const qnJson = await qnRes.json();

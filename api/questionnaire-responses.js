@@ -14,14 +14,57 @@ function genId() {
 }
 
 function unwrapKV(result) {
-  let data = result;
-  if (data && data.value) data = data.value;
-  if (typeof data === 'string') {
-    try { data = JSON.parse(data); } catch {}
+  try {
+    console.log('原始数据:', typeof result === 'string' ? result : JSON.stringify(result));
+    
+    // 首次解析（处理字符串或对象）
+    let data = typeof result === 'string' ? 
+      JSON.parse(result.replace(/\\"/g, '"')) : 
+      result;
+    
+    // 解包嵌套的value结构
+    while (data && typeof data === 'object' && data.value) {
+      data = data.value;
+    }
+    
+    // 处理可能存在的二次字符串化情况
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        console.error('二级JSON解析失败:', e);
+      }
+    }
+    
+    console.log('最终解包结果:', data);
+    return data;
+  } catch (e) {
+    console.error('解包过程异常:', e);
+    return null;
   }
-  while (data && data.value) data = data.value;
-  return data;
 }
+
+// 处理Upstash响应数据
+const handleUpstashResponse = async (key) => {
+  const resp = await fetch(`${apiUrl}/get/${key}`, {
+    headers: { 'Authorization': `Bearer ${apiToken}` }
+  });
+  
+  if (!resp.ok) return null;
+  
+  const respData = await resp.json();
+  console.log('Upstash原始响应:', respData);
+  
+  // Upstash直接返回格式处理
+  if (respData.result && typeof respData.result === 'string') {
+    try {
+      return JSON.parse(respData.result);
+    } catch (e) {
+      console.error('解析响应数据失败:', e);
+    }
+  }
+  return respData.result;
+};
 
 export default async function handler(req, res) {
   // 设置CORS头
@@ -33,10 +76,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const apiUrl = process.env.KV_REST_API_URL;
-  const apiToken = process.env.KV_REST_API_TOKEN;
+  const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  console.log('Debug - Environment Variables:', { apiUrl, apiToken });
   if (!apiUrl || !apiToken) {
-    return res.status(500).json({ error: 'KV_REST_API_URL or KV_REST_API_TOKEN not set' });
+    return res.status(500).json({ error: 'Upstash env not set: please set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN' });
   }
 
   const { method, query } = req;
@@ -50,48 +94,46 @@ export default async function handler(req, res) {
       }
 
       console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
-      // 使用scan替代keys获取答卷列表
-      const listResponse = await fetch(`${apiUrl}/scan`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prefix: `${RESPONSES_KEY_PREFIX}${questionnaireId}-`,
-          limit: 100
-        })
-      });
-
-      if (!listResponse.ok) {
-        return res.status(200).json({ responses: [] });
-      }
-
-      const listData = await listResponse.json();
-      console.log(`[获取答卷列表] 返回结果:`, JSON.stringify(listData));
-      const keys = Array.isArray(listData.keys) ? listData.keys : (Array.isArray(listData.result) ? listData.result : []);
+      // 扫描所有可能的键格式
+      console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
+      const keyPatterns = [
+        `qn-response-qn-${questionnaireId}-*`,
+        `qn:resp:${questionnaireId.replace('qn-','')}:*`
+      ];
+      console.log('使用的键模式:', keyPatterns);
+      
       const responses = [];
-
-      for (const key of keys) {
+      
+      for (const pattern of keyPatterns) {
         try {
-          const respResponse = await fetch(`${apiUrl}/get/${key}`, {
+          console.log('正在扫描模式:', pattern);
+          const res = await fetch(`${apiUrl}/keys/${pattern}`, {
             headers: { 'Authorization': `Bearer ${apiToken}` }
           });
           
-          if (respResponse.ok) {
-            const respData = await respResponse.json();
-            const response = unwrapKV(respData.result);
-            if (response) {
-              responses.push({
-                id: key.split('-').pop(),
-                ...response
-              });
+          console.log('扫描结果状态:', res.status);
+          if (res.ok) {
+            const data = await res.json();
+            console.log('扫描到的键:', data.result);
+            const keys = Array.isArray(data.result) ? data.result : [];
+            
+            for (const key of keys) {
+              console.log('正在获取键:', key);
+              const resp = await handleUpstashResponse(key);
+              if (resp) {
+                responses.push({
+                  id: key.split(/[-:]/).pop(),
+                  ...resp
+                });
+              }
             }
           }
         } catch (error) {
-          console.error(`Error loading response ${key}:`, error);
+          console.error(`Error scanning pattern ${pattern}:`, error);
         }
       }
+      
+      console.log('最终响应数据:', responses);
 
       return res.status(200).json({ responses });
 
@@ -105,14 +147,27 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: '答案数据无效' });
       }
 
-      // 读取校验码映射
-      const codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
+      // 读取校验码映射（新前缀，失败则用旧前缀 qn:code:）
+      let codeRes = await fetch(`${apiUrl}/get/${CODES_KEY_PREFIX}${code}`, {
         headers: { Authorization: `Bearer ${apiToken}` }
       });
+      if (!codeRes.ok) {
+        codeRes = await fetch(`${apiUrl}/get/qn:code:${code}`, {
+          headers: { Authorization: `Bearer ${apiToken}` }
+        });
+      }
       if (!codeRes.ok) return res.status(404).json({ error: '校验码无效或不存在' });
       const codeJson = await codeRes.json();
       if (!codeJson || codeJson.result == null) {
-        return res.status(404).json({ error: '校验码无效或不存在' });
+        // 再次尝试旧前缀
+        const codeRes2 = await fetch(`${apiUrl}/get/qn:code:${code}`, {
+          headers: { Authorization: `Bearer ${apiToken}` }
+        }).catch(() => null);
+        if (!codeRes2 || !codeRes2.ok) {
+          return res.status(404).json({ error: '校验码无效或不存在' });
+        }
+        const cj2 = await codeRes2.json();
+        codeJson.result = cj2.result;
       }
       const codeObj = unwrapKV(codeJson.result);
       const qnId = codeObj?.questionnaireId;
@@ -121,11 +176,16 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: '校验码未启用或未绑定问卷' });
       }
 
-      // 读取问卷，确认已发布
-      const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
+      // 读取问卷，确认已发布（新前缀，失败则用旧前缀 qn:）
+      let qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${qnId}`, {
         headers: { Authorization: `Bearer ${apiToken}` }
       });
-      if (!qnRes.ok) return res.status(404).json({ error: '问卷不存在' });
+      if (!qnRes.ok) {
+        qnRes = await fetch(`${apiUrl}/get/qn:${qnId}`, {
+          headers: { Authorization: `Bearer ${apiToken}` }
+        });
+        if (!qnRes.ok) return res.status(404).json({ error: '问卷不存在' });
+      }
       const qnJson = await qnRes.json();
       if (!qnJson || qnJson.result == null) return res.status(404).json({ error: '问卷不存在' });
       const qn = unwrapKV(qnJson.result) || {};
