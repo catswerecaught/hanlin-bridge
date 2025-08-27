@@ -39,9 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Wait for DOM to be fully ready
       await new Promise(resolve => {
-        if (document.getElementById('qnTitle') && 
-            document.getElementById('qnDesc') && 
-            document.getElementById('qnCode')) {
+        if (document.getElementById('titleInput') && 
+            document.getElementById('descInput') && 
+            document.getElementById('codeInput')) {
           resolve();
         } else {
           setTimeout(resolve, 100);
@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         // Safely set values
-        const titleEl = document.getElementById('qnTitle');
-        const descEl = document.getElementById('qnDesc');
-        const codeEl = document.getElementById('qnCode');
+        const titleEl = document.getElementById('titleInput');
+        const descEl = document.getElementById('descInput');
+        const codeEl = document.getElementById('codeInput');
         
         if (titleEl) titleEl.value = currentQuestionnaire.title || '';
         if (descEl) descEl.value = currentQuestionnaire.description || '';
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let optionsHtml = '';
     if (['radio', 'checkbox', 'select'].includes(field.type)) {
-      const optionSymbol = field.type === 'radio' ? '○' : field.type === 'checkbox' ? '☑' : '▼';
+      const optionSymbol = field.type === 'radio' ? '○' : field.type === 'checkbox' ? '□' : '▼';
       optionsHtml = `
         <div class="option-list">
           ${(field.options || []).map((option, i) => `
@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="question-editor" data-question-id="${field.id}">
         <div class="question-number">${questionNumber}</div>
         <div class="question-actions">
-          <button class="action-btn" title="复制" data-action="copy">📋</button>
-          <button class="action-btn" title="删除" data-action="delete">🗑️</button>
+          <button class="action-btn" title="复制" data-action="copy">[复制]</button>
+          <button class="action-btn" title="删除" data-action="delete">[删除]</button>
         </div>
         
         <div class="form-group">
