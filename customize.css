@@ -267,14 +267,13 @@
 /* Discount Visual */
 .discount-visual {
     width: 100%;
-    height: 160px;
+    height: 250px;
     background-image: url('images/surveycon.png');
-    background-size: 80%;
+    background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
-    border-radius: 12px;
     position: relative;
-    align-self: flex-end;
+    align-self: center;
 }
 
 /* Modal Styles */
