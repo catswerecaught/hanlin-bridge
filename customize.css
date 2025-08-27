@@ -198,13 +198,12 @@
 }
 
 .card-image {
-    height: 200px;
+    min-height: 200px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    margin-top: auto;
-    flex: 1;
-    padding-bottom: 46px;
+    position: relative;
+    padding: 16px 0;
 }
 
 @media (max-width: 768px) {
@@ -278,15 +277,13 @@
 
 /* Discount Visual */
 .discount-visual {
-    width: 100%;
+    width: 80%;
+    max-width: 280px;
     aspect-ratio: 1 / 1;
     background-image: url('images/surveycon.png');
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
-    position: relative;
-    align-self: center;
-    margin-top: 0;
 }
 
 /* Modal Styles */
