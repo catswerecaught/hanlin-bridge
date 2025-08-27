@@ -286,6 +286,7 @@
     background-repeat: no-repeat;
     position: relative;
     align-self: center;
+    margin-top: 20px;
 }
 
 /* Modal Styles */
