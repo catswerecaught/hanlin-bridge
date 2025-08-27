@@ -268,20 +268,13 @@
 .discount-visual {
     width: 100%;
     height: 160px;
-    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    background-image: url('images/surveycon.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
     border-radius: 12px;
     position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     align-self: flex-end;
-}
-
-.discount-visual::after {
-    content: "💰";
-    font-size: 4rem;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 }
 
 /* Modal Styles */
