@@ -500,11 +500,15 @@ async function updateQuestionnaire(body, apiUrl, apiToken, res) {
 // 删除问卷
 async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
   try {
+    console.log(`[deleteQuestionnaire] 开始删除问卷: ${id}`);
+    
     if (!id) {
+      console.log('[deleteQuestionnaire] 错误: 问卷ID不能为空');
       return res.status(400).json({ error: '问卷ID不能为空' });
     }
     
     // 获取问卷信息（用于删除校验码映射）
+    console.log(`[deleteQuestionnaire] 获取问卷数据: ${QUESTIONNAIRES_KEY_PREFIX}${id}`);
     const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
     });
@@ -515,30 +519,45 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
       
       // 删除校验码映射
       if (qnData?.code && isValidCode(qnData.code)) {
-        await fetch(`${apiUrl}/del/${CODES_KEY_PREFIX}${qnData.code}`, {
+        console.log(`[deleteQuestionnaire] 删除校验码映射: ${CODES_KEY_PREFIX}${qnData.code}`);
+        const codeDelRes = await fetch(`${apiUrl}/del/${CODES_KEY_PREFIX}${qnData.code}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${apiToken}` }
         });
+        
+        if (!codeDelRes.ok) {
+          console.log(`[deleteQuestionnaire] 删除校验码失败: ${codeDelRes.status}`);
+          // 继续删除问卷，不中断流程
+        }
       }
+    } else {
+      console.log(`[deleteQuestionnaire] 问卷不存在: ${id}`);
+      // 继续尝试删除，可能只是缓存不一致
     }
     
     // 删除问卷
+    console.log(`[deleteQuestionnaire] 删除问卷: ${QUESTIONNAIRES_KEY_PREFIX}${id}`);
     const deleteResponse = await fetch(`${apiUrl}/del/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${apiToken}` }
     });
     
     if (!deleteResponse.ok) {
-      throw new Error('Failed to delete questionnaire');
+      console.log(`[deleteQuestionnaire] 删除问卷失败: ${deleteResponse.status}`);
+      throw new Error(`Failed to delete questionnaire: ${deleteResponse.status}`);
     }
     
+    console.log(`[deleteQuestionnaire] 问卷删除成功: ${id}`);
     return res.status(200).json({ 
       success: true,
       message: '问卷删除成功'
     });
   } catch (error) {
-    console.error('Error in deleteQuestionnaire:', error);
-    return res.status(500).json({ error: '删除问卷失败' });
+    console.error('[deleteQuestionnaire] 错误:', error);
+    return res.status(500).json({ 
+      error: '删除问卷失败',
+      detail: error.message
+    });
   }
 }
 

@@ -66,6 +66,46 @@ const handleUpstashResponse = async (key) => {
   return respData.result;
 };
 
+async function getResponsesForQuestionnaire(questionnaireId, apiUrl, apiToken) {
+  console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
+  // 精确匹配Upstash实际存储格式
+  const keyPatterns = [
+    `qn-response-qn-${questionnaireId}-*`  // 确认的实际存储格式
+  ];
+  console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
+  console.log('使用的键模式:', keyPatterns);
+
+  const responses = [];
+  
+  for (const pattern of keyPatterns) {
+    console.log('正在扫描模式:', pattern);
+    // 修正扫描请求URL格式
+    const scanUrl = `${apiUrl}/keys/${encodeURIComponent(pattern)}*?count=100`;
+    const scanResp = await fetch(scanUrl, {
+      headers: { 'Authorization': `Bearer ${apiToken}` }
+    });
+    
+    console.log('扫描结果状态:', scanResp.status);
+    const scanData = await scanResp.json();
+    console.log('扫描到的键:', scanData.result || []);
+    const keys = Array.isArray(scanData.result) ? scanData.result : [];
+    
+    for (const key of keys) {
+      console.log('正在获取键:', key);
+      const resp = await handleUpstashResponse(key);
+      if (resp) {
+        responses.push({
+          id: key.split(/[-:]/).pop(),
+          ...resp
+        });
+      }
+    }
+  }
+  
+  console.log('最终响应数据:', responses);
+  return responses;
+}
+
 export default async function handler(req, res) {
   // 设置CORS头
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -80,73 +120,42 @@ export default async function handler(req, res) {
   const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   console.log('Debug - Environment Variables:', { apiUrl, apiToken });
   if (!apiUrl || !apiToken) {
-    return res.status(500).json({
-      error: 'Upstash env not set: please set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN',
-      detail: '环境变量未设置',
+    return res.status(500).json({ 
+      error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set',
       timestamp: new Date().toISOString()
     });
   }
 
-  const { method, query } = req;
-
   try {
-    if (method === 'GET') {
-      // 获取问卷的答卷列表（管理员）
-      const { questionnaireId } = query;
+    if (req.method === 'GET') {
+      const { questionnaireId } = req.query;
+      
       if (!questionnaireId) {
-        return res.status(400).json({
-          error: '缺少问卷ID',
-          detail: '请提供问卷ID',
+        return res.status(400).json({ 
+          error: 'Missing questionnaireId parameter',
           timestamp: new Date().toISOString()
         });
       }
 
-      console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
-      // 精确匹配Upstash实际存储格式
-      const keyPatterns = [
-        `qn-response-qn-${questionnaireId}-*`  // 确认的实际存储格式
-      ];
-      console.log('开始扫描问卷响应，问卷ID:', questionnaireId);
-      console.log('使用的键模式:', keyPatterns);
-
-      const responses = [];
-      
-      for (const pattern of keyPatterns) {
-        console.log('正在扫描模式:', pattern);
-        // 修正扫描请求URL格式
-        const scanUrl = `${apiUrl}/keys/${encodeURIComponent(pattern)}*?count=100`;
-        const scanResp = await fetch(scanUrl, {
-          headers: { 'Authorization': `Bearer ${apiToken}` }
-        });
-        
-        console.log('扫描结果状态:', scanResp.status);
-        const scanData = await scanResp.json();
-        console.log('扫描到的键:', scanData.result || []);
-        const keys = Array.isArray(scanData.result) ? scanData.result : [];
-        
-        for (const key of keys) {
-          console.log('正在获取键:', key);
-          const resp = await handleUpstashResponse(key);
-          if (resp) {
-            responses.push({
-              id: key.split(/[-:]/).pop(),
-              ...resp
-            });
-          }
-        }
+      // 获取问卷响应数量
+      const countRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${questionnaireId}`);
+      let responseCount = 0;
+      if (countRes.ok) {
+        const qnData = await countRes.json();
+        const questionnaire = unwrapKV(qnData.result);
+        responseCount = questionnaire?.responseCount || 0;
       }
-      
-      console.log('最终响应数据:', responses);
 
+      // 获取问卷响应数据
+      const responses = await getResponsesForQuestionnaire(questionnaireId, apiUrl, apiToken);
+      
       return res.status(200).json({
         success: true,
-        code: 200,
-        message: '获取答卷列表成功',
-        data: responses,
+        count: responseCount,
+        responses,
         timestamp: new Date().toISOString()
       });
-
-    } else if (method === 'POST') {
+    } else if (req.method === 'POST') {
       // 提交答卷
       const { code, answers } = req.body;
       if (!code || !isValidCode(code)) {
@@ -268,7 +277,7 @@ export default async function handler(req, res) {
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
       return res.status(405).json({
-        error: `Method ${method} Not Allowed`,
+        error: `Method ${req.method} Not Allowed`,
         detail: '请使用正确的请求方法',
         timestamp: new Date().toISOString()
       });

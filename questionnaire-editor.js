@@ -40,8 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // 尝试从API加载
       const response = await fetch(`/api/questionnaires?id=${id}`);
       if (response.ok) {
-        const questionnaire = await response.json();
-        currentQuestionnaire = questionnaire;
+        const { id: qnId, ...questionnaire } = await response.json();
+        currentQuestionnaire = {
+          id: qnId,
+          ...questionnaire
+        };
         document.getElementById('qnTitle').value = questionnaire.title || '';
         document.getElementById('qnDesc').value = questionnaire.description || '';
         document.getElementById('qnCode').value = questionnaire.code || '';

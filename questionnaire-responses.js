@@ -66,10 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (resp.ok) {
           const data = await resp.json();
           mockResponses = data.responses || [];
+          
+          // 更新响应计数显示
+          document.getElementById('responseCount').textContent = 
+            `共 ${data.count || mockResponses.length} 条答卷`;
         }
       }
     } catch (error) {
       console.log('使用本地数据，API暂不可用:', error);
+      document.getElementById('responseCount').textContent = 
+        `共 ${mockResponses.length} 条答卷`;
+      
       // 如果是示例问卷，提供一些示例数据
       if (questionnaireId === 'demo-001') {
         mockResponses = [
