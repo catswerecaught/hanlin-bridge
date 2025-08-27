@@ -507,7 +507,7 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
       return res.status(400).json({ error: '问卷ID不能为空' });
     }
     
-    // 获取问卷信息（用于删除校验码映射）
+    // 获取问卷信息
     console.log(`[deleteQuestionnaire] 获取问卷数据: ${QUESTIONNAIRES_KEY_PREFIX}${id}`);
     const qnRes = await fetch(`${apiUrl}/get/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       headers: { Authorization: `Bearer ${apiToken}` }
@@ -516,70 +516,47 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
     let qnData = null;
     if (qnRes.ok) {
       const qnJson = await qnRes.json();
-      console.log('Upstash GET response:', qnJson);
       qnData = unwrapKV(qnJson.result);
       
       // 删除校验码映射
       if (qnData?.code && isValidCode(qnData.code)) {
         console.log(`[deleteQuestionnaire] 删除校验码映射: ${CODES_KEY_PREFIX}${qnData.code}`);
-        const codeDelRes = await fetch(`${apiUrl}/del/${CODES_KEY_PREFIX}${qnData.code}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${apiToken}` }
+        const codeDelRes = await fetch(`${apiUrl}/set/${CODES_KEY_PREFIX}${qnData.code}`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(null) // Upstash requires POST with null value to delete
         });
         
-        // 安全处理空响应
-        let codeDelJson = {};
-        try {
-          codeDelJson = await codeDelRes.json().catch(() => ({}));
-        } catch (e) {
-          console.log('Upstash DEL code response is empty');
-        }
-        console.log('Upstash DEL code response:', codeDelJson);
-        
         if (!codeDelRes.ok) {
-          console.log(`[deleteQuestionnaire] 删除校验码失败: ${codeDelRes.status}`, codeDelJson);
+          console.log(`[deleteQuestionnaire] 删除校验码失败: ${codeDelRes.status}`);
         }
       }
-    } else {
-      const error = await qnRes.json().catch(() => ({}));
-      console.log(`[deleteQuestionnaire] 问卷不存在: ${id}`, error);
     }
     
     // 删除问卷
     console.log(`[deleteQuestionnaire] 删除问卷: ${QUESTIONNAIRES_KEY_PREFIX}${id}`);
-    const deleteResponse = await fetch(`${apiUrl}/del/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
-      method: 'DELETE',
+    const deleteResponse = await fetch(`${apiUrl}/set/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
+      method: 'POST',
       headers: { 
         'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json' 
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(null) // Upstash requires POST with null value to delete
     });
-    
-    // 安全处理空响应
-    let delJson = {};
-    try {
-      delJson = await deleteResponse.json().catch(() => ({}));
-    } catch (e) {
-      console.log('Upstash DEL questionnaire response is empty');
-    }
-    console.log('Upstash DEL questionnaire response:', delJson);
     
     if (!deleteResponse.ok) {
-      console.log(`[deleteQuestionnaire] 删除问卷失败: ${deleteResponse.status}`, delJson);
-      throw new Error(`Failed to delete questionnaire: ${deleteResponse.status} - ${JSON.stringify(delJson)}`);
+      throw new Error(`删除失败: ${deleteResponse.status}`);
     }
     
-    console.log(`[deleteQuestionnaire] 问卷删除成功: ${id}`);
-    return res.status(200).json({ 
-      success: true,
-      message: '问卷删除成功'
-    });
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.error('[deleteQuestionnaire] 错误:', error);
     return res.status(500).json({ 
       error: '删除问卷失败',
-      detail: error.message,
-      timestamp: new Date().toISOString()
+      detail: error.message
     });
   }
 }
