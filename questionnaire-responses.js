@@ -22,27 +22,42 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载问卷数据
   async function loadQuestionnaireData(id) {
     try {
-      // 尝试从localStorage加载问卷
-      const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
-      let questionnaire = savedQuestionnaires.find(q => q.id === id);
-      
-      // 如果没找到，使用示例问卷
-      if (!questionnaire && id === 'demo-001') {
-        questionnaire = {
-          id: 'demo-001',
-          title: '悠然问卷示例',
-          fields: [
-            { name: 'name', label: '姓名', type: 'text', required: true },
-            { name: 'subject', label: '助学科目', type: 'text', required: true },
-            { name: 'scores', label: '成绩', type: 'text', required: true }
-          ]
-        };
+      // 先尝试从API加载问卷
+      try {
+        const response = await fetch(`/api/questionnaires?id=${id}`);
+        if (response.ok) {
+          const { id: qnId, ...questionnaire } = await response.json();
+          currentQuestionnaire = { id: qnId, ...questionnaire };
+        }
+      } catch (error) {
+        console.log('API加载问卷失败，尝试本地数据:', error);
       }
       
-      if (questionnaire) {
-        currentQuestionnaire = questionnaire;
+      // 如果API失败，尝试从localStorage加载问卷
+      if (!currentQuestionnaire) {
+        const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
+        let questionnaire = savedQuestionnaires.find(q => q.id === id);
         
-        // 更新页面标题
+        // 如果没找到，使用示例问卷
+        if (!questionnaire && id === 'demo-001') {
+          questionnaire = {
+            id: 'demo-001',
+            title: '悠然问卷示例',
+            fields: [
+              { name: 'name', label: '姓名', type: 'text', required: true },
+              { name: 'subject', label: '助学科目', type: 'text', required: true },
+              { name: 'scores', label: '成绩', type: 'text', required: true }
+            ]
+          };
+        }
+        
+        if (questionnaire) {
+          currentQuestionnaire = questionnaire;
+        }
+      }
+      
+      // 更新页面标题
+      if (currentQuestionnaire) {
         if (currentQuestionnaire.fields && currentQuestionnaire.fields[questionIndex]) {
           const questionTitle = currentQuestionnaire.fields[questionIndex];
           document.getElementById('questionnaireTitle').textContent = 
@@ -60,18 +75,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载答卷数据
   async function loadResponses() {
     try {
-      const responseCountEl = document.getElementById('responseCount');
-      if (!responseCountEl) return;
-
       // 尝试从API加载答卷数据
       if (questionnaireId) {
+        console.log('正在加载问卷响应数据:', questionnaireId);
         const resp = await fetch(`/api/questionnaire-responses?questionnaireId=${questionnaireId}`);
         if (resp.ok) {
           const data = await resp.json();
+          console.log('API返回数据:', data);
           mockResponses = data.responses || [];
           
           // 更新响应计数显示
-          responseCountEl.textContent = `共 ${data.count || mockResponses.length} 条答卷`;
+          const responseCountEl = document.getElementById('responseCount');
+          if (responseCountEl) {
+            responseCountEl.textContent = `共 ${data.count || mockResponses.length} 条答卷`;
+          }
+        } else {
+          console.error('API请求失败:', resp.status, resp.statusText);
         }
       }
     } catch (error) {
@@ -101,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     responses = mockResponses;
+    console.log('最终响应数据:', responses);
     renderResponsesTable();
   }
   
@@ -109,10 +129,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('responsesTableBody');
     if (!tbody) return;
 
+    console.log('渲染答卷表格，响应数据:', responses);
+    console.log('当前问卷:', currentQuestionnaire);
+    console.log('问题索引:', questionIndex);
+
+    if (!responses || responses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">暂无答卷数据</td></tr>';
+      return;
+    }
+
     const currentField = currentQuestionnaire?.fields[questionIndex];
     
     tbody.innerHTML = responses.map((response, index) => {
-      const answer = currentField ? response.answers[currentField.name] || '-' : '-';
+      const answer = currentField ? response.answers?.[currentField.name] || '-' : '-';
       const time = new Date(response.time || response.submittedAt).toLocaleString('zh-CN', {
         month: 'numeric',
         day: 'numeric',
