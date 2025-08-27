@@ -107,11 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 渲染答卷表格
   function renderResponsesTable() {
     const tbody = document.getElementById('responsesTableBody');
+    if (!tbody) return;
+
     const currentField = currentQuestionnaire?.fields[questionIndex];
     
     tbody.innerHTML = responses.map((response, index) => {
       const answer = currentField ? response.answers[currentField.name] || '-' : '-';
-      const time = new Date(response.time).toLocaleString('zh-CN', {
+      const time = new Date(response.time || response.submittedAt).toLocaleString('zh-CN', {
         month: 'numeric',
         day: 'numeric',
         hour: '2-digit',
@@ -123,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${index + 1}</td>
           <td>${time}</td>
           <td>${answer}</td>
-          <td><a href="#" class="view-response-btn" onclick="viewResponse(${index})">查看答卷</a></td>
+          <td><a href="#" class="view-response-btn" data-index="${index}" onclick="viewResponse(${index})">查看答卷</a></td>
         </tr>
       `;
     }).join('');
@@ -136,25 +138,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!response) return;
     
     // 更新模态框标题
-    document.getElementById('responseModalTitle').textContent = `序号：${index + 1}`;
+    const modalTitle = document.getElementById('responseModalTitle');
+    if (modalTitle) modalTitle.textContent = `序号：${index + 1}`;
     
     // 更新元数据
-    document.getElementById('responseIP').textContent = response.ip;
-    document.getElementById('responseTime').textContent = response.time;
-    document.getElementById('responseSource').textContent = response.source;
+    const updateField = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    
+    updateField('responseIP', response.ip);
+    updateField('responseTime', response.time || response.submittedAt);
+    updateField('responseSource', response.source || '网页');
     
     // 更新答卷详情
     const detailsContainer = document.getElementById('responseDetails');
-    if (currentQuestionnaire) {
+    if (detailsContainer && currentQuestionnaire) {
       detailsContainer.innerHTML = currentQuestionnaire.fields.map((field, i) => {
-        const answer = response.answers[field.name] || '未填写';
+        const answer = response.answers[field.name] || '-';
         return `
-          <div class="question-response">
-            <div class="question-label">
-              ${field.required ? '<span class="required-mark">* </span>' : ''}
-              ${i + 1}. ${field.label}
-            </div>
-            <div class="question-answer">${answer}</div>
+          <div class="response-field">
+            <label for="field-${i}">${field.label || field.name}:</label>
+            <input type="text" id="field-${i}" name="field-${i}" value="${answer}" readonly>
           </div>
         `;
       }).join('');
