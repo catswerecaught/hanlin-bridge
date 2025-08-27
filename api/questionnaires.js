@@ -539,7 +539,10 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
     console.log(`[deleteQuestionnaire] 删除问卷: ${QUESTIONNAIRES_KEY_PREFIX}${id}`);
     const deleteResponse = await fetch(`${apiUrl}/del/${QUESTIONNAIRES_KEY_PREFIX}${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${apiToken}` }
+      headers: { 
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json' 
+      }
     });
     
     if (!deleteResponse.ok) {
@@ -560,5 +563,3 @@ async function deleteQuestionnaire(id, apiUrl, apiToken, res) {
     });
   }
 }
-
- 

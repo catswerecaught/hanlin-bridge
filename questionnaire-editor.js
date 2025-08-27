@@ -37,38 +37,45 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载现有问卷
   async function loadExistingQuestionnaire(id) {
     try {
-      // 尝试从API加载
+      // Wait for DOM to be fully ready
+      if (!document.getElementById('qnTitle') || 
+          !document.getElementById('qnDesc') || 
+          !document.getElementById('qnCode')) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Try API first
       const response = await fetch(`/api/questionnaires?id=${id}`);
       if (response.ok) {
         const { id: qnId, ...questionnaire } = await response.json();
-        currentQuestionnaire = {
-          id: qnId,
-          ...questionnaire
-        };
-        document.getElementById('qnTitle').value = questionnaire.title || '';
-        document.getElementById('qnDesc').value = questionnaire.description || '';
-        document.getElementById('qnCode').value = questionnaire.code || '';
+        currentQuestionnaire = { id: qnId, ...questionnaire };
+        
+        // Safely set values
+        const titleEl = document.getElementById('qnTitle');
+        const descEl = document.getElementById('qnDesc');
+        const codeEl = document.getElementById('qnCode');
+        
+        if (titleEl) titleEl.value = questionnaire.title || '';
+        if (descEl) descEl.value = questionnaire.description || '';
+        if (codeEl) codeEl.value = questionnaire.code || '';
+        
         renderQuestions();
         return;
       }
     } catch (error) {
-      console.log('API加载失败，尝试本地数据:', error);
+      console.error('API加载失败:', error);
     }
     
-    // 降级到localStorage
+    // Fallback to localStorage
     try {
       const savedQuestionnaires = JSON.parse(localStorage.getItem('questionnaires') || '[]');
       const questionnaire = savedQuestionnaires.find(q => q.id === id);
-      
       if (questionnaire) {
         currentQuestionnaire = questionnaire;
-        document.getElementById('qnTitle').value = questionnaire.title || '';
-        document.getElementById('qnDesc').value = questionnaire.description || '';
-        document.getElementById('qnCode').value = questionnaire.code || '';
         renderQuestions();
       }
     } catch (error) {
-      console.error('加载问卷失败:', error);
+      console.error('本地数据加载失败:', error);
     }
   }
 
