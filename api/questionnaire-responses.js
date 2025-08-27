@@ -80,7 +80,11 @@ export default async function handler(req, res) {
   const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   console.log('Debug - Environment Variables:', { apiUrl, apiToken });
   if (!apiUrl || !apiToken) {
-    return res.status(500).json({ error: 'Upstash env not set: please set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN' });
+    return res.status(500).json({
+      error: 'Upstash env not set: please set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN',
+      detail: '环境变量未设置',
+      timestamp: new Date().toISOString()
+    });
   }
 
   const { method, query } = req;
@@ -90,7 +94,11 @@ export default async function handler(req, res) {
       // 获取问卷的答卷列表（管理员）
       const { questionnaireId } = query;
       if (!questionnaireId) {
-        return res.status(400).json({ error: '缺少问卷ID' });
+        return res.status(400).json({
+          error: '缺少问卷ID',
+          detail: '请提供问卷ID',
+          timestamp: new Date().toISOString()
+        });
       }
 
       console.log(`[获取答卷列表] 尝试获取问卷ID=${questionnaireId}的答卷`);
@@ -130,16 +138,30 @@ export default async function handler(req, res) {
       
       console.log('最终响应数据:', responses);
 
-      return res.status(200).json({ responses });
+      return res.status(200).json({
+        success: true,
+        code: 200,
+        message: '获取答卷列表成功',
+        data: responses,
+        timestamp: new Date().toISOString()
+      });
 
     } else if (method === 'POST') {
       // 提交答卷
       const { code, answers } = req.body;
       if (!code || !isValidCode(code)) {
-        return res.status(400).json({ error: '校验码格式无效' });
+        return res.status(400).json({
+          error: '校验码格式无效',
+          detail: '请提供有效的校验码',
+          timestamp: new Date().toISOString()
+        });
       }
       if (!answers || typeof answers !== 'object') {
-        return res.status(400).json({ error: '答案数据无效' });
+        return res.status(400).json({
+          error: '答案数据无效',
+          detail: '请提供有效的答案数据',
+          timestamp: new Date().toISOString()
+        });
       }
 
       // 读取校验码映射（新前缀，失败则用旧前缀 qn:code:）
@@ -151,7 +173,11 @@ export default async function handler(req, res) {
           headers: { Authorization: `Bearer ${apiToken}` }
         });
       }
-      if (!codeRes.ok) return res.status(404).json({ error: '校验码无效或不存在' });
+      if (!codeRes.ok) return res.status(404).json({
+        error: '校验码无效或不存在',
+        detail: '请检查校验码是否正确',
+        timestamp: new Date().toISOString()
+      });
       const codeJson = await codeRes.json();
       if (!codeJson || codeJson.result == null) {
         // 再次尝试旧前缀
@@ -159,7 +185,11 @@ export default async function handler(req, res) {
           headers: { Authorization: `Bearer ${apiToken}` }
         }).catch(() => null);
         if (!codeRes2 || !codeRes2.ok) {
-          return res.status(404).json({ error: '校验码无效或不存在' });
+          return res.status(404).json({
+            error: '校验码无效或不存在',
+            detail: '请检查校验码是否正确',
+            timestamp: new Date().toISOString()
+          });
         }
         const cj2 = await codeRes2.json();
         codeJson.result = cj2.result;
@@ -168,7 +198,11 @@ export default async function handler(req, res) {
       const qnId = codeObj?.questionnaireId;
       const enabled = codeObj?.enabled !== false;
       if (!qnId || !enabled) {
-        return res.status(404).json({ error: '校验码未启用或未绑定问卷' });
+        return res.status(404).json({
+          error: '校验码未启用或未绑定问卷',
+          detail: '请检查校验码是否正确',
+          timestamp: new Date().toISOString()
+        });
       }
 
       // 读取问卷，确认已发布（新前缀，失败则用旧前缀 qn:）
@@ -179,12 +213,24 @@ export default async function handler(req, res) {
         qnRes = await fetch(`${apiUrl}/get/qn:${qnId}`, {
           headers: { Authorization: `Bearer ${apiToken}` }
         });
-        if (!qnRes.ok) return res.status(404).json({ error: '问卷不存在' });
+        if (!qnRes.ok) return res.status(404).json({
+          error: '问卷不存在',
+          detail: '请检查问卷ID是否正确',
+          timestamp: new Date().toISOString()
+        });
       }
       const qnJson = await qnRes.json();
-      if (!qnJson || qnJson.result == null) return res.status(404).json({ error: '问卷不存在' });
+      if (!qnJson || qnJson.result == null) return res.status(404).json({
+        error: '问卷不存在',
+        detail: '请检查问卷ID是否正确',
+        timestamp: new Date().toISOString()
+      });
       const qn = unwrapKV(qnJson.result) || {};
-      if (qn.published !== true) return res.status(403).json({ error: '问卷未发布' });
+      if (qn.published !== true) return res.status(403).json({
+        error: '问卷未发布',
+        detail: '请检查问卷是否已发布',
+        timestamp: new Date().toISOString()
+      });
 
       // 生成答卷ID并存储
       const respId = genId();
@@ -211,16 +257,30 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        responseId: respId,
-        message: '答卷提交成功'
+        code: 200,
+        message: '答卷提交成功',
+        data: {
+          responseId: respId
+        },
+        timestamp: new Date().toISOString()
       });
 
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
-      return res.status(405).json({ error: `Method ${method} Not Allowed` });
+      return res.status(405).json({
+        error: `Method ${method} Not Allowed`,
+        detail: '请使用正确的请求方法',
+        timestamp: new Date().toISOString()
+      });
     }
   } catch (err) {
     console.error('Questionnaire Responses API Error:', err);
-    return res.status(500).json({ error: '服务器内部错误' });
+    return res.status(500).json({
+      error: '获取答卷失败',
+      code: 500,
+      message: '内部错误',
+      detail: err.message || '未知错误',
+      timestamp: new Date().toISOString()
+    });
   }
 }
