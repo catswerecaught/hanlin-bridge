@@ -75,13 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><span class="${qn.published ? 'status-published' : 'status-draft'}">${qn.published ? '已发布' : '草稿'}</span></td>
         <td>${formatTime(qn.createdAt)}</td>
         <td><code>${qn.code || '-'}</code></td>
-        <td>${qn.responseCount || 0}</td>
+        <td id="response-count-${qn.id}">${qn.responseCount || 0}</td>
         <td>
           <div class="actions">
-            <button class="btn-success" onclick="editQuestionnaire('${qn.id}')">编辑</button>
-            <button class="btn-primary" onclick="viewResponses('${qn.id}')" title="查看答卷统计">查看答卷</button>
-            <button class="btn-primary" onclick="togglePublish('${qn.id}')">${qn.published ? '取消发布' : '发布'}</button>
-            <button class="btn-danger" onclick="deleteQuestionnaire('${qn.id}')">删除</button>
+            <button class="btn-outline" onclick="editQuestionnaire('${qn.id}')">编辑</button>
+            <button class="btn-outline" onclick="viewResponses('${qn.id}')" title="查看答卷统计">查看答卷</button>
+            <button class="btn-outline" onclick="togglePublish('${qn.id}')">${qn.published ? '取消发布' : '发布'}</button>
+            <button class="btn-outline btn-danger" onclick="deleteQuestionnaire('${qn.id}')">删除</button>
           </div>
         </td>
       </tr>

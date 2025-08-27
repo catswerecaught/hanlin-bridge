@@ -61,6 +61,13 @@
     .question-actions { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
     .action-btn { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: #666; }
     .action-btn:hover { color: #333; }
+    
+    /* CSS Icons */
+    .icon-text::before { content: '—'; font-weight: bold; }
+    .icon-textarea::before { content: '≡'; font-weight: bold; }
+    .icon-number::before { content: '#'; font-weight: bold; }
+    .icon-copy::before { content: '⧉'; font-weight: bold; }
+    .icon-delete::before { content: '×'; font-weight: bold; font-size: 16px; }
   </style>
 </head>
 <body>
@@ -95,15 +102,15 @@
         <div class="type-category">
           <div class="type-category-title">填空题</div>
           <div class="type-item" data-type="text">
-            <span class="type-icon">[T]</span>
+            <span class="type-icon icon-text"></span>
             <span>单行文本</span>
           </div>
           <div class="type-item" data-type="textarea">
-            <span class="type-icon">[A]</span>
+            <span class="type-icon icon-textarea"></span>
             <span>多行文本</span>
           </div>
           <div class="type-item" data-type="number">
-            <span class="type-icon">[#]</span>
+            <span class="type-icon icon-number"></span>
             <span>数字</span>
           </div>
         </div>
@@ -143,8 +150,8 @@
           <div class="question-editor active" data-question-id="1">
             <div class="question-number">*1</div>
             <div class="question-actions">
-              <button class="action-btn" title="复制">[复制]</button>
-              <button class="action-btn" title="删除">[删除]</button>
+              <button class="action-btn" title="复制"><span class="icon-copy"></span></button>
+              <button class="action-btn" title="删除"><span class="icon-delete"></span></button>
             </div>
             
             <div class="form-group">

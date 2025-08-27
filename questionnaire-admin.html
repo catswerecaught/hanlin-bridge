@@ -9,16 +9,18 @@
     .admin-container { max-width: 1200px; margin: 28px auto 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e1e8ed; padding-bottom: 16px; }
     .admin-title { font-size: 24px; font-weight: 800; color: #111; margin: 0; }
-    .btn-primary { background: #007aff; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-success { background: #34c759; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .btn-danger { background: #ff3b30; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #007aff; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    .btn-outline { background: transparent; border: 1px solid #007aff; color: #007aff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .btn-outline:hover { background: #007aff; color: #fff; }
+    .btn-outline.btn-danger { border-color: #ff3b30; color: #ff3b30; }
+    .btn-outline.btn-danger:hover { background: #ff3b30; color: #fff; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .qn-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     .qn-table th, .qn-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e8ed; }
     .qn-table th { background: #f8f9fa; font-weight: 600; color: #333; }
     .qn-table tr:hover { background: #f8f9fa; }
     .status-published { color: #34c759; font-weight: 600; }
     .status-draft { color: #ff9500; font-weight: 600; }
-    .actions { display: flex; gap: 8px; }
     .empty-state { text-align: center; padding: 60px 20px; color: #666; }
     .form-group { margin-bottom: 16px; }
     .form-label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }

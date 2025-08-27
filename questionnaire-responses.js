@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestionnaire = null;
   let responses = [];
   let currentResponseIndex = 0;
+  let currentPage = 1;
+  let itemsPerPage = 10;
+  let totalResponses = [];
   
   // 从API或localStorage加载答卷数据
   let mockResponses = [];
@@ -119,8 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
+    totalResponses = mockResponses;
     responses = mockResponses;
     console.log('最终响应数据:', responses);
+    updatePagination();
     renderResponsesTable();
   }
   
@@ -242,7 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return answer.toLowerCase().includes(searchTerm);
     });
     
-    responses = filteredResponses;
+    totalResponses = filteredResponses;
+    currentPage = 1;
+    updatePagination();
     renderResponsesTable();
   });
   
@@ -250,14 +257,72 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filterEmpty').addEventListener('change', (e) => {
     if (e.target.checked) {
       const currentField = currentQuestionnaire?.fields[questionIndex];
-      responses = mockResponses.filter(response => {
+      totalResponses = mockResponses.filter(response => {
         const answer = response.answers[currentField?.name] || '';
         return answer.trim() !== '';
       });
     } else {
-      responses = mockResponses;
+      totalResponses = mockResponses;
     }
+    currentPage = 1;
+    updatePagination();
     renderResponsesTable();
+  });
+  
+  // 分页功能
+  function updatePagination() {
+    const totalItems = totalResponses.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    // 更新计数显示
+    const responseCountEl = document.getElementById('responseCount');
+    if (responseCountEl) {
+      responseCountEl.textContent = `共${totalItems}条`;
+    }
+    
+    // 更新页码显示
+    const paginationInfo = document.querySelector('.pagination-controls span:last-of-type');
+    if (paginationInfo) {
+      paginationInfo.textContent = `${currentPage}/${totalPages || 1}`;
+    }
+    
+    // 计算当前页数据
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    responses = totalResponses.slice(startIndex, endIndex);
+  }
+  
+  // 每页条数选择
+  document.querySelector('select').addEventListener('change', (e) => {
+    itemsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    updatePagination();
+    renderResponsesTable();
+  });
+  
+  // 分页按钮事件
+  document.querySelectorAll('.page-btn').forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+      const totalPages = Math.ceil(totalResponses.length / itemsPerPage);
+      
+      switch(index) {
+        case 0: // 首页
+          currentPage = 1;
+          break;
+        case 1: // 上一页
+          if (currentPage > 1) currentPage--;
+          break;
+        case 2: // 下一页
+          if (currentPage < totalPages) currentPage++;
+          break;
+        case 3: // 末页
+          currentPage = totalPages;
+          break;
+      }
+      
+      updatePagination();
+      renderResponsesTable();
+    });
   });
   
   // 导出Excel功能

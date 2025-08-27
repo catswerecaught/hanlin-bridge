@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="question-editor" data-question-id="${field.id}">
         <div class="question-number">${questionNumber}</div>
         <div class="question-actions">
-          <button class="action-btn" title="复制" data-action="copy">[复制]</button>
-          <button class="action-btn" title="删除" data-action="delete">[删除]</button>
+          <button class="action-btn" title="复制" data-action="copy"><span class="icon-copy"></span></button>
+          <button class="action-btn" title="删除" data-action="delete"><span class="icon-delete"></span></button>
         </div>
         
         <div class="form-group">
