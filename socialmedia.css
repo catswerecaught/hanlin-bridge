@@ -1,0 +1,710 @@
+/* 社媒页面样式 */
+.social-container {
+    display: grid;
+    grid-template-columns: 275px 1fr 350px;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+    min-height: calc(100vh - 68px);
+    position: relative;
+    background: white;
+}
+
+/* 左侧导航栏 */
+.social-sidebar {
+    position: sticky;
+    top: 68px;
+    height: calc(100vh - 68px);
+    padding: 20px;
+    background: white;
+    overflow-y: auto;
+    z-index: 5;
+}
+
+.social-nav {
+    margin-bottom: 40px;
+}
+
+.social-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text-color);
+}
+
+.social-nav-item:hover {
+    background-color: rgba(15, 20, 25, 0.1);
+}
+
+.social-nav-item.active {
+    font-weight: 700;
+}
+
+.social-icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+.social-nav-item:first-child .social-icon {
+    transform: none;
+}
+
+.post-button {
+    width: 90%;
+    padding: 16px 0;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.post-button:hover {
+    background: #1a8cd8;
+}
+
+/* 主内容区 */
+.main-feed {
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    min-height: 100vh;
+    background: white;
+    position: relative;
+    z-index: 1;
+}
+
+.feed-header {
+    position: sticky;
+    top: 68px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 56px;
+}
+
+.feed-tabs {
+    display: flex;
+    height: 100%;
+}
+
+.feed-tab {
+    background: none;
+    border: none;
+    padding: 0 24px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    position: relative;
+    height: 100%;
+    transition: color 0.2s;
+}
+
+.feed-tab:hover {
+    color: var(--text-color);
+}
+
+.feed-tab.active {
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.feed-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: var(--primary-blue);
+    border-radius: 2px;
+}
+
+.settings-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--secondary-text-color);
+    cursor: pointer;
+}
+
+/* 发帖编辑器 */
+.post-composer {
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+}
+
+.compose-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.user-avatar-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.user-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.compose-input-container {
+    flex: 1;
+}
+
+#postContent {
+    width: 100%;
+    min-height: 56px;
+    border: none;
+    outline: none;
+    font-size: 20px;
+    line-height: 24px;
+    resize: none;
+    font-family: inherit;
+    color: var(--text-color);
+    background: transparent;
+    padding: 8px 0;
+}
+
+#postContent::placeholder {
+    color: var(--secondary-text-color);
+}
+
+.compose-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.compose-tools {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.compose-tool {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.compose-tool:hover {
+    background: rgba(29, 155, 240, 0.1);
+}
+
+.compose-tool svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--primary-blue);
+}
+
+.char-count {
+    font-size: 13px;
+    color: var(--secondary-text-color);
+}
+
+.post-submit-btn {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.post-submit-btn:disabled {
+    background: #1d9bf0;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.post-submit-btn:not(:disabled):hover {
+    background: #1a8cd8;
+}
+
+/* 帖子样式 */
+.post-item {
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.post-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.post-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-user-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+
+.post-user-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-color);
+}
+
+.post-username {
+    font-size: 15px;
+    color: var(--secondary-text-color);
+}
+
+.post-time {
+    font-size: 15px;
+    color: var(--secondary-text-color);
+}
+
+.vip-badge {
+    width: 16px !important;
+    height: 16px !important;
+    margin-left: 4px !important;
+    vertical-align: middle;
+}
+
+.post-content {
+    font-size: 15px;
+    line-height: 20px;
+    color: var(--text-color);
+    margin-bottom: 12px;
+    margin-left: 60px;
+}
+
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    max-width: 425px;
+    margin-left: 60px;
+}
+
+.post-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 13px;
+    color: var(--secondary-text-color);
+}
+
+.post-action:hover {
+    background: rgba(29, 161, 242, 0.1);
+}
+
+.post-action:hover svg {
+    fill: rgb(29, 161, 242);
+    transform: scale(1.1);
+}
+
+.post-action svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.post-action[data-action="view"]:hover {
+    background: transparent;
+}
+
+.post-action[data-action="view"]:hover svg {
+    fill: var(--secondary-text-color);
+    transform: none;
+}
+
+.post-action[data-action="like"]:hover {
+    background: transparent;
+}
+
+.post-action[data-action="like"]:hover svg {
+    fill: rgb(249, 24, 128);
+    transform: scale(1.1);
+}
+
+.post-action[data-action="comment"]:hover {
+    background: transparent;
+}
+
+.post-action[data-action="comment"]:hover svg {
+    fill: rgb(29, 161, 242);
+    transform: scale(1.1);
+}
+
+.post-action.liked svg {
+    fill: rgb(249, 24, 128);
+}
+
+.post-action.liked:hover {
+    background: rgba(249, 24, 128, 0.1);
+}
+
+
+.post-action.liked:hover svg {
+    fill: rgb(249, 24, 128);
+    transform: scale(1.1);
+}
+
+.post-action[data-action="retweet"]:hover {
+    background: transparent;
+}
+
+.post-action[data-action="retweet"]:hover svg {
+    fill: rgb(0, 186, 124);
+    transform: scale(1.1);
+}
+
+.post-action.retweeted:hover {
+    background: rgba(0, 186, 124, 0.1);
+}
+
+.post-action.retweeted svg {
+    fill: rgb(0, 186, 124);
+}
+
+.post-action.retweeted:hover svg {
+    fill: rgb(0, 186, 124);
+    transform: scale(1.1);
+}
+
+.post-menu {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.post-menu:hover {
+    background: rgba(29, 161, 242, 0.1);
+}
+
+.post-menu svg {
+    width: 18px;
+    height: 18px;
+    fill: var(--secondary-text-color);
+}
+
+/* 右侧边栏 */
+.right-sidebar {
+    position: sticky;
+    top: 68px;
+    height: calc(100vh - 68px);
+    padding: 20px;
+    overflow-y: auto;
+    background: white;
+    z-index: 5;
+}
+
+.right-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+/* 搜索框 */
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    background: rgb(239, 243, 244);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    height: 44px;
+    transition: background-color 0.2s;
+}
+
+.search-input-wrapper:focus-within {
+    background: white;
+    border: 1px solid var(--primary-blue);
+}
+
+.search-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--secondary-text-color);
+    margin-right: 16px;
+}
+
+#searchInput {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--text-color);
+    flex: 1;
+}
+
+#searchInput::placeholder {
+    color: var(--secondary-text-color);
+}
+
+/* 卡片通用样式 */
+.premium-card,
+.suggestions-card,
+.trends-card {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #e1e8ed;
+}
+
+.premium-card h3,
+.suggestions-card h3,
+.trends-card h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px 16px 16px;
+}
+
+.premium-card p {
+    color: var(--secondary-text-color);
+    font-size: 15px;
+    line-height: 20px;
+    margin: 0 16px 16px;
+}
+
+.subscribe-btn,
+.show-more-btn {
+    background: var(--text-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin: 0 16px 16px;
+}
+
+.show-more-btn {
+    background: transparent;
+    color: var(--primary-blue);
+    padding: 16px;
+    width: 100%;
+    text-align: left;
+    margin: 0;
+    font-weight: 400;
+    border-radius: 0 0 16px 16px;
+}
+
+.show-more-btn:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* 推荐用户列表 */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background: rgba(15, 20, 25, 0.1);
+}
+
+.suggestion-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.suggestion-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.suggestion-info {
+    flex: 1;
+}
+
+.suggestion-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 2px;
+}
+
+.suggestion-username {
+    font-size: 13px;
+    color: var(--secondary-text-color);
+}
+
+.follow-btn {
+    background: var(--text-color);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.follow-btn:hover {
+    background: rgb(39, 44, 48);
+}
+
+/* 趋势列表 */
+.trend-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trend-item:hover {
+    background: rgba(15, 20, 25, 0.1);
+}
+
+.trend-category {
+    font-size: 13px;
+    color: var(--secondary-text-color);
+    margin-bottom: 2px;
+}
+
+.trend-topic {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 2px;
+}
+
+.trend-count {
+    font-size: 13px;
+    color: var(--secondary-text-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .social-container {
+        grid-template-columns: 240px 1fr 300px;
+    }
+    
+    .social-sidebar {
+        width: 240px;
+        left: 20px;
+    }
+    
+    .right-sidebar {
+        width: 300px;
+        right: 20px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .social-container {
+        grid-template-columns: 80px 1fr 280px;
+    }
+    
+    .social-sidebar {
+        width: 80px;
+        left: 20px;
+    }
+    
+    .social-nav-item span {
+        display: none;
+    }
+    
+    .post-button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .right-sidebar {
+        width: 280px;
+        right: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .social-container {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .social-sidebar,
+    .right-sidebar {
+        display: none;
+    }
+    
+    .main-feed {
+        border: none;
+    }
+}

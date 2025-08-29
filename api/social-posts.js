@@ -1,0 +1,282 @@
+// 社交媒体帖子 API - 使用 Upstash 存储
+const SOCIAL_POSTS_KEY = 'social-posts';
+const SOCIAL_POST_PREFIX = 'social-post-';
+
+function unwrapKV(result) {
+  try {
+    console.log('原始数据:', typeof result === 'string' ? result : JSON.stringify(result));
+    
+    // 首次解析（处理字符串或对象）
+    let data = typeof result === 'string' ? 
+      JSON.parse(result.replace(/\\"/g, '"')) : 
+      result;
+    
+    // 解包嵌套的value结构
+    while (data && typeof data === 'object' && data.value) {
+      data = data.value;
+    }
+    
+    // 处理可能存在的二次字符串化情况
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        console.error('二级JSON解析失败:', e);
+      }
+    }
+    
+    console.log('最终解包结果:', data);
+    return data;
+  } catch (e) {
+    console.error('解包过程异常:', e);
+    return null;
+  }
+}
+
+// 从 Upstash 读取帖子数据
+async function readPosts(apiUrl, apiToken) {
+    try {
+        const resp = await fetch(`${apiUrl}/get/${SOCIAL_POSTS_KEY}`, {
+            headers: { 'Authorization': `Bearer ${apiToken}` }
+        });
+        
+        if (!resp.ok) {
+            console.log('未找到帖子数据，初始化新数据');
+            return await initializePosts(apiUrl, apiToken);
+        }
+        
+        const data = await resp.json();
+        const posts = unwrapKV(data.result);
+        
+        if (!posts || !Array.isArray(posts)) {
+            console.log('帖子数据格式无效，重新初始化');
+            return await initializePosts(apiUrl, apiToken);
+        }
+        
+        return posts;
+    } catch (error) {
+        console.error('读取帖子数据失败:', error);
+        return await initializePosts(apiUrl, apiToken);
+    }
+}
+
+// 写入帖子数据到 Upstash
+async function writePosts(posts, apiUrl, apiToken) {
+    try {
+        const resp = await fetch(`${apiUrl}/set/${SOCIAL_POSTS_KEY}`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(posts)
+        });
+        
+        if (!resp.ok) {
+            console.error('写入帖子数据失败:', resp.status);
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('写入帖子数据异常:', error);
+        return false;
+    }
+}
+
+
+// 初始化帖子数据
+async function initializePosts(apiUrl, apiToken) {
+    const initialPosts = [
+        {
+            id: 1,
+            userId: 'user00001',
+            userName: '陶先生',
+            userAvatar: 'images/user00001.jpg',
+            userVip: 'Pro会员',
+            content: '刚刚发布了翰林桥的新功能！大家可以在这里分享学习心得和讨论学术问题了 🎓',
+            timestamp: new Date(Date.now() - 3600000), // 1小时前
+            likes: 24,
+            retweets: 5,
+            comments: 8,
+            views: 156,
+            liked: false,
+            retweeted: false
+        },
+        {
+            id: 2,
+            userId: 'user00002',
+            userName: '生物杨老师',
+            userAvatar: 'images/user00002.jpg',
+            userVip: 'Pro会员',
+            content: '分享一个生物学习小技巧：记忆细胞结构时，可以把细胞比作一个城市，各个细胞器就像城市的不同功能区域。这样记忆会更加深刻！',
+            timestamp: new Date(Date.now() - 7200000), // 2小时前
+            likes: 18,
+            retweets: 12,
+            comments: 6,
+            views: 89,
+            liked: true,
+            retweeted: false
+        },
+        {
+            id: 3,
+            userId: 'user00003',
+            userName: '化学孙老师',
+            userAvatar: 'images/user00003.jpg',
+            userVip: 'Pro会员',
+            content: '今天的化学实验太有趣了！看到学生们对化学反应的好奇眼神，感觉所有的努力都值得了 ⚗️✨',
+            timestamp: new Date(Date.now() - 10800000), // 3小时前
+            likes: 31,
+            retweets: 3,
+            comments: 11,
+            views: 203,
+            liked: false,
+            retweeted: true
+        },
+        {
+            id: 4,
+            userId: 'user00005',
+            userName: '邬学长',
+            userAvatar: 'images/user00005.jpg',
+            userVip: '普通会员',
+            content: '备考期间，保持良好的心态很重要。每天给自己设定小目标，完成后给自己一点奖励。加油，所有正在努力的同学们！💪',
+            timestamp: new Date(Date.now() - 14400000), // 4小时前
+            likes: 45,
+            retweets: 8,
+            comments: 15,
+            views: 287,
+            liked: false,
+            retweeted: false
+        },
+        {
+            id: 5,
+            userId: 'user00007',
+            userName: '王学姐',
+            userAvatar: 'images/user00007.jpg',
+            userVip: '普通会员',
+            content: '推荐一个学习方法：番茄工作法。25分钟专注学习+5分钟休息，效果真的很不错！特别适合注意力容易分散的同学。',
+            timestamp: new Date(Date.now() - 18000000), // 5小时前
+            likes: 22,
+            retweets: 7,
+            comments: 9,
+            views: 145,
+            liked: true,
+            retweeted: false
+        }
+    ];
+
+    // 写入初始数据到 Upstash
+    await writePosts(initialPosts, apiUrl, apiToken);
+    return initialPosts;
+}
+
+export default async function handler(req, res) {
+    // 设置CORS头
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    
+    if (!apiUrl || !apiToken) {
+        return res.status(500).json({ 
+            error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set',
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    const { method, url: reqUrl } = req;
+    const urlParts = reqUrl.split('/');
+    const postId = urlParts[urlParts.length - 1];
+
+    try {
+        if (method === 'GET') {
+            // 获取所有帖子
+            const posts = await readPosts(apiUrl, apiToken);
+            res.status(200).json(posts);
+        } else if (method === 'POST') {
+            // 创建新帖子
+            const posts = await readPosts(apiUrl, apiToken);
+            const newPost = req.body;
+            
+            // 生成新ID
+            newPost.id = Math.max(...posts.map(p => p.id), 0) + 1;
+            newPost.timestamp = new Date();
+            newPost.likes = 0;
+            newPost.retweets = 0;
+            newPost.comments = 0;
+            newPost.views = 0;
+            newPost.liked = false;
+            newPost.retweeted = false;
+            
+            posts.unshift(newPost);
+            const success = await writePosts(posts, apiUrl, apiToken);
+            
+            if (success) {
+                res.status(201).json(newPost);
+            } else {
+                res.status(500).json({ error: 'Failed to save post' });
+            }
+        } else if (method === 'PATCH') {
+            // 更新帖子（点赞、转发等）
+            const posts = await readPosts(apiUrl, apiToken);
+            const { action } = req.body;
+            
+            const post = posts.find(p => p.id == postId);
+            if (!post) {
+                return res.status(404).json({ error: 'Post not found' });
+            }
+            
+            switch (action) {
+                case 'like':
+                    post.liked = !post.liked;
+                    post.likes += post.liked ? 1 : -1;
+                    break;
+                case 'retweet':
+                    post.retweeted = !post.retweeted;
+                    post.retweets += post.retweeted ? 1 : -1;
+                    break;
+                case 'view':
+                    post.views += 1;
+                    break;
+                default:
+                    return res.status(400).json({ error: 'Invalid action' });
+            }
+            
+            const success = await writePosts(posts, apiUrl, apiToken);
+            if (success) {
+                res.status(200).json(post);
+            } else {
+                res.status(500).json({ error: 'Failed to update post' });
+            }
+        } else if (method === 'DELETE') {
+            // 删除帖子
+            const posts = await readPosts(apiUrl, apiToken);
+            const filteredPosts = posts.filter(p => p.id != postId);
+            
+            if (filteredPosts.length === posts.length) {
+                return res.status(404).json({ error: 'Post not found' });
+            }
+            
+            const success = await writePosts(filteredPosts, apiUrl, apiToken);
+            if (success) {
+                res.status(200).json({ message: 'Post deleted successfully' });
+            } else {
+                res.status(500).json({ error: 'Failed to delete post' });
+            }
+            
+        } else {
+            res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
+            res.status(405).end(`Method ${method} Not Allowed`);
+        }
+        
+    } catch (error) {
+        console.error('Social posts API error:', error);
+        res.status(500).json({ error: 'Internal server error', detail: error.message });
+    }
+}
