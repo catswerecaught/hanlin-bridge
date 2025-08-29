@@ -77,13 +77,37 @@ async function handleApi(req, res, pathname) {
   } catch {
     return send(res, 404, { error: 'API file not found' });
   }
+
+  // 简单的 JSON 请求体解析器
+  async function parseJsonBody(request) {
+    return await new Promise((resolve) => {
+      const chunks = [];
+      request.on('data', (c) => chunks.push(c));
+      request.on('end', () => {
+        if (!chunks.length) return resolve(undefined);
+        const raw = Buffer.concat(chunks).toString('utf8');
+        if (!raw) return resolve(undefined);
+        try {
+          resolve(JSON.parse(raw));
+        } catch {
+          resolve(undefined);
+        }
+      });
+    });
+  }
   try {
     const modPath = url.pathToFileURL(file).href;
     const mod = await import(modPath);
     const handler = mod.default;
     if (typeof handler !== 'function') return send(res, 500, { error: 'Invalid API handler' });
     enhanceRes(res);
-    enhanceReq(req, new URL(req.url, `http://${req.headers.host}`));
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    enhanceReq(req, parsedUrl);
+    // 仅当是 JSON 请求时解析 body
+    const ct = (req.headers['content-type'] || '').toLowerCase();
+    if (ct.includes('application/json')) {
+      req.body = await parseJsonBody(req);
+    }
     await handler(req, res);
   } catch (e) {
     console.error('API error:', e);

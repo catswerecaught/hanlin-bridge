@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
         suggestions: [],
         trends: []
     };
+    // 防止重复绑定全局事件
+    let documentClickBound = false;
 
     // DOM 元素
     const postContent = document.getElementById('postContent');
@@ -46,45 +48,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getCurrentUser() {
-        // 检查多种可能的登录状态存储方式
-        let storedUser = localStorage.getItem('currentUser');
-        if (!storedUser) {
-            storedUser = localStorage.getItem('loggedInUser');
-        }
-        if (!storedUser) {
-            storedUser = sessionStorage.getItem('currentUser');
-        }
-        
+        // 统一优先读取 script.js 设置的 loginUser
+        let storedUser = localStorage.getItem('loginUser');
+        if (!storedUser) storedUser = localStorage.getItem('currentUser');
+        if (!storedUser) storedUser = localStorage.getItem('loggedInUser');
+        if (!storedUser) storedUser = sessionStorage.getItem('currentUser');
+
         if (storedUser) {
             try {
                 const userData = JSON.parse(storedUser);
                 console.log('找到存储的用户数据:', userData);
-                // 从users数组中找到完整的用户信息
-                const foundUser = users.find(user => 
-                    user.username === userData.username || 
-                    user.username === userData.name ||
-                    user.name === userData.username
-                );
+                // 从users数组中找到完整的用户信息，找不到则直接返回存储对象
+                const foundUser = users.find(user => user.username === userData.username || user.name === userData.username) || userData;
                 console.log('匹配到的用户:', foundUser);
                 return foundUser;
             } catch (e) {
                 console.error('解析用户数据失败:', e);
                 // 如果是字符串格式，尝试直接匹配
-                const foundUser = users.find(user => 
-                    user.username === storedUser || user.name === storedUser
-                );
-                return foundUser;
+                const foundUser = users.find(user => user.username === storedUser || user.name === storedUser);
+                return foundUser || null;
             }
         }
-        
+
         // 检查是否有其他登录标识
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         if (isLoggedIn) {
-            // 如果有登录标识但没有用户数据，返回第一个用户作为默认
             console.log('检测到登录状态但无用户数据，使用默认用户');
-            return users[0]; // 返回陶先生作为默认登录用户
+            return users[0];
         }
-        
+
         return null;
     }
 
@@ -235,12 +227,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateSuggestions() {
-        // 随机选择一些用户作为推荐关注
+        // 随机选择用户作为推荐关注，并限制为3个
         const availableUsers = users.filter(user => 
             !socialData.currentUser || user.username !== socialData.currentUser.username
         );
-        
-        return availableUsers.slice(0, 4).map(user => ({
+        // 打乱顺序
+        const shuffled = [...availableUsers].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 3).map(user => ({
             ...user,
             followers: Math.floor(Math.random() * 1000) + 100
         }));
@@ -371,7 +364,8 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
-            `<img class="vip-badge" src="images/smverified.png" alt="认证用户" style="width: 16px; height: 16px; margin-left: 4px;">` : '';
+            `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
+        const isSupreme = socialData.currentUser && socialData.currentUser.supreme === true;
 
         return `
             <article class="post-item" data-post-id="${post.id}">
@@ -381,15 +375,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="post-user-info">
                         <span class="post-user-name">${user.name}</span>
+                        ${verifiedBadge}
                         <span class="post-username">@${user.username}</span>
                         <span class="post-time">·</span>
                         <span class="post-time">${timeAgo}</span>
-                        ${verifiedBadge}
                     </div>
                     <div class="post-menu">
                         <svg viewBox="0 0 24 24">
                             <path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
                         </svg>
+                        ${isSupreme ? `
+                        <div class="post-menu-dropdown" data-dropdown>
+                            <div class="post-menu-item" data-action="delete">删除帖子</div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
                 <div class="post-content">${post.content}</div>
@@ -424,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addPostEventListeners() {
-        // 帖子交互事件
+        // 帖子交互事件（点赞/转发/评论/浏览）
         document.querySelectorAll('.post-action').forEach(action => {
             action.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -433,6 +432,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 handlePostAction(actionType, postId, this);
             });
         });
+
+        // 三点菜单开关
+        document.querySelectorAll('.post-menu').forEach(menu => {
+            menu.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.querySelector('[data-dropdown]');
+                if (!dropdown) return;
+                // 关闭其他下拉
+                document.querySelectorAll('.post-menu-dropdown.show').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('show');
+                });
+                dropdown.classList.toggle('show');
+            });
+        });
+
+        // 菜单项点击
+        document.querySelectorAll('.post-menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const actionType = this.dataset.action;
+                const postId = parseInt(this.closest('.post-item').dataset.postId);
+                handlePostAction(actionType, postId, this);
+                // 关闭菜单
+                const dropdown = this.closest('.post-menu-dropdown');
+                if (dropdown) dropdown.classList.remove('show');
+            });
+        });
+
+        // 点击外部关闭所有菜单（只绑定一次）
+        if (!documentClickBound) {
+            document.addEventListener('click', function closeAllMenus() {
+                document.querySelectorAll('.post-menu-dropdown.show').forEach(d => d.classList.remove('show'));
+            });
+            documentClickBound = true;
+        }
     }
 
     async function handlePostAction(action, postId, element) {
@@ -449,6 +483,49 @@ document.addEventListener('DOMContentLoaded', function() {
             // 初始化数组如果不存在
             if (!post.likedBy) post.likedBy = [];
             if (!post.retweetedBy) post.retweetedBy = [];
+        }
+
+        if (action === 'delete') {
+            if (!socialData.currentUser || socialData.currentUser.supreme !== true) {
+                alert('无权限删除帖子');
+                return;
+            }
+            if (!confirm('确定删除该帖子？此操作不可撤销。')) return;
+            try {
+                const headers = { 'X-Admin-Username': socialData.currentUser.username };
+                const token = sessionStorage.getItem('supremeDeleteToken');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                let resp = await fetch(`/api/social-posts?id=${postId}`, {
+                    method: 'DELETE',
+                    headers
+                });
+
+                // 如果需要令牌且未提供，允许用户输入令牌后重试
+                if (resp.status === 403 && !token) {
+                    const input = prompt('请输入管理员令牌以删除帖子：');
+                    if (input && input.trim()) {
+                        sessionStorage.setItem('supremeDeleteToken', input.trim());
+                        headers['Authorization'] = `Bearer ${input.trim()}`;
+                        resp = await fetch(`/api/social-posts?id=${postId}`, {
+                            method: 'DELETE',
+                            headers
+                        });
+                    }
+                }
+
+                if (resp.ok) {
+                    socialData.posts = socialData.posts.filter(p => p.id !== postId);
+                    renderPosts();
+                    showToast('帖子已删除');
+                } else {
+                    const err = await resp.json().catch(() => ({}));
+                    showToast(err.error || '删除失败');
+                }
+            } catch (e) {
+                showToast('删除失败');
+            }
+            return; // 删除无需执行后续PATCH同步
         }
 
         switch (action) {
@@ -493,17 +570,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 尝试同步到后端
         try {
-            await fetch(`/api/social-posts/${postId}`, {
+            await fetch(`/api/social-posts?id=${postId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    likes: post.likes,
-                    retweets: post.retweets,
-                    comments: post.comments,
-                    views: post.views,
-                    liked: post.liked,
-                    retweeted: post.retweeted
-                })
+                body: JSON.stringify({ action })
             });
         } catch (error) {
             // API不可用时忽略错误

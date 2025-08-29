@@ -174,7 +174,7 @@ export default async function handler(req, res) {
     // 设置CORS头
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Username');
     
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -190,9 +190,19 @@ export default async function handler(req, res) {
         });
     }
 
-    const { method, url: reqUrl } = req;
-    const urlParts = reqUrl.split('/');
-    const postId = urlParts[urlParts.length - 1];
+    const { method } = req;
+    // 优先从查询参数读取 postId，兼容 /api/social-posts?id=123
+    // 同时保留对 /api/social-posts/123 这种路径形式的回退兼容
+    const postId = (req.query && (req.query.id || req.query.postId)) || (() => {
+        try {
+            const pathname = new URL(req.url, 'http://localhost').pathname;
+            const parts = pathname.split('/');
+            const last = parts[parts.length - 1];
+            return /^\d+$/.test(last) ? last : null;
+        } catch {
+            return null;
+        }
+    })();
 
     try {
         if (method === 'GET') {
@@ -227,6 +237,9 @@ export default async function handler(req, res) {
             const posts = await readPosts(apiUrl, apiToken);
             const { action } = req.body;
             
+            if (!postId) {
+                return res.status(400).json({ error: 'Missing post id' });
+            }
             const post = posts.find(p => p.id == postId);
             if (!post) {
                 return res.status(404).json({ error: 'Post not found' });
@@ -255,7 +268,31 @@ export default async function handler(req, res) {
                 res.status(500).json({ error: 'Failed to update post' });
             }
         } else if (method === 'DELETE') {
-            // 删除帖子
+            // 删除帖子（仅超级管理员）
+            // 校验权限：优先使用口令校验，其次使用用户名白名单
+            const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+            const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+            const requiredToken = process.env.SUPREME_DELETE_TOKEN;
+            const adminUsername = req.headers['x-admin-username'] || req.headers['X-Admin-Username'];
+            const allowedAdmins = (process.env.SUPREME_USERNAMES || 'taosir')
+                .split(',')
+                .map(s => s && s.trim())
+                .filter(Boolean);
+
+            if (requiredToken) {
+                if (!bearer || bearer !== requiredToken) {
+                    return res.status(403).json({ error: 'Forbidden: invalid admin token' });
+                }
+            } else {
+                if (!adminUsername || !allowedAdmins.includes(adminUsername)) {
+                    return res.status(403).json({ error: 'Forbidden: not allowed' });
+                }
+            }
+
+            if (!postId) {
+                return res.status(400).json({ error: 'Missing post id' });
+            }
+
             const posts = await readPosts(apiUrl, apiToken);
             const filteredPosts = posts.filter(p => p.id != postId);
             
