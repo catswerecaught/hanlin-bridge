@@ -410,8 +410,9 @@
 }
 
 .post-actions {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 equal columns */
+    column-gap: 16px; /* consistent gaps */
     max-width: 425px;
     margin-left: 60px;
     width: 100%;
@@ -430,6 +431,9 @@
     color: var(--secondary-text-color);
     min-width: 60px;
     justify-content: flex-start;
+    white-space: nowrap; /* prevent count wrapping */
+    height: 34px; /* consistent control height */
+    box-sizing: border-box;
 }
 
 .post-action:hover {
@@ -447,13 +451,20 @@
     fill: currentColor;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: block; /* avoid baseline shift */
+    flex: 0 0 18px; /* fixed icon slot */
 }
 
 /* keep numbers from shifting icon positions */
 .post-action span {
     display: inline-block;
-    min-width: 16px;
+    width: 64px; /* fixed slot fits up to very long counts */
+    text-align: left; /* align numbers next to the icon */
     line-height: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    font-variant-numeric: tabular-nums; /* use equal-width digits */
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    flex: 0 0 64px; /* fixed count slot */
 }
 
 .post-action[data-action="view"]:hover {
@@ -869,13 +880,23 @@
         border: none;
     }
     
-    /* Reduce spacing between interaction components on mobile */
+    /* Reduce spacing and slot sizes between interaction components on mobile */
     .post-actions {
         max-width: 340px;
+        column-gap: 12px; /* tighter grid gap */
     }
     .post-action {
         min-width: 44px;
         padding: 6px;
         gap: 6px;
+    }
+    .post-action svg {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+    }
+    .post-action span {
+        width: 48px; /* smaller reserved width for small screens */
+        flex: 0 0 48px;
     }
 }
