@@ -337,16 +337,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateSuggestions() {
-        // 随机选择用户作为推荐关注，并限制为3个
-        const availableUsers = users.filter(user => 
-            !socialData.currentUser || user.username !== socialData.currentUser.username
-        );
-        // 打乱顺序
-        const shuffled = [...availableUsers].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, 3).map(user => ({
-            ...user,
-            followers: Math.floor(Math.random() * 1000) + 100
-        }));
+        // 固定推荐三个账号：Oliver Tao、Tuebo Social、翰林桥官方
+        const fixedSuggestions = ['taosir', 'user00007', 'user00010'];
+        const suggestedUsers = [];
+        
+        fixedSuggestions.forEach(username => {
+            const user = users.find(u => u.username === username);
+            if (user && (!socialData.currentUser || user.username !== socialData.currentUser.username)) {
+                suggestedUsers.push({
+                    ...user,
+                    followers: Math.floor(Math.random() * 1000) + 100
+                });
+            }
+        });
+        
+        return suggestedUsers;
     }
 
     function generateTrends() {
@@ -464,6 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 添加帖子交互事件
         addPostEventListeners();
+        
+        // 添加hashtag点击事件
+        addHashtagEventListeners();
     }
 
     function createPostHTML(post) {
@@ -951,13 +959,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderTrends() {
-        trendsList.innerHTML = socialData.trends.map(trend => `
-            <div class="trend-item">
-                <div class="trend-category">${trend.category}</div>
-                <div class="trend-topic">${trend.topic}</div>
-                <div class="trend-count">${trend.count}</div>
+        const trendingHashtags = getTrendingHashtags();
+        if (trendingHashtags.length === 0) {
+            trendsList.innerHTML = '<div style="padding: 16px; color: var(--secondary-text-color); text-align: center;">暂无趋势内容</div>';
+            return;
+        }
+        
+        // 随机排序显示趋勿
+        const shuffledTrends = [...trendingHashtags].sort(() => Math.random() - 0.5);
+        const trendsToShow = shuffledTrends.slice(0, 5); // 只显示5个
+        
+        trendsList.innerHTML = trendsToShow.map(trend => `
+            <div class="trend-item" data-hashtag="${trend.hashtag}" style="cursor: pointer;">
+                <div class="trend-category">Tuebo · 趋势</div>
+                <div class="trend-topic">${trend.hashtag}</div>
+                <div class="trend-count">${trend.count} 贴子</div>
             </div>
         `).join('');
+        
+        // 添加趋勿点击事件
+        document.querySelectorAll('.trend-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const hashtag = this.dataset.hashtag;
+                if (hashtag) {
+                    socialData.searchState.isSearching = true;
+                    socialData.searchState.showingTrends = false;
+                    socialData.searchState.query = hashtag;
+                    performSearch(hashtag);
+                }
+            });
+        });
     }
     
     // 提取帖子中的hashtag
@@ -999,7 +1030,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function highlightHashtags(text) {
         if (!text) return text;
         // 匹配中文和英文的#号和内容
-        return text.replace(/([#＃])([\u4e00-\u9fa5\w]+)/g, '<span class="post-hashtag">$1$2</span>');
+        return text.replace(/([#＃])([\u4e00-\u9fa5\w]+)/g, '<span class="post-hashtag" data-hashtag="$2">$1$2</span>');
+    }
+    
+    // 添加hashtag点击事件监听
+    function addHashtagEventListeners() {
+        document.querySelectorAll('.post-hashtag').forEach(hashtag => {
+            hashtag.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const hashtagText = this.dataset.hashtag;
+                if (hashtagText) {
+                    // 进入搜索模式并搜索hashtag
+                    socialData.searchState.isSearching = true;
+                    socialData.searchState.showingTrends = false;
+                    socialData.searchState.query = hashtagText;
+                    performSearch(hashtagText);
+                }
+            });
+        });
     }
 
     function performSearch(query) {
@@ -1008,14 +1056,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!query || query.trim().length < 2) return;
         
         socialData.searchState.isSearching = true;
-        socialData.searchState.query = query.toLowerCase();
-        socialData.searchState.showingTrends = false; // 搜索后不再显示趋势
+        socialData.searchState.query = query; // 保持原始查询不进行大小写转换
+        socialData.searchState.showingTrends = false; // 搜索后不再显示趋勿
+        
+        const searchQuery = query.toLowerCase(); // 用于搜索的小写版本
         
         // 搜索用户
         const userResults = users.filter(user =>
-            user.name.toLowerCase().includes(query) ||
-            user.username.toLowerCase().includes(query) ||
-            (user.description && user.description.toLowerCase().includes(query))
+            user.name.toLowerCase().includes(searchQuery) ||
+            user.username.toLowerCase().includes(searchQuery) ||
+            (user.description && user.description.toLowerCase().includes(searchQuery))
         );
 
         // 搜索帖子
@@ -1026,9 +1076,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const userName = (post.user && post.user.name) ? post.user.name.toLowerCase() : '';
             const userUsername = (post.user && post.user.username) ? post.user.username.toLowerCase() : '';
             
-            return content.includes(query) || 
-                   userName.includes(query) || 
-                   userUsername.includes(query);
+            return content.includes(searchQuery) || 
+                   userName.includes(searchQuery) || 
+                   userUsername.includes(searchQuery);
         });
 
         socialData.searchState.results = {
@@ -1131,8 +1181,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="trending-header">当前趋势</div>
                         <div class="trending-list">
                             ${trendingHashtags.map((trend, index) => `
-                                <div class="trending-item">
-                                    <div class="trending-location">${index + 1}·Tuebo 的趋势</div>
+                                <div class="trending-item" data-hashtag="${trend.hashtag}" style="cursor: pointer;">
+                                    <div class="trending-location">${index + 1}·Tuebo 的趋勿</div>
                                     <div class="trending-topic">${trend.hashtag}</div>
                                     <div class="trending-count">${trend.count} 条帖子</div>
                                 </div>
@@ -1229,6 +1279,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 添加帖子交互事件
         addPostEventListeners();
+        
+        // 添加hashtag点击事件
+        addHashtagEventListeners();
+        
+        // 添加趋勿项目点击事件（在搜索结果中）
+        document.querySelectorAll('.trending-item[data-hashtag]').forEach(item => {
+            item.addEventListener('click', function() {
+                const hashtag = this.dataset.hashtag;
+                if (hashtag) {
+                    performSearch(hashtag);
+                }
+            });
+        });
     }
 
     function createSearchUserHTML(user) {
