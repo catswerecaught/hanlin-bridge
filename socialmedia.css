@@ -1,7 +1,7 @@
 /* 社媒页面样式 */
 .social-container {
     display: grid;
-    grid-template-columns: 275px 1fr 425px;
+    grid-template-columns: 275px 1fr 400px;
     gap: 0;
     width: 100vw;
     max-width: none;
@@ -160,7 +160,7 @@
     transform: translateX(-50%);
     width: 60px;
     height: 4px;
-    background: var(--primary-blue);
+    background: #000066;
     border-radius: 2px;
 }
 
@@ -789,7 +789,7 @@
 /* 响应式设计 */
 @media (max-width: 1200px) {
     .social-container {
-        grid-template-columns: 240px 1fr 315px;
+        grid-template-columns: 240px 1fr 290px;
         width: 100%;
         max-width: 100vw;
     }
@@ -800,14 +800,14 @@
     }
     
     .right-sidebar {
-        width: 315px;
+        width: 290px;
         right: 20px;
     }
 }
 
 @media (max-width: 1000px) {
     .social-container {
-        grid-template-columns: 80px 1fr 295px;
+        grid-template-columns: 80px 1fr 270px;
     }
     
     .social-sidebar {
@@ -830,7 +830,7 @@
     }
     
     .right-sidebar {
-        width: 295px;
+        width: 270px;
         right: 20px;
     }
 
