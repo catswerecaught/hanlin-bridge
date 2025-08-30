@@ -528,10 +528,6 @@ justify-content: center;
 cursor: pointer;
 transition: none !important;
 }
-.user-avatar:hover .logout-popover,
-.user-avatar .logout-popover:hover {
-/* 不影响头像缩放 */
-}
 .user-avatar-img,
 .user-avatar img,
 .user-avatar .user-initial {

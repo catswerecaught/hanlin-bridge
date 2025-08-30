@@ -69,7 +69,8 @@ async function writePosts(posts, apiUrl, apiToken) {
                 'Authorization': `Bearer ${apiToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(posts)
+            // Upstash KV requires the payload to be wrapped as { "value": ... }
+            body: JSON.stringify({ value: posts })
         });
         
         if (!resp.ok) {
