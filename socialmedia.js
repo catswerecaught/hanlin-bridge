@@ -550,6 +550,10 @@ document.addEventListener('DOMContentLoaded', function() {
         addScrollLoadListener();
     }
 
+    function renderFollowingPosts() {
+        renderPosts('following');
+    }
+
     // 滚动加载更多帖子
     function addScrollLoadListener() {
         // 移除之前的监听器避免重复绑定
