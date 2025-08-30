@@ -329,6 +329,20 @@
     display: inline-block;
 }
 
+.suggestion-name .vip-badge {
+    position: static;
+    right: auto;
+    bottom: auto;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    vertical-align: middle;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    display: inline-block;
+}
+
 /* 帖子三点菜单下拉 */
 .post-menu-dropdown {
     position: absolute;
@@ -644,6 +658,22 @@
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+/* 强制推荐区用户名右侧的认证图标为行内布局，覆盖全局 .vip-badge 绝对定位 */
+.suggestions-card .suggestion-name img.vip-badge,
+.suggestions-list .suggestion-name img.vip-badge {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin-left: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
 }
 
 .suggestion-username {
