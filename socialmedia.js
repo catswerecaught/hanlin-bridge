@@ -170,8 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 retweets: 5,
                 comments: 8,
                 views: 156,
-                liked: false,
-                retweeted: false
+                likedBy: [], // 初始化追踪数组
+                retweetedBy: [],
+                viewedBy: []
             },
             {
                 id: 2,
@@ -182,8 +183,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 retweets: 12,
                 comments: 6,
                 views: 89,
-                liked: true,
-                retweeted: false
+                likedBy: [], // 初始化追踪数组
+                retweetedBy: [],
+                viewedBy: []
             },
             {
                 id: 3,
@@ -194,8 +196,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 retweets: 3,
                 comments: 11,
                 views: 203,
-                liked: false,
-                retweeted: true
+                likedBy: [],
+                retweetedBy: [],
+                viewedBy: []
             },
             {
                 id: 4,
@@ -206,8 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 retweets: 8,
                 comments: 15,
                 views: 287,
-                liked: false,
-                retweeted: false
+                likedBy: [],
+                retweetedBy: [],
+                viewedBy: []
             },
             {
                 id: 5,
@@ -218,8 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 retweets: 7,
                 comments: 9,
                 views: 145,
-                liked: true,
-                retweeted: false
+                likedBy: [],
+                retweetedBy: [],
+                viewedBy: []
             }
         ];
         
