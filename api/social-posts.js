@@ -128,8 +128,10 @@ async function readPosts(apiUrl, apiToken) {
         }
 
         if (!Array.isArray(postsArr)) {
-            console.error('帖子数据格式无效，拒绝覆盖，抛出错误');
-            throw new Error('Invalid posts format in KV');
+            console.error('帖子数据格式无效，返回空数组以避免500错误');
+            console.error('原始数据类型:', typeof unpacked, '内容:', unpacked);
+            // 生产环境容错：返回空数组而不是抛错，避免500
+            return [];
         }
         return postsArr;
     } catch (error) {
