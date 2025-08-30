@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 根据tab类型渲染内容
                 const tabType = this.dataset.tab;
-                if (tabType === 'for-you') {
+                if (tabType === 'recommend') {
                     renderPosts();
                 } else if (tabType === 'following') {
                     renderFollowingPosts();
