@@ -302,6 +302,11 @@ export default async function handler(req, res) {
             const posts = await readPosts(apiUrl, apiToken);
             const newPost = req.body;
             
+            // 基本校验
+            if (!newPost || typeof newPost !== 'object') {
+                return res.status(400).json({ error: 'Invalid post payload' });
+            }
+            
             // 规范化帖子格式：统一为扁平化格式
             if (newPost.user && typeof newPost.user === 'object') {
                 // 前端发送的是 {user: {...}} 格式，转换为扁平化格式
@@ -312,9 +317,28 @@ export default async function handler(req, res) {
                 delete newPost.user; // 删除嵌套的user对象
             }
             
+            // 校验用户信息
+            if (!newPost.userId || !newPost.userName) {
+                return res.status(400).json({ error: 'Missing user info (userId/userName)' });
+            }
+            
+            // 处理内容，保留 emoji，限制长度（按字符点截断，避免截断代理对）
+            if (typeof newPost.content !== 'string') {
+                newPost.content = newPost.content == null ? '' : String(newPost.content);
+            }
+            newPost.content = newPost.content.replace(/\r\n/g, '\n').trim();
+            const CONTENT_CHAR_LIMIT = 2000;
+            if (newPost.content.length > CONTENT_CHAR_LIMIT) {
+                newPost.content = [...newPost.content].slice(0, CONTENT_CHAR_LIMIT).join('');
+            }
+            
             // 生成新ID
-            newPost.id = Math.max(...posts.map(p => p.id), 0) + 1;
-            newPost.timestamp = new Date();
+            const maxId = posts.reduce((max, p) => {
+                const n = Number(p && p.id);
+                return Number.isFinite(n) ? Math.max(max, n) : max;
+            }, 0);
+            newPost.id = maxId + 1;
+            newPost.timestamp = new Date().toISOString();
             newPost.likes = 0;
             newPost.retweets = 0;
             newPost.comments = 0;
