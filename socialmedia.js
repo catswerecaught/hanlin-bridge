@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
             isSearching: false,
             query: '',
             results: { users: [], posts: [] },
-            activeTab: '用户'
+            activeTab: '热门',
+            showingTrends: true
         }
     };
     // 防止重复绑定全局事件
@@ -183,6 +184,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+        
+        // 搜索导航按钮事件监听
+        const searchNavItems = document.querySelectorAll('.social-nav-item');
+        searchNavItems.forEach(item => {
+            const span = item.querySelector('span');
+            if (span && span.textContent === '搜索') {
+                item.addEventListener('click', function() {
+                    enterSearchMode();
+                });
+            }
+        });
     }
 
     async function loadInitialData() {
@@ -555,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                     </div>
                 </div>
-                <div class="post-content">${post.content}</div>
+                <div class="post-content">${highlightHashtags(post.content)}</div>
                 <div class="post-actions">
                     <div class="post-action" data-action="comment">
                         <svg viewBox="0 0 24 24">
@@ -947,21 +959,57 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `).join('');
     }
-
-    function handleSearch() {
-        if (!searchInput) return;
+    
+    // 提取帖子中的hashtag
+    function extractHashtags(text) {
+        if (!text) return [];
+        // 匹配中文和英文的#号
+        const hashtagRegex = /[#＃]([\u4e00-\u9fa5\w]+)/g;
+        const matches = [...text.matchAll(hashtagRegex)];
+        // 去除重复，同一篇帖子中相同的hashtag只算一次
+        const uniqueHashtags = [...new Set(matches.map(match => match[1]))];
+        return uniqueHashtags;
+    }
+    
+    // 获取热门趋势
+    function getTrendingHashtags() {
+        const hashtagCounts = {};
         
-        const query = searchInput.value.trim().toLowerCase();
-        console.log('执行搜索，查询:', query);
+        socialData.posts.forEach(post => {
+            if (post && post.content) {
+                const hashtags = extractHashtags(post.content);
+                hashtags.forEach(hashtag => {
+                    if (hashtagCounts[hashtag]) {
+                        hashtagCounts[hashtag]++;
+                    } else {
+                        hashtagCounts[hashtag] = 1;
+                    }
+                });
+            }
+        });
         
-        if (query.length < 1) {
-            exitSearchMode();
-            return;
-        }
+        // 按数量排序，返回前10个
+        return Object.entries(hashtagCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10)
+            .map(([hashtag, count]) => ({ hashtag, count }));
+    }
+    
+    // 高亮显示hashtag
+    function highlightHashtags(text) {
+        if (!text) return text;
+        // 匹配中文和英文的#号和内容
+        return text.replace(/([#＃])([\u4e00-\u9fa5\w]+)/g, '<span class="post-hashtag">$1$2</span>');
+    }
 
-        // 进入搜索模式
+    function performSearch(query) {
+        console.log('正在搜索:', query);
+        
+        if (!query || query.trim().length < 2) return;
+        
         socialData.searchState.isSearching = true;
-        socialData.searchState.query = query;
+        socialData.searchState.query = query.toLowerCase();
+        socialData.searchState.showingTrends = false; // 搜索后不再显示趋势
         
         // 搜索用户
         const userResults = users.filter(user =>
@@ -996,10 +1044,35 @@ document.addEventListener('DOMContentLoaded', function() {
         renderSearchResults();
     }
 
+    function handleSearch() {
+        if (!searchInput) return;
+        
+        const query = searchInput.value.trim().toLowerCase();
+        console.log('执行搜索，查询:', query);
+        
+        if (query.length < 1) {
+            exitSearchMode();
+            return;
+        }
+
+        performSearch(query);
+    }
+
+    // 进入搜索模式（显示趋势）
+    function enterSearchMode() {
+        socialData.searchState.isSearching = true;
+        socialData.searchState.showingTrends = true;
+        socialData.searchState.query = '';
+        socialData.searchState.activeTab = '热门';
+        
+        renderSearchResults();
+    }
+
     function exitSearchMode() {
         socialData.searchState.isSearching = false;
         socialData.searchState.query = '';
         socialData.searchState.results = { users: [], posts: [] };
+        socialData.searchState.showingTrends = false;
         if (searchInput) searchInput.value = '';
         
         // 显示主页组件
@@ -1021,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (postComposer) postComposer.style.display = 'none';
         
         const { users, posts } = socialData.searchState.results;
-        const { query, activeTab } = socialData.searchState;
+        const { query, activeTab, showingTrends } = socialData.searchState;
         
         // 创建搜索结果页面结构
         const searchHeader = `
@@ -1037,19 +1110,40 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text" class="search-query-input" value="${query}" placeholder="搜索">
                     </div>
                 </div>
-                <div class="search-tabs">
+                ${!showingTrends ? `<div class="search-tabs">
                     <button class="search-tab ${activeTab === '热门' ? 'active' : ''}" data-tab="热门">热门</button>
                     <button class="search-tab ${activeTab === '最新' ? 'active' : ''}" data-tab="最新">最新</button>
                     <button class="search-tab ${activeTab === '用户' ? 'active' : ''}" data-tab="用户">用户</button>
                     <button class="search-tab ${activeTab === '媒体' ? 'active' : ''}" data-tab="媒体">媒体</button>
                     <button class="search-tab ${activeTab === '列表' ? 'active' : ''}" data-tab="列表">列表</button>
-                </div>
+                </div>` : ''}
             </div>
         `;
         
         let content = '';
         
-        if (activeTab === '用户') {
+        // 如果是显示趋势模式
+        if (showingTrends) {
+            const trendingHashtags = getTrendingHashtags();
+            if (trendingHashtags.length > 0) {
+                content = `
+                    <div class="trending-section">
+                        <div class="trending-header">当前趋势</div>
+                        <div class="trending-list">
+                            ${trendingHashtags.map((trend, index) => `
+                                <div class="trending-item">
+                                    <div class="trending-location">${index + 1}·Tuebo 的趋势</div>
+                                    <div class="trending-topic">${trend.hashtag}</div>
+                                    <div class="trending-count">${trend.count} 条帖子</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                content = '<div class="no-search-results">暂无趋势内容。</div>';
+            }
+        } else if (activeTab === '用户') {
             if (users.length > 0) {
                 content = `
                     <div class="search-user-results">

@@ -934,6 +934,70 @@
     margin-bottom: 0;
 }
 
+/* 趋势显示样式 */
+.trending-section {
+    padding: 0;
+}
+
+.trending-header {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-color);
+    padding: 20px 16px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.trending-list {
+    padding: 0;
+}
+
+.trending-item {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trending-item:hover {
+    background-color: rgba(15, 20, 25, 0.03);
+}
+
+.trending-location {
+    color: var(--secondary-text-color);
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.trending-topic {
+    color: var(--text-color);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.trending-count {
+    color: var(--secondary-text-color);
+    font-size: 13px;
+}
+
+/* Hashtag styling in posts */
+.post-content {
+    color: inherit;
+}
+
+.post-content [href*="#"], 
+.post-content a[href^="#"], 
+.post-hashtag {
+    color: #000066 !important;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.post-hashtag:hover {
+    text-decoration: underline;
+}
+
 .search-user-item {
     display: flex;
     align-items: flex-start;
