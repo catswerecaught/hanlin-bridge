@@ -10,6 +10,8 @@
     min-height: calc(100vh - 68px);
     position: relative;
     background: white;
+    /* Unify divider/border color across social page to match right sidebar */
+    --border-color: #e1e8ed;
 }
 
 /* 左侧导航栏 */
@@ -25,6 +27,30 @@
 
 .social-nav {
     margin-bottom: 40px;
+}
+
+/* Brand header above nav */
+.social-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.social-brand-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.social-brand-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-color);
+    letter-spacing: 0.2px;
 }
 
 .social-nav-item {
@@ -536,6 +562,7 @@
     overflow-y: auto;
     background: white;
     z-index: 5;
+    margin-right: 35px; /* add separation from viewport edge */
 }
 
 .right-sidebar::-webkit-scrollbar {
@@ -591,7 +618,7 @@
     border-radius: 16px;
     margin-bottom: 20px;
     overflow: hidden;
-    border: 1px solid #e1e8ed;
+    border: 1px solid var(--border-color);
 }
 
 .premium-card h3,
