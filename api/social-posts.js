@@ -9,23 +9,30 @@ function unwrapKV(result) {
   try {
     console.log('原始数据:', typeof result === 'string' ? result : JSON.stringify(result));
     
-    // 首次解析（处理字符串或对象）
-    let data = typeof result === 'string' ? 
-      JSON.parse(result.replace(/\\"/g, '"')) : 
-      result;
-    
-    // 解包嵌套的value结构
-    while (data && typeof data === 'object' && data.value) {
-      data = data.value;
-    }
-    
-    // 处理可能存在的二次字符串化情况
-    if (typeof data === 'string') {
+    // 安全解析：迭代解析字符串（最多三次），不破坏转义字符
+    let data = result;
+    for (let i = 0; i < 3 && typeof data === 'string'; i++) {
       try {
         data = JSON.parse(data);
-      } catch (e) {
-        console.error('二级JSON解析失败:', e);
+      } catch {
+        break;
       }
+    }
+    
+    // 解包嵌套的 value 结构
+    let guard = 0;
+    while (data && typeof data === 'object' && 'value' in data && guard < 3) {
+      data = data.value;
+      // 若 value 仍为字符串，继续尝试解析
+      for (let i = 0; i < 2 && typeof data === 'string'; i++) {
+        try { data = JSON.parse(data); } catch { break; }
+      }
+      guard++;
+    }
+    
+    // 再做一次兜底解析（处理双重字符串化的数组/对象）
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch {}
     }
     
     console.log('最终解包结果:', data);
@@ -102,6 +109,58 @@ async function readPosts(apiUrl, apiToken) {
         let unpacked = unwrapKV(raw);
         let postsArr = null;
 
+        // 工具函数：判断对象是否像帖子
+        const looksLikePost = (v) => v && typeof v === 'object' && (
+            'content' in v || 'userId' in v || 'user' in v || 'userName' in v
+        );
+        const tryParse = (s) => {
+            if (typeof s !== 'string') return s;
+            try { return JSON.parse(s); } catch { return s; }
+        };
+        const deepFindPosts = (node, depth = 0) => {
+            if (depth > 5) return null;
+            if (node == null) return null;
+            // 直接是数组
+            if (Array.isArray(node)) {
+                // 尝试解析数组中的字符串元素
+                const parsed = node.map(tryParse);
+                if (parsed.some(looksLikePost)) return parsed;
+                return null;
+            }
+            // 字符串：尝试解析后继续
+            if (typeof node === 'string') {
+                const parsed = tryParse(node);
+                if (parsed !== node) return deepFindPosts(parsed, depth + 1);
+                return null;
+            }
+            // 对象：
+            if (typeof node === 'object') {
+                const keys = Object.keys(node);
+                // 数字键对象转数组
+                const isNumericKeyObject = keys.length > 0 && keys.every(k => /^\d+$/.test(k));
+                if (isNumericKeyObject) {
+                    const arr = keys
+                        .map(k => [Number(k), node[k]])
+                        .sort((a, b) => a[0] - b[0])
+                        .map(([, v]) => tryParse(v));
+                    if (arr.some(looksLikePost)) return arr;
+                }
+                // 常见容器字段
+                for (const k of ['posts', 'value', 'result', 'data']) {
+                    if (k in node) {
+                        const found = deepFindPosts(node[k], depth + 1);
+                        if (Array.isArray(found)) return found;
+                    }
+                }
+                // 遍历所有值
+                for (const v of Object.values(node)) {
+                    const found = deepFindPosts(v, depth + 1);
+                    if (Array.isArray(found)) return found;
+                }
+            }
+            return null;
+        };
+
         // 1) 已是数组
         if (Array.isArray(unpacked)) {
             postsArr = unpacked;
@@ -135,6 +194,31 @@ async function readPosts(apiUrl, apiToken) {
                         return unpacked[key];
                     }
                 }
+
+                // 兼容数组被存成对象 {"0": {...}, "1": {...}}
+                const keys = Object.keys(unpacked);
+                const isNumericKeyObject = keys.length > 0 && keys.every(k => /^\d+$/.test(k));
+                if (isNumericKeyObject) {
+                    const arr = keys
+                        .map(k => [Number(k), unpacked[k]])
+                        .sort((a, b) => a[0] - b[0])
+                        .map(([, v]) => v);
+                    return arr;
+                }
+
+                // 兼容对象值为帖子对象的 map：取 values 作为数组（并对字符串元素尝试解析）
+                const rawValues = Object.values(unpacked);
+                if (rawValues.length > 0) {
+                    const parsedValues = rawValues.map(v => tryParse(v));
+                    const looksLikePosts = parsedValues.every(v => v && typeof v === 'object' && ('content' in v || 'userId' in v || 'user' in v || 'userName' in v));
+                    if (looksLikePosts) {
+                        return parsedValues;
+                    }
+                }
+
+                // 递归深度查找：应对更复杂的嵌套/双重字符串化
+                const deep = deepFindPosts(unpacked, 0);
+                if (Array.isArray(deep)) return deep;
             }
             
             console.error('帖子数据格式无效，无法解析为数组');

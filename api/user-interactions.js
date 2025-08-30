@@ -1,13 +1,37 @@
 // 用户交互 API（点赞/转发）- 使用 Upstash KV
 const USER_INTERACTIONS_PREFIX = 'user-interactions:';
 
+// 安全的解包函数：避免替换转义字符，迭代解析字符串并解包 value 层
 function unwrapKV(result) {
   try {
-    let data = typeof result === 'string' ? JSON.parse(result.replace(/\\"/g, '"')) : result;
-    while (data && typeof data === 'object' && data.value) data = data.value;
+    // 初始数据可为字符串或对象
+    let data = result;
+
+    // 尝试多次解析字符串（处理双/三重字符串化）
+    for (let i = 0; i < 3 && typeof data === 'string'; i++) {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        break;
+      }
+    }
+
+    // 解包嵌套的 { value: ... } 结构
+    let guard = 0;
+    while (data && typeof data === 'object' && 'value' in data && guard < 3) {
+      data = data.value;
+      // 若 value 为字符串，再尝试解析
+      for (let i = 0; i < 2 && typeof data === 'string'; i++) {
+        try { data = JSON.parse(data); } catch { break; }
+      }
+      guard++;
+    }
+
+    // 兜底再解析一次字符串
     if (typeof data === 'string') {
       try { data = JSON.parse(data); } catch {}
     }
+
     return data;
   } catch {
     return null;
