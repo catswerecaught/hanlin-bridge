@@ -447,19 +447,39 @@
     transform: scale(1.1);
 }
 
+/* 点赞状态样式 - 类似推特效果 */
 .post-action.liked svg {
     fill: rgb(249, 24, 128);
+    animation: likeHeartAnimation 0.3s ease-out;
+}
+
+.post-action.liked span {
+    color: rgb(249, 24, 128);
 }
 
 .post-action.liked:hover {
     background: transparent;
 }
 
-
 .post-action.liked:hover svg {
     fill: rgb(249, 24, 128);
     transform: scale(1.1);
 }
+
+/* 点赞动画关键帧 */
+@keyframes likeHeartAnimation {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.25);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* 移除数字跳动动画，只保留爱心图标动画 */
 
 .post-action[data-action="retweet"]:hover {
     background: transparent;
