@@ -981,6 +981,27 @@
     font-size: 13px;
 }
 
+/* 显示更多按钮样式 */
+.show-more-trends-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    margin: 8px 0;
+    background: transparent;
+    border: none;
+    color: #1d9bf0;
+    font-size: 15px;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.show-more-trends-btn:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
 /* Hashtag styling in posts */
 .post-content {
     color: inherit;

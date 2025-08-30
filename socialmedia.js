@@ -175,24 +175,47 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // 主页导航按钮事件监听
-        const homeNavItem = document.querySelector('.social-nav-item.active');
-        if (homeNavItem) {
-            homeNavItem.addEventListener('click', function() {
-                if (socialData.searchState.isSearching) {
-                    exitSearchMode();
-                }
-            });
-        }
-        
-        // 搜索导航按钮事件监听
-        const searchNavItems = document.querySelectorAll('.social-nav-item');
-        searchNavItems.forEach(item => {
+        // 导航按钮事件监听
+        const navItems = document.querySelectorAll('.social-nav-item');
+        navItems.forEach(item => {
             const span = item.querySelector('span');
-            if (span && span.textContent === '搜索') {
+            if (span) {
                 item.addEventListener('click', function() {
-                    enterSearchMode();
+                    // 更新导航激活状态
+                    updateNavActiveState(span.textContent.trim());
+                    
+                    // 处理特定导航行为
+                    if (span.textContent === '主页') {
+                        if (socialData.searchState.isSearching) {
+                            exitSearchMode();
+                        }
+                        // 重置分页状态
+                        if (socialData.pagination) {
+                            socialData.pagination.currentPage = 1;
+                        }
+                    } else if (span.textContent === '搜索') {
+                        enterSearchMode();
+                    }
                 });
+            }
+        });
+    }
+
+    // 更新导航激活状态
+    function updateNavActiveState(activeNavText) {
+        const navItems = document.querySelectorAll('.social-nav-item');
+        navItems.forEach(item => {
+            const span = item.querySelector('span');
+            if (span) {
+                if (span.textContent.trim() === activeNavText) {
+                    // 激活当前导航项
+                    item.classList.add('active');
+                    span.style.fontWeight = 'bold';
+                } else {
+                    // 取消其他导航项的激活状态
+                    item.classList.remove('active');
+                    span.style.fontWeight = 'normal';
+                }
             }
         });
     }
@@ -460,11 +483,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('准备渲染的帖子数量:', postsToShow.length);
         
+        // 初始化分页数据
+        if (!socialData.pagination) {
+            socialData.pagination = {
+                currentPage: 1,
+                postsPerPage: 5,
+                allPosts: postsToShow
+            };
+        } else {
+            socialData.pagination.allPosts = postsToShow;
+        }
+        
+        // 计算要显示的帖子
+        const startIndex = 0;
+        const endIndex = socialData.pagination.currentPage * socialData.pagination.postsPerPage;
+        const paginatedPosts = postsToShow.slice(startIndex, endIndex);
+        
         if (postsToShow.length === 0) {
             const emptyText = filter === 'following' ? '这里目前没有帖文。' : '暂无帖子';
             postsContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--secondary-text-color);">${emptyText}</div>`;
         } else {
-            postsContainer.innerHTML = postsToShow.map(post => createPostHTML(post)).join('');
+            postsContainer.innerHTML = paginatedPosts.map(post => createPostHTML(post)).join('');
+            
+            // 添加加载更多提示（如果还有更多帖子）
+            if (endIndex < postsToShow.length) {
+                postsContainer.innerHTML += '<div class="load-more-indicator" style="padding: 20px; text-align: center; color: var(--secondary-text-color);">向下滚动加载更多...</div>';
+            }
         }
         
         // 添加帖子交互事件
@@ -472,6 +516,52 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 添加hashtag点击事件
         addHashtagEventListeners();
+        
+        // 添加滚动加载监听器
+        addScrollLoadListener();
+    }
+
+    // 滚动加载更多帖子
+    function addScrollLoadListener() {
+        // 移除之前的监听器避免重复绑定
+        window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll);
+    }
+
+    function handleScroll() {
+        // 只在非搜索模式下启用滚动加载
+        if (socialData.searchState.isSearching) return;
+        
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        
+        // 当滚动到距离底部100px时加载更多
+        if (scrollTop + windowHeight >= documentHeight - 100) {
+            loadMorePosts();
+        }
+    }
+
+    function loadMorePosts() {
+        if (!socialData.pagination || !socialData.pagination.allPosts) return;
+        
+        const { currentPage, postsPerPage, allPosts } = socialData.pagination;
+        const maxPages = Math.ceil(allPosts.length / postsPerPage);
+        
+        // 如果已经加载完所有帖子，则不再加载
+        if (currentPage >= maxPages) return;
+        
+        // 增加页数
+        socialData.pagination.currentPage++;
+        
+        // 重新渲染帖子（会显示更多帖子）
+        renderPosts(getCurrentTabFilter());
+    }
+
+    function getCurrentTabFilter() {
+        // 获取当前激活的tab
+        const activeTab = document.querySelector('.tab.active');
+        return activeTab ? activeTab.textContent.trim() === '关注' ? 'following' : 'recommend' : 'recommend';
     }
 
     function createPostHTML(post) {
@@ -965,9 +1055,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 随机排序显示趋勿
+        // 随机排序显示趋势
         const shuffledTrends = [...trendingHashtags].sort(() => Math.random() - 0.5);
-        const trendsToShow = shuffledTrends.slice(0, 5); // 只显示5个
+        const trendsToShow = shuffledTrends.slice(0, 3); // 只显示3个
         
         trendsList.innerHTML = trendsToShow.map(trend => `
             <div class="trend-item" data-hashtag="${trend.hashtag}" style="cursor: pointer;">
@@ -977,7 +1067,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `).join('');
         
-        // 添加趋勿点击事件
+        // 添加“显示更多”按钮（如果有足够的趋势）
+        if (trendingHashtags.length > 3) {
+            trendsList.innerHTML += '<div class="show-more-trends-btn">显示更多</div>';
+        }
+        
+        // 添加趋势点击事件
         document.querySelectorAll('.trend-item').forEach(item => {
             item.addEventListener('click', function() {
                 const hashtag = this.dataset.hashtag;
@@ -989,6 +1084,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+        
+        // 添加"显示更多"按钮点击事件
+        const showMoreBtn = document.querySelector('.show-more-trends-btn');
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener('click', function() {
+                enterSearchMode();
+            });
+        }
     }
     
     // 提取帖子中的hashtag
@@ -1057,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         socialData.searchState.isSearching = true;
         socialData.searchState.query = query; // 保持原始查询不进行大小写转换
-        socialData.searchState.showingTrends = false; // 搜索后不再显示趋勿
+        socialData.searchState.showingTrends = false; // 搜索后不再显示趋势
         
         const searchQuery = query.toLowerCase(); // 用于搜索的小写版本
         
@@ -1182,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="trending-list">
                             ${trendingHashtags.map((trend, index) => `
                                 <div class="trending-item" data-hashtag="${trend.hashtag}" style="cursor: pointer;">
-                                    <div class="trending-location">${index + 1}·Tuebo 的趋勿</div>
+                                    <div class="trending-location">${index + 1}·Tuebo 的趋势</div>
                                     <div class="trending-topic">${trend.hashtag}</div>
                                     <div class="trending-count">${trend.count} 条帖子</div>
                                 </div>
@@ -1283,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 添加hashtag点击事件
         addHashtagEventListeners();
         
-        // 添加趋勿项目点击事件（在搜索结果中）
+        // 添加趋势项目点击事件（在搜索结果中）
         document.querySelectorAll('.trending-item[data-hashtag]').forEach(item => {
             item.addEventListener('click', function() {
                 const hashtag = this.dataset.hashtag;
