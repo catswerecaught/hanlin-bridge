@@ -175,19 +175,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 从后端读取当前用户的交互（点赞/转发）并保存到内存与本地缓存（供离线回退）
+    // 从后端读取当前用户的交互（点赞/转发/关注）并保存到内存与本地缓存（供离线回退）
     async function loadUserInteractions(userId) {
         try {
             const resp = await fetch(`/api/user-interactions?userId=${encodeURIComponent(userId)}`);
             if (resp.ok) {
                 const ui = await resp.json();
+                const serverLiked = Array.isArray(ui.liked) ? ui.liked : [];
+                const serverRetweeted = Array.isArray(ui.retweeted) ? ui.retweeted : [];
+                const serverFollowings = Array.isArray(ui.followings) ? ui.followings : [];
+
+                // 合并本地关注与服务端关注，避免丢失本地数据
+                const localFollowings = getFollowedUsers(userId);
+                const mergedFollowings = Array.from(new Set([...(serverFollowings || []), ...(localFollowings || [])]));
+
                 socialData.userInteractions = {
-                    liked: Array.isArray(ui.liked) ? ui.liked : [],
-                    retweeted: Array.isArray(ui.retweeted) ? ui.retweeted : []
+                    liked: serverLiked,
+                    retweeted: serverRetweeted,
+                    followings: mergedFollowings
                 };
+
                 // 同步到本地缓存作为回退
                 const local = getUserInteractions(userId);
-                setUserInteractions(userId, { liked: socialData.userInteractions.liked, retweeted: socialData.userInteractions.retweeted, viewed: local.viewed || [] });
+                setUserInteractions(userId, { liked: serverLiked, retweeted: serverRetweeted, viewed: local.viewed || [] });
+                // 同步关注到本地followedUsers缓存
+                setFollowedUsers(userId, mergedFollowings);
+
+                // 如果本地与服务端有差异，尝试回写合并结果（忽略错误）
+                if (mergedFollowings.length !== serverFollowings.length) {
+                    try {
+                        fetch('/api/user-interactions', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId, action: 'sync', followings: mergedFollowings })
+                        });
+                    } catch {}
+                }
             }
         } catch (e) {
             // 忽略错误，回退到本地缓存
@@ -372,8 +395,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 根据tab过滤帖子
         if (filter === 'following' && socialData.currentUser) {
-            // 这里可以实现关注逻辑，暂时显示所有帖子
-            postsToShow = socialData.posts;
+            const currentUserId = socialData.currentUser.username;
+            const followedUsers = getFollowedUsers(currentUserId);
+            postsToShow = socialData.posts.filter(p => {
+                const uname = (p.user && p.user.username) || p.userId || '';
+                return followedUsers.includes(uname);
+            });
         }
         
         // 按时间排序
@@ -382,7 +409,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('准备渲染的帖子数量:', postsToShow.length);
         
         if (postsToShow.length === 0) {
-            postsContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--secondary-text-color);">暂无帖子</div>';
+            const emptyText = filter === 'following' ? '这里目前没有帖文。' : '暂无帖子';
+            postsContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--secondary-text-color);">${emptyText}</div>`;
         } else {
             postsContainer.innerHTML = postsToShow.map(post => createPostHTML(post)).join('');
         }
@@ -773,7 +801,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function getFollowedUsers(userId) {
         const key = `followedUsers_${userId}`;
         const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored) : [];
+        if (stored) return JSON.parse(stored);
+        // 回退到内存中的用户交互（如果可用）
+        if (socialData.userInteractions && Array.isArray(socialData.userInteractions.followings)) {
+            return socialData.userInteractions.followings;
+        }
+        return [];
     }
 
     function setFollowedUsers(userId, followedUsers) {
@@ -808,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return socialData.currentUser ? socialData.currentUser.username : `anon_${getDeviceId()}`;
     }
 
-    function handleFollowClick() {
+    async function handleFollowClick() {
         if (!socialData.currentUser) {
             alert('请先登录');
             return;
@@ -819,20 +852,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const followedUsers = getFollowedUsers(currentUserId);
         const isFollowing = followedUsers.includes(username);
 
+        const btn = this;
+        // 乐观更新 UI + 本地缓存
+        let newFollowings;
         if (isFollowing) {
-            // 取消关注
-            const updatedFollows = followedUsers.filter(u => u !== username);
-            setFollowedUsers(currentUserId, updatedFollows);
-            this.textContent = '关注';
-            this.classList.remove('following');
+            newFollowings = followedUsers.filter(u => u !== username);
+            btn.textContent = '关注';
+            btn.classList.remove('following');
             showToast('已取消关注');
         } else {
-            // 关注
-            followedUsers.push(username);
-            setFollowedUsers(currentUserId, followedUsers);
-            this.textContent = '已关注';
-            this.classList.add('following');
+            newFollowings = [...followedUsers, username];
+            btn.textContent = '已关注';
+            btn.classList.add('following');
             showToast('关注成功！');
+        }
+        setFollowedUsers(currentUserId, newFollowings);
+        if (!socialData.userInteractions) socialData.userInteractions = { liked: [], retweeted: [], followings: [] };
+        socialData.userInteractions.followings = newFollowings;
+
+        // 尝试持久化到后端
+        try {
+            const resp = await fetch('/api/user-interactions', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId, action: isFollowing ? 'unfollow' : 'follow', target: username })
+            });
+            if (resp.ok) {
+                const data = await resp.json().catch(() => null);
+                if (data && Array.isArray(data.followings)) {
+                    setFollowedUsers(currentUserId, data.followings);
+                    socialData.userInteractions.followings = data.followings;
+                }
+                // 重新渲染当前tab（如果在“关注”页会立即生效）
+                const activeTab = document.querySelector('.feed-tab.active');
+                const tabType = activeTab ? activeTab.dataset.tab : 'recommend';
+                renderPosts(tabType);
+            } else {
+                // 保留本地状态，提示稍后同步
+                showToast('已在本地保存，将在网络恢复后同步');
+                const activeTab = document.querySelector('.feed-tab.active');
+                const tabType = activeTab ? activeTab.dataset.tab : 'recommend';
+                renderPosts(tabType);
+            }
+        } catch (e) {
+            // 网络错误：保留本地状态，提示稍后同步
+            showToast('网络异常，已在本地保存，将在恢复后同步');
+            const activeTab = document.querySelector('.feed-tab.active');
+            const tabType = activeTab ? activeTab.dataset.tab : 'recommend';
+            renderPosts(tabType);
         }
     }
 

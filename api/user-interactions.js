@@ -42,23 +42,41 @@ async function readUserInteractions(userId, apiUrl, apiToken) {
   const key = `${USER_INTERACTIONS_PREFIX}${userId}`;
   try {
     const resp = await fetch(`${apiUrl}/get/${key}`, { headers: { 'Authorization': `Bearer ${apiToken}` } });
-    if (!resp.ok) return { liked: [], retweeted: [] };
+    if (!resp.ok) return { liked: [], retweeted: [], followings: [] };
     const data = await resp.json();
     const unpacked = unwrapKV(data.result);
     if (unpacked && typeof unpacked === 'object') {
       return {
         liked: Array.isArray(unpacked.liked) ? unpacked.liked : [],
-        retweeted: Array.isArray(unpacked.retweeted) ? unpacked.retweeted : []
+        retweeted: Array.isArray(unpacked.retweeted) ? unpacked.retweeted : [],
+        followings: Array.isArray(unpacked.followings) ? unpacked.followings : []
       };
     }
   } catch {}
-  return { liked: [], retweeted: [] };
+  return { liked: [], retweeted: [], followings: [] };
+}
+
+async function writeUserInteractions(userId, interactions, apiUrl, apiToken) {
+  const key = `${USER_INTERACTIONS_PREFIX}${userId}`;
+  try {
+    const resp = await fetch(`${apiUrl}/set/${key}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ value: interactions })
+    });
+    return resp.ok;
+  } catch {
+    return false;
+  }
 }
 
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -68,18 +86,48 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set' });
   }
 
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  const userId = (req.query && (req.query.userId || req.query.uid)) || (req.body && req.body.userId);
+  if (req.method === 'GET') {
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    try {
+      const data = await readUserInteractions(userId, apiUrl, apiToken);
+      res.status(200).json(data);
+    } catch (e) {
+      res.status(500).json({ error: 'Internal server error', detail: String(e) });
+    }
+    return;
   }
 
-  const userId = req.query && (req.query.userId || req.query.uid);
-  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  if (req.method === 'PATCH') {
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    const { action, target, followings } = req.body || {};
+    try {
+      const current = await readUserInteractions(userId, apiUrl, apiToken);
+      const next = {
+        liked: Array.isArray(current.liked) ? current.liked : [],
+        retweeted: Array.isArray(current.retweeted) ? current.retweeted : [],
+        followings: Array.isArray(current.followings) ? current.followings : []
+      };
 
-  try {
-    const data = await readUserInteractions(userId, apiUrl, apiToken);
-    res.status(200).json(data);
-  } catch (e) {
-    res.status(500).json({ error: 'Internal server error', detail: String(e) });
+      if (action === 'follow' && typeof target === 'string' && target.trim()) {
+        if (!next.followings.includes(target)) next.followings.push(target);
+      } else if (action === 'unfollow' && typeof target === 'string' && target.trim()) {
+        next.followings = next.followings.filter(u => u !== target);
+      } else if (action === 'sync' && Array.isArray(followings)) {
+        next.followings = [...new Set(followings.filter(u => typeof u === 'string'))];
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+        return;
+      }
+
+      const ok = await writeUserInteractions(userId, next, apiUrl, apiToken);
+      if (!ok) return res.status(500).json({ error: 'Failed to persist followings' });
+      return res.status(200).json(next);
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal server error', detail: String(e) });
+    }
   }
+
+  res.setHeader('Allow', ['GET', 'PATCH']);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
