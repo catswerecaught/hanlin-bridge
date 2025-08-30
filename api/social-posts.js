@@ -128,24 +128,16 @@ async function readPosts(apiUrl, apiToken) {
         }
 
         if (!Array.isArray(postsArr)) {
-            console.error('帖子数据格式无效，详细调试信息:');
-            console.error('原始 raw 数据类型:', typeof raw, '内容:', raw);
-            console.error('解包后 unpacked 数据类型:', typeof unpacked, '内容:', unpacked);
-            console.error('最终 postsArr 数据类型:', typeof postsArr, '内容:', postsArr);
-            
-            // 临时调试：尝试更多解析方式
+            // 尝试从对象的任何键中查找数组
             if (unpacked && typeof unpacked === 'object') {
-                console.error('对象的所有键:', Object.keys(unpacked));
-                // 尝试所有可能的键名
                 for (const key of Object.keys(unpacked)) {
                     if (Array.isArray(unpacked[key])) {
-                        console.error(`发现数组在键 "${key}" 中，长度:`, unpacked[key].length);
                         return unpacked[key];
                     }
                 }
             }
             
-            // 如果确实无法解析，抛出错误而不是返回空数组
+            console.error('帖子数据格式无效，无法解析为数组');
             throw new Error(`Invalid posts format in KV - raw type: ${typeof raw}, unpacked type: ${typeof unpacked}`);
         }
         return postsArr;
