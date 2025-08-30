@@ -366,6 +366,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
             `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
         const isSupreme = socialData.currentUser && socialData.currentUser.supreme === true;
+        
+        // 检查当前用户的交互状态
+        const currentUserId = socialData.currentUser ? socialData.currentUser.username : null;
+        const userLiked = currentUserId && post.likedBy && post.likedBy.includes(currentUserId);
+        const userRetweeted = currentUserId && post.retweetedBy && post.retweetedBy.includes(currentUserId);
 
         return `
             <article class="post-item" data-post-id="${post.id}">
@@ -399,13 +404,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         </svg>
                         <span>${formatCount(post.comments)}</span>
                     </div>
-                    <div class="post-action ${post.retweeted ? 'retweeted' : ''}" data-action="retweet">
+                    <div class="post-action ${userRetweeted ? 'retweeted' : ''}" data-action="retweet">
                         <svg viewBox="0 0 24 24">
                             <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16V8c0-1.1-.896-2-2-2z"/>
                         </svg>
                         <span>${formatCount(post.retweets)}</span>
                     </div>
-                    <div class="post-action ${post.liked ? 'liked' : ''}" data-action="like">
+                    <div class="post-action ${userLiked ? 'liked' : ''}" data-action="like">
                         <svg viewBox="0 0 24 24">
                             <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
                         </svg>
@@ -530,31 +535,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
         switch (action) {
             case 'like':
-                post.liked = !post.liked;
-                post.likes += post.liked ? 1 : -1;
+                const wasLikedByUser = currentUserId && post.likedBy && post.likedBy.includes(currentUserId);
                 if (currentUserId) {
-                    if (post.liked && !post.likedBy.includes(currentUserId)) {
+                    if (!wasLikedByUser) {
                         post.likedBy.push(currentUserId);
-                    } else if (!post.liked && post.likedBy.includes(currentUserId)) {
+                        post.likes += 1;
+                        element.classList.add('liked');
+                    } else {
                         post.likedBy = post.likedBy.filter(id => id !== currentUserId);
+                        post.likes -= 1;
+                        element.classList.remove('liked');
                     }
+                    element.querySelector('span').textContent = formatCount(post.likes);
                 }
-                element.classList.toggle('liked', post.liked);
-                element.querySelector('span').textContent = formatCount(post.likes);
                 break;
                 
             case 'retweet':
-                post.retweeted = !post.retweeted;
-                post.retweets += post.retweeted ? 1 : -1;
+                const wasRetweetedByUser = currentUserId && post.retweetedBy && post.retweetedBy.includes(currentUserId);
                 if (currentUserId) {
-                    if (post.retweeted && !post.retweetedBy.includes(currentUserId)) {
+                    if (!wasRetweetedByUser) {
                         post.retweetedBy.push(currentUserId);
-                    } else if (!post.retweeted && post.retweetedBy.includes(currentUserId)) {
+                        post.retweets += 1;
+                        element.classList.add('retweeted');
+                    } else {
                         post.retweetedBy = post.retweetedBy.filter(id => id !== currentUserId);
+                        post.retweets -= 1;
+                        element.classList.remove('retweeted');
                     }
+                    element.querySelector('span').textContent = formatCount(post.retweets);
                 }
-                element.classList.toggle('retweeted', post.retweeted);
-                element.querySelector('span').textContent = formatCount(post.retweets);
                 break;
                 
             case 'comment':
@@ -563,8 +572,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'view':
-                post.views += 1;
-                element.querySelector('span').textContent = formatCount(post.views);
+                // 只有登录用户才能增加浏览量，且每个用户每个帖子只能增加一次
+                if (currentUserId) {
+                    if (!post.viewedBy) post.viewedBy = [];
+                    if (!post.viewedBy.includes(currentUserId)) {
+                        post.viewedBy.push(currentUserId);
+                        post.views += 1;
+                        element.querySelector('span').textContent = formatCount(post.views);
+                    }
+                }
                 break;
         }
 
@@ -581,29 +597,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSuggestions() {
-        suggestionsList.innerHTML = socialData.suggestions.map(user => `
-            <div class="suggestion-item">
-                <div class="suggestion-avatar">
-                    <img src="${user.avatar}" alt="${user.name}">
+        // 获取当前用户的关注列表
+        const currentUserId = socialData.currentUser ? socialData.currentUser.username : null;
+        const followedUsers = currentUserId ? getFollowedUsers(currentUserId) : [];
+        
+        suggestionsList.innerHTML = socialData.suggestions.map(user => {
+            const isFollowing = followedUsers.includes(user.username);
+            return `
+                <div class="suggestion-item">
+                    <div class="suggestion-avatar">
+                        <img src="${user.avatar}" alt="${user.name}">
+                    </div>
+                    <div class="suggestion-info">
+                        <div class="suggestion-name">${user.name}</div>
+                        <div class="suggestion-username">@${user.username}</div>
+                    </div>
+                    <button class="follow-btn ${isFollowing ? 'following' : ''}" data-username="${user.username}">
+                        ${isFollowing ? '已关注' : '关注'}
+                    </button>
                 </div>
-                <div class="suggestion-info">
-                    <div class="suggestion-name">${user.name}</div>
-                    <div class="suggestion-username">@${user.username}</div>
-                </div>
-                <button class="follow-btn" data-username="${user.username}">关注</button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // 添加关注按钮事件
         document.querySelectorAll('.follow-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.textContent = '已关注';
-                this.style.background = 'transparent';
-                this.style.color = 'var(--text-color)';
-                this.style.border = '1px solid var(--border-color)';
-                showToast('关注成功！');
-            });
+            btn.addEventListener('click', handleFollowClick);
         });
+    }
+
+    function getFollowedUsers(userId) {
+        const key = `followedUsers_${userId}`;
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function setFollowedUsers(userId, followedUsers) {
+        const key = `followedUsers_${userId}`;
+        localStorage.setItem(key, JSON.stringify(followedUsers));
+    }
+
+    function handleFollowClick() {
+        if (!socialData.currentUser) {
+            alert('请先登录');
+            return;
+        }
+
+        const username = this.dataset.username;
+        const currentUserId = socialData.currentUser.username;
+        const followedUsers = getFollowedUsers(currentUserId);
+        const isFollowing = followedUsers.includes(username);
+
+        if (isFollowing) {
+            // 取消关注
+            const updatedFollows = followedUsers.filter(u => u !== username);
+            setFollowedUsers(currentUserId, updatedFollows);
+            this.textContent = '关注';
+            this.classList.remove('following');
+            this.style.background = 'var(--text-color)';
+            this.style.color = 'white';
+            this.style.border = 'none';
+            showToast('已取消关注');
+        } else {
+            // 关注
+            followedUsers.push(username);
+            setFollowedUsers(currentUserId, followedUsers);
+            this.textContent = '已关注';
+            this.classList.add('following');
+            this.style.background = 'transparent';
+            this.style.color = 'var(--text-color)';
+            this.style.border = '1px solid var(--border-color)';
+            showToast('关注成功！');
+        }
     }
 
     function renderTrends() {
