@@ -305,14 +305,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateTrends() {
         return [
             {
-                category: '韩语音乐 · 趋势',
-                topic: 'Jungkook',
-                count: '20.3万 贴子'
+                category: '教育 · 趋势',
+                topic: 'Tuebo Social',
+                count: '201.3万 贴子'
             },
             {
-                category: '韩语音乐 · 趋势',
-                topic: 'TAEKOOK',
-                count: '149万 贴子'
+                category: '教育 · 趋势',
+                topic: 'Hanlin Bridge',
+                count: '92.3万 贴子'
             },
             {
                 category: '美国 · 趋势',
