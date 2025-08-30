@@ -74,6 +74,25 @@
     font-weight: 700;
 }
 
+/* Ensure left nav icons use consistent size/color and don't inherit sidebar search input spacing */
+.social-nav .social-nav-item .social-icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+    display: block;
+    margin: 0; /* rely on flex gap for spacing */
+}
+
+.social-nav .social-nav-item .search-icon {
+    margin: 0; /* override generic .search-icon margin-right */
+    fill: currentColor; /* inherit text color for active state */
+}
+
+/* Align nav text vertically with icon */
+.social-nav .social-nav-item span {
+    line-height: 22px;
+}
+
 .social-icon {
     width: 22px;
     height: 22px;
@@ -1029,12 +1048,19 @@
     display: none;
 }
 
-.social-nav-item.active .search-icon .search-normal {
-    display: none;
+/* Ensure the bold search icon path actually renders with stroke */
+.search-icon .search-bold {
+    stroke: currentColor;
+    fill: none;
 }
 
-.social-nav-item.active .search-icon .search-bold {
+/* Do not toggle search icon to bold on active; keep normal path visible */
+.social-nav-item .search-icon .search-normal {
     display: block;
+}
+
+.social-nav-item .search-icon .search-bold {
+    display: none;
 }
 
 /* Comment section styling */
