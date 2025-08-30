@@ -302,6 +302,16 @@ export default async function handler(req, res) {
             const posts = await readPosts(apiUrl, apiToken);
             const newPost = req.body;
             
+            // 规范化帖子格式：统一为扁平化格式
+            if (newPost.user && typeof newPost.user === 'object') {
+                // 前端发送的是 {user: {...}} 格式，转换为扁平化格式
+                newPost.userId = newPost.user.username;
+                newPost.userName = newPost.user.name;
+                newPost.userAvatar = newPost.user.avatar;
+                newPost.userVip = newPost.user.vip;
+                delete newPost.user; // 删除嵌套的user对象
+            }
+            
             // 生成新ID
             newPost.id = Math.max(...posts.map(p => p.id), 0) + 1;
             newPost.timestamp = new Date();
