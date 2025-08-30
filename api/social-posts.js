@@ -2,6 +2,8 @@
 const SOCIAL_POSTS_KEY = 'social-posts';
 const SOCIAL_POST_PREFIX = 'social-post-';
 const USER_INTERACTIONS_PREFIX = 'user-interactions:';
+// 仅当显式开启时才注入模拟数据
+const SEED_MOCK_POSTS = String(process.env.SEED_MOCK_POSTS || '').toLowerCase() === 'true';
 
 function unwrapKV(result) {
   try {
@@ -80,24 +82,32 @@ async function readPosts(apiUrl, apiToken) {
         const resp = await fetch(`${apiUrl}/get/${SOCIAL_POSTS_KEY}`, {
             headers: { 'Authorization': `Bearer ${apiToken}` }
         });
-        
+
+        // 若 Upstash 请求非 2xx，则不要初始化，抛错以避免覆盖现有数据
         if (!resp.ok) {
-            console.log('未找到帖子数据，初始化新数据');
-            return await initializePosts(apiUrl, apiToken);
+            console.error('Upstash 读取失败，状态码:', resp.status);
+            throw new Error(`Upstash GET failed: ${resp.status}`);
         }
-        
+
         const data = await resp.json();
-        const posts = unwrapKV(data.result);
-        
-        if (!posts || !Array.isArray(posts)) {
-            console.log('帖子数据格式无效，重新初始化');
+        const raw = data && data.result;
+
+        // 仅当键不存在（result === null）时才进行一次性初始化
+        if (raw === null || typeof raw === 'undefined') {
+            console.log('首次初始化帖子数据（键不存在）');
             return await initializePosts(apiUrl, apiToken);
         }
-        
+
+        const posts = unwrapKV(raw);
+        if (!Array.isArray(posts)) {
+            console.error('帖子数据格式无效，拒绝覆盖，抛出错误');
+            throw new Error('Invalid posts format in KV');
+        }
         return posts;
     } catch (error) {
-        console.error('读取帖子数据失败:', error);
-        return await initializePosts(apiUrl, apiToken);
+        // 不再在读取失败时初始化，避免误覆盖历史数据
+        console.error('读取帖子数据失败（不进行初始化）:', error);
+        throw error;
     }
 }
 
@@ -127,9 +137,9 @@ async function writePosts(posts, apiUrl, apiToken) {
 }
 
 
-// 初始化帖子数据
+// 初始化帖子数据（默认不注入任何模拟数据）
 async function initializePosts(apiUrl, apiToken) {
-    const initialPosts = [
+    const initialPosts = SEED_MOCK_POSTS ? [
         {
             id: 1,
             userId: 'user00001',
@@ -137,7 +147,7 @@ async function initializePosts(apiUrl, apiToken) {
             userAvatar: 'images/user00001.jpg',
             userVip: 'Pro会员',
             content: '刚刚发布了翰林桥的新功能！大家可以在这里分享学习心得和讨论学术问题了 🎓',
-            timestamp: new Date(Date.now() - 3600000), // 1小时前
+            timestamp: new Date(Date.now() - 3600000),
             likes: 24,
             retweets: 5,
             comments: 8,
@@ -152,7 +162,7 @@ async function initializePosts(apiUrl, apiToken) {
             userAvatar: 'images/user00002.jpg',
             userVip: 'Pro会员',
             content: '分享一个生物学习小技巧：记忆细胞结构时，可以把细胞比作一个城市，各个细胞器就像城市的不同功能区域。这样记忆会更加深刻！',
-            timestamp: new Date(Date.now() - 7200000), // 2小时前
+            timestamp: new Date(Date.now() - 7200000),
             likes: 18,
             retweets: 12,
             comments: 6,
@@ -167,7 +177,7 @@ async function initializePosts(apiUrl, apiToken) {
             userAvatar: 'images/user00003.jpg',
             userVip: 'Pro会员',
             content: '今天的化学实验太有趣了！看到学生们对化学反应的好奇眼神，感觉所有的努力都值得了 ⚗️✨',
-            timestamp: new Date(Date.now() - 10800000), // 3小时前
+            timestamp: new Date(Date.now() - 10800000),
             likes: 31,
             retweets: 3,
             comments: 11,
@@ -182,7 +192,7 @@ async function initializePosts(apiUrl, apiToken) {
             userAvatar: 'images/user00005.jpg',
             userVip: '普通会员',
             content: '备考期间，保持良好的心态很重要。每天给自己设定小目标，完成后给自己一点奖励。加油，所有正在努力的同学们！💪',
-            timestamp: new Date(Date.now() - 14400000), // 4小时前
+            timestamp: new Date(Date.now() - 14400000),
             likes: 45,
             retweets: 8,
             comments: 15,
@@ -197,7 +207,7 @@ async function initializePosts(apiUrl, apiToken) {
             userAvatar: 'images/user00007.jpg',
             userVip: '普通会员',
             content: '推荐一个学习方法：番茄工作法。25分钟专注学习+5分钟休息，效果真的很不错！特别适合注意力容易分散的同学。',
-            timestamp: new Date(Date.now() - 18000000), // 5小时前
+            timestamp: new Date(Date.now() - 18000000),
             likes: 22,
             retweets: 7,
             comments: 9,
@@ -205,9 +215,8 @@ async function initializePosts(apiUrl, apiToken) {
             liked: true,
             retweeted: false
         }
-    ];
+    ] : [];
 
-    // 写入初始数据到 Upstash
     await writePosts(initialPosts, apiUrl, apiToken);
     return initialPosts;
 }
