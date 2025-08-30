@@ -1,6 +1,7 @@
 // 社交媒体帖子 API - 使用 Upstash 存储
 const SOCIAL_POSTS_KEY = 'social-posts';
 const SOCIAL_POST_PREFIX = 'social-post-';
+const USER_INTERACTIONS_PREFIX = 'user-interactions:';
 
 function unwrapKV(result) {
   try {
@@ -31,6 +32,46 @@ function unwrapKV(result) {
     console.error('解包过程异常:', e);
     return null;
   }
+}
+
+// 读取指定用户的交互数据（点赞、转发）
+async function readUserInteractions(userId, apiUrl, apiToken) {
+    const key = `${USER_INTERACTIONS_PREFIX}${userId}`;
+    try {
+        const resp = await fetch(`${apiUrl}/get/${key}`, {
+            headers: { 'Authorization': `Bearer ${apiToken}` }
+        });
+        if (!resp.ok) return { liked: [], retweeted: [] };
+        const data = await resp.json();
+        const unpacked = unwrapKV(data.result);
+        if (unpacked && typeof unpacked === 'object') {
+            return {
+                liked: Array.isArray(unpacked.liked) ? unpacked.liked : [],
+                retweeted: Array.isArray(unpacked.retweeted) ? unpacked.retweeted : []
+            };
+        }
+        return { liked: [], retweeted: [] };
+    } catch (e) {
+        return { liked: [], retweeted: [] };
+    }
+}
+
+// 写入指定用户的交互数据
+async function writeUserInteractions(userId, interactions, apiUrl, apiToken) {
+    const key = `${USER_INTERACTIONS_PREFIX}${userId}`;
+    try {
+        const resp = await fetch(`${apiUrl}/set/${key}`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ value: interactions })
+        });
+        return resp.ok;
+    } catch {
+        return false;
+    }
 }
 
 // 从 Upstash 读取帖子数据
@@ -224,6 +265,10 @@ export default async function handler(req, res) {
             newPost.views = 0;
             newPost.liked = false;
             newPost.retweeted = false;
+            // 初始化交互数组，便于多用户持久化
+            if (!Array.isArray(newPost.likedBy)) newPost.likedBy = [];
+            if (!Array.isArray(newPost.retweetedBy)) newPost.retweetedBy = [];
+            if (!Array.isArray(newPost.viewedBy)) newPost.viewedBy = [];
             
             posts.unshift(newPost);
             const success = await writePosts(posts, apiUrl, apiToken);
@@ -236,7 +281,7 @@ export default async function handler(req, res) {
         } else if (method === 'PATCH') {
             // 更新帖子（点赞、转发等）
             const posts = await readPosts(apiUrl, apiToken);
-            const { action } = req.body;
+            const { action, userId } = req.body;
             
             if (!postId) {
                 return res.status(400).json({ error: 'Missing post id' });
@@ -247,14 +292,64 @@ export default async function handler(req, res) {
             }
             
             switch (action) {
-                case 'like':
-                    post.liked = !post.liked;
-                    post.likes += post.liked ? 1 : -1;
+                case 'like': {
+                    if (!userId) {
+                        return res.status(400).json({ error: 'Missing userId for like action' });
+                    }
+                    if (!Array.isArray(post.likedBy)) post.likedBy = [];
+                    const exists = post.likedBy.includes(userId);
+                    if (exists) {
+                        post.likedBy = post.likedBy.filter(id => id !== userId);
+                        post.likes = Math.max(0, (post.likes || 0) - 1);
+                        post.liked = false;
+                    } else {
+                        post.likedBy.push(userId);
+                        post.likes = (post.likes || 0) + 1;
+                        post.liked = true;
+                    }
+                    // 同步用户交互到 Upstash
+                    try {
+                        const ui = await readUserInteractions(userId, apiUrl, apiToken);
+                        const likedSet = new Set(ui.liked || []);
+                        const pid = Number(postId);
+                        if (exists) {
+                            likedSet.delete(pid);
+                        } else {
+                            likedSet.add(pid);
+                        }
+                        await writeUserInteractions(userId, { liked: Array.from(likedSet), retweeted: ui.retweeted || [] }, apiUrl, apiToken);
+                    } catch {}
                     break;
-                case 'retweet':
-                    post.retweeted = !post.retweeted;
-                    post.retweets += post.retweeted ? 1 : -1;
+                }
+                case 'retweet': {
+                    if (!userId) {
+                        return res.status(400).json({ error: 'Missing userId for retweet action' });
+                    }
+                    if (!Array.isArray(post.retweetedBy)) post.retweetedBy = [];
+                    const exists = post.retweetedBy.includes(userId);
+                    if (exists) {
+                        post.retweetedBy = post.retweetedBy.filter(id => id !== userId);
+                        post.retweets = Math.max(0, (post.retweets || 0) - 1);
+                        post.retweeted = false;
+                    } else {
+                        post.retweetedBy.push(userId);
+                        post.retweets = (post.retweets || 0) + 1;
+                        post.retweeted = true;
+                    }
+                    // 同步用户交互到 Upstash
+                    try {
+                        const ui = await readUserInteractions(userId, apiUrl, apiToken);
+                        const rtSet = new Set(ui.retweeted || []);
+                        const pid = Number(postId);
+                        if (exists) {
+                            rtSet.delete(pid);
+                        } else {
+                            rtSet.add(pid);
+                        }
+                        await writeUserInteractions(userId, { liked: ui.liked || [], retweeted: Array.from(rtSet) }, apiUrl, apiToken);
+                    } catch {}
                     break;
+                }
                 case 'view':
                     post.views += 1;
                     break;

@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', function() {
         posts: [],
         currentUser: null,
         suggestions: [],
-        trends: []
+        trends: [],
+        userInteractions: null
     };
     // 防止重复绑定全局事件
     let documentClickBound = false;
@@ -33,6 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 加载初始数据
         await loadInitialData();
+
+        // 加载用户交互（从后端）
+        if (socialData.currentUser) {
+            await loadUserInteractions(socialData.currentUser.username);
+        }
         
         // 渲染页面内容
         renderPosts();
@@ -166,6 +172,25 @@ document.addEventListener('DOMContentLoaded', function() {
             socialData.posts = generateMockPosts();
             socialData.suggestions = generateSuggestions();
             socialData.trends = generateTrends();
+        }
+    }
+
+    // 从后端读取当前用户的交互（点赞/转发）并保存到内存与本地缓存（供离线回退）
+    async function loadUserInteractions(userId) {
+        try {
+            const resp = await fetch(`/api/user-interactions?userId=${encodeURIComponent(userId)}`);
+            if (resp.ok) {
+                const ui = await resp.json();
+                socialData.userInteractions = {
+                    liked: Array.isArray(ui.liked) ? ui.liked : [],
+                    retweeted: Array.isArray(ui.retweeted) ? ui.retweeted : []
+                };
+                // 同步到本地缓存作为回退
+                const local = getUserInteractions(userId);
+                setUserInteractions(userId, { liked: socialData.userInteractions.liked, retweeted: socialData.userInteractions.retweeted, viewed: local.viewed || [] });
+            }
+        } catch (e) {
+            // 忽略错误，回退到本地缓存
         }
     }
 
@@ -390,10 +415,23 @@ document.addEventListener('DOMContentLoaded', function() {
         let userRetweeted = false;
         
         if (currentUserId) {
-            // 从localStorage恢复用户交互状态
-            const userInteractions = getUserInteractions(currentUserId);
-            userLiked = userInteractions.liked.includes(post.id);
-            userRetweeted = userInteractions.retweeted.includes(post.id);
+            // 优先使用后端的用户交互KV；其次使用帖子上的数组；最后回退到本地缓存
+            if (socialData.userInteractions && Array.isArray(socialData.userInteractions.liked)) {
+                userLiked = socialData.userInteractions.liked.includes(post.id);
+            } else if (Array.isArray(post.likedBy)) {
+                userLiked = post.likedBy.includes(currentUserId);
+            } else {
+                const userInteractions = getUserInteractions(currentUserId);
+                userLiked = userInteractions.liked.includes(post.id);
+            }
+            if (socialData.userInteractions && Array.isArray(socialData.userInteractions.retweeted)) {
+                userRetweeted = socialData.userInteractions.retweeted.includes(post.id);
+            } else if (Array.isArray(post.retweetedBy)) {
+                userRetweeted = post.retweetedBy.includes(currentUserId);
+            } else {
+                const userInteractions = getUserInteractions(currentUserId);
+                userRetweeted = userInteractions.retweeted.includes(post.id);
+            }
             
             // 更新post对象中的数组（如果尚未包含）
             if (!post.likedBy) post.likedBy = [];
@@ -620,6 +658,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     setUserInteractions(currentUserId, userInteractions);
                     element.querySelector('span').textContent = formatCount(post.likes);
+                    // 同步内存中的用户交互
+                    if (!socialData.userInteractions) socialData.userInteractions = { liked: [], retweeted: [] };
+                    if (!wasLikedByUser) {
+                        if (!socialData.userInteractions.liked.includes(post.id)) socialData.userInteractions.liked.push(post.id);
+                    } else {
+                        socialData.userInteractions.liked = socialData.userInteractions.liked.filter(id => id !== post.id);
+                    }
                 }
                 break;
                 
@@ -640,6 +685,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     setUserInteractions(currentUserId, userInteractions);
                     element.querySelector('span').textContent = formatCount(post.retweets);
+                    // 同步内存中的用户交互
+                    if (!socialData.userInteractions) socialData.userInteractions = { liked: [], retweeted: [] };
+                    if (!wasRetweetedByUser) {
+                        if (!socialData.userInteractions.retweeted.includes(post.id)) socialData.userInteractions.retweeted.push(post.id);
+                    } else {
+                        socialData.userInteractions.retweeted = socialData.userInteractions.retweeted.filter(id => id !== post.id);
+                    }
                 }
                 break;
                 
@@ -655,11 +707,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 尝试同步到后端
         try {
-            await fetch(`/api/social-posts?id=${postId}`, {
+            const payload = (action === 'like' || action === 'retweet') && currentUserId ? { action, userId: currentUserId } : { action };
+            const resp = await fetch(`/api/social-posts?id=${postId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action })
+                body: JSON.stringify(payload)
             });
+            if (resp.ok) {
+                const updated = await resp.json().catch(() => null);
+                if (updated && typeof updated === 'object') {
+                    if (action === 'like') {
+                        post.likes = updated.likes ?? post.likes;
+                        if (Array.isArray(updated.likedBy)) post.likedBy = updated.likedBy;
+                        const serverLiked = Array.isArray(post.likedBy) && currentUserId ? post.likedBy.includes(currentUserId) : false;
+                        if (serverLiked) element.classList.add('liked'); else element.classList.remove('liked');
+                        element.querySelector('span').textContent = formatCount(post.likes);
+                    } else if (action === 'retweet') {
+                        post.retweets = updated.retweets ?? post.retweets;
+                        if (Array.isArray(updated.retweetedBy)) post.retweetedBy = updated.retweetedBy;
+                        const serverRetweeted = Array.isArray(post.retweetedBy) && currentUserId ? post.retweetedBy.includes(currentUserId) : false;
+                        if (serverRetweeted) element.classList.add('retweeted'); else element.classList.remove('retweeted');
+                        element.querySelector('span').textContent = formatCount(post.retweets);
+                    }
+                }
+            }
         } catch (error) {
             // API不可用时忽略错误
         }
