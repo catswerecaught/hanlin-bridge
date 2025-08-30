@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="suggestion-username">@${user.username}</div>
                     </div>
                     <button class="follow-btn ${isFollowing ? 'following' : ''}" data-username="${user.username}">
-                        ${isFollowing ? '已关注' : '关注'}
+                        ${isFollowing ? '正在关注' : '关注'}
                     </button>
                 </div>
             `;
@@ -862,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('已取消关注');
         } else {
             newFollowings = [...followedUsers, username];
-            btn.textContent = '已关注';
+            btn.textContent = '正在关注';
             btn.classList.add('following');
             showToast('关注成功！');
         }
