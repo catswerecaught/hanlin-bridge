@@ -297,9 +297,12 @@
 }
 
 .post-user-name {
-    font-weight: 700;
+    font-weight: bold;
     font-size: 15px;
     color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .post-username {
@@ -388,7 +391,7 @@
 }
 
 .post-action:hover {
-    background: rgba(29, 161, 242, 0.1);
+    background: transparent;
 }
 
 .post-action:hover svg {
@@ -435,7 +438,7 @@
 }
 
 .post-action.liked:hover {
-    background: rgba(249, 24, 128, 0.1);
+    background: transparent;
 }
 
 
@@ -454,7 +457,7 @@
 }
 
 .post-action.retweeted:hover {
-    background: rgba(0, 186, 124, 0.1);
+    background: transparent;
 }
 
 .post-action.retweeted svg {
@@ -638,6 +641,9 @@
     font-weight: 700;
     color: var(--text-color);
     margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .suggestion-username {
@@ -652,12 +658,25 @@
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: bold;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .follow-btn:hover {
-    background: rgb(39, 44, 48);
+    background: rgba(29, 29, 31, 0.8);
+}
+
+.follow-btn.following {
+    background: transparent !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.follow-btn.following:hover {
+    background: rgba(255, 0, 0, 0.1) !important;
+    color: red !important;
+    border-color: red !important;
 }
 
 /* 趋势列表 */

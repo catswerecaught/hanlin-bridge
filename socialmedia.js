@@ -374,8 +374,33 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 检查当前用户的交互状态
         const currentUserId = socialData.currentUser ? socialData.currentUser.username : null;
-        const userLiked = currentUserId && post.likedBy && post.likedBy.includes(currentUserId);
-        const userRetweeted = currentUserId && post.retweetedBy && post.retweetedBy.includes(currentUserId);
+        let userLiked = false;
+        let userRetweeted = false;
+        
+        if (currentUserId) {
+            // 从localStorage恢复用户交互状态
+            const userInteractions = getUserInteractions(currentUserId);
+            userLiked = userInteractions.liked.includes(post.id);
+            userRetweeted = userInteractions.retweeted.includes(post.id);
+            
+            // 更新post对象中的数组（如果尚未包含）
+            if (!post.likedBy) post.likedBy = [];
+            if (!post.retweetedBy) post.retweetedBy = [];
+            if (!post.viewedBy) post.viewedBy = [];
+            
+            if (userLiked && !post.likedBy.includes(currentUserId)) {
+                post.likedBy.push(currentUserId);
+            }
+            if (userRetweeted && !post.retweetedBy.includes(currentUserId)) {
+                post.retweetedBy.push(currentUserId);
+            }
+            
+            // 每次渲染时增加阅读量（每个用户每个帖子只增加一次）
+            if (!post.viewedBy.includes(currentUserId)) {
+                post.viewedBy.push(currentUserId);
+                post.views += 1;
+            }
+        }
 
         return `
             <article class="post-item" data-post-id="${post.id}">
@@ -542,15 +567,19 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'like':
                 const wasLikedByUser = currentUserId && post.likedBy && post.likedBy.includes(currentUserId);
                 if (currentUserId) {
+                    const userInteractions = getUserInteractions(currentUserId);
                     if (!wasLikedByUser) {
                         post.likedBy.push(currentUserId);
                         post.likes += 1;
                         element.classList.add('liked');
+                        userInteractions.liked.push(post.id);
                     } else {
                         post.likedBy = post.likedBy.filter(id => id !== currentUserId);
                         post.likes -= 1;
                         element.classList.remove('liked');
+                        userInteractions.liked = userInteractions.liked.filter(id => id !== post.id);
                     }
+                    setUserInteractions(currentUserId, userInteractions);
                     element.querySelector('span').textContent = formatCount(post.likes);
                 }
                 break;
@@ -558,15 +587,19 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'retweet':
                 const wasRetweetedByUser = currentUserId && post.retweetedBy && post.retweetedBy.includes(currentUserId);
                 if (currentUserId) {
+                    const userInteractions = getUserInteractions(currentUserId);
                     if (!wasRetweetedByUser) {
                         post.retweetedBy.push(currentUserId);
                         post.retweets += 1;
                         element.classList.add('retweeted');
+                        userInteractions.retweeted.push(post.id);
                     } else {
                         post.retweetedBy = post.retweetedBy.filter(id => id !== currentUserId);
                         post.retweets -= 1;
                         element.classList.remove('retweeted');
+                        userInteractions.retweeted = userInteractions.retweeted.filter(id => id !== post.id);
                     }
+                    setUserInteractions(currentUserId, userInteractions);
                     element.querySelector('span').textContent = formatCount(post.retweets);
                 }
                 break;
@@ -577,15 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'view':
-                // 只有登录用户才能增加浏览量，且每个用户每个帖子只能增加一次
-                if (currentUserId) {
-                    if (!post.viewedBy) post.viewedBy = [];
-                    if (!post.viewedBy.includes(currentUserId)) {
-                        post.viewedBy.push(currentUserId);
-                        post.views += 1;
-                        element.querySelector('span').textContent = formatCount(post.views);
-                    }
-                }
+                // 阅读量现在在渲染时自动增加，不需要点击处理
                 break;
         }
 
@@ -608,13 +633,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         suggestionsList.innerHTML = socialData.suggestions.map(user => {
             const isFollowing = followedUsers.includes(user.username);
+            const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
+                `<img class="vip-badge" src="images/smverified.png" alt="认证用户" style="width: 16px; height: 16px; margin-left: 4px;">` : '';
             return `
                 <div class="suggestion-item">
                     <div class="suggestion-avatar">
                         <img src="${user.avatar}" alt="${user.name}">
                     </div>
                     <div class="suggestion-info">
-                        <div class="suggestion-name">${user.name}</div>
+                        <div class="suggestion-name">
+                            ${user.name}
+                            ${verifiedBadge}
+                        </div>
                         <div class="suggestion-username">@${user.username}</div>
                     </div>
                     <button class="follow-btn ${isFollowing ? 'following' : ''}" data-username="${user.username}">
@@ -639,6 +669,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function setFollowedUsers(userId, followedUsers) {
         const key = `followedUsers_${userId}`;
         localStorage.setItem(key, JSON.stringify(followedUsers));
+    }
+
+    function getUserInteractions(userId) {
+        const key = `userInteractions_${userId}`;
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : { liked: [], retweeted: [], viewed: [] };
+    }
+
+    function setUserInteractions(userId, interactions) {
+        const key = `userInteractions_${userId}`;
+        localStorage.setItem(key, JSON.stringify(interactions));
     }
 
     function handleFollowClick() {
