@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const trendsList = document.getElementById('trendsList');
     const composeAvatar = document.getElementById('composeAvatar');
     const searchInput = document.getElementById('searchInput');
+    const subscribeBtn = document.querySelector('.subscribe-btn');
 
     // 初始化
     init();
@@ -37,6 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
         renderPosts();
         renderSuggestions();
         renderTrends();
+        // 更新订阅按钮文案
+        updateSubscribeButton();
     }
 
     function checkLoginStatus() {
@@ -89,6 +92,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 根据会员身份更新右侧订阅按钮文案
+    function updateSubscribeButton() {
+        if (!subscribeBtn) return;
+        const isVip = socialData.currentUser && (socialData.currentUser.vip === '普通会员' || socialData.currentUser.vip === 'Pro会员');
+        subscribeBtn.textContent = isVip ? '已订阅' : '订阅';
+    }
+
     function initEventListeners() {
         // 发帖内容输入监听
         if (postContent) {
@@ -97,11 +107,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 charCount.textContent = length;
                 
                 // 启用/禁用发帖按钮
-                submitPost.disabled = length === 0 || length > 280;
+                submitPost.disabled = length === 0 || length > 1000;
                 
                 // 字符计数颜色
-                if (length > 260) {
-                    charCount.style.color = length > 280 ? '#f91880' : '#ffd400';
+                if (length > 900) {
+                    charCount.style.color = length > 1000 ? '#f91880' : '#ffd400';
                 } else {
                     charCount.style.color = 'var(--secondary-text-color)';
                 }
@@ -371,6 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
             `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
         const isSupreme = socialData.currentUser && socialData.currentUser.supreme === true;
+        // 视图追踪唯一ID（登录用户或匿名设备）
+        const viewerId = getViewerId();
         
         // 检查当前用户的交互状态
         const currentUserId = socialData.currentUser ? socialData.currentUser.username : null;
@@ -394,11 +406,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userRetweeted && !post.retweetedBy.includes(currentUserId)) {
                 post.retweetedBy.push(currentUserId);
             }
-            
-            // 每次渲染时增加阅读量（每个用户每个帖子只增加一次）
-            if (!post.viewedBy.includes(currentUserId)) {
-                post.viewedBy.push(currentUserId);
-                post.views += 1;
+        }
+
+        // 每次渲染时增加阅读量（每个“查看者”每个帖子只增加一次，包含匿名设备）
+        if (!post.viewedBy) post.viewedBy = [];
+        const interactionsForView = getUserInteractions(viewerId);
+        if (!interactionsForView.viewed.includes(post.id)) {
+            if (!post.viewedBy.includes(viewerId)) {
+                post.viewedBy.push(viewerId);
+            }
+            post.views += 1;
+            interactionsForView.viewed.push(post.id);
+            setUserInteractions(viewerId, interactionsForView);
+            // 同步到后端（如果可用）
+            try {
+                fetch(`/api/social-posts?id=${post.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'view' })
+                });
+            } catch (e) {
+                // 忽略错误
             }
         }
 
@@ -693,6 +721,22 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem(key, JSON.stringify(interactions));
     }
 
+    // 生成或获取匿名设备ID，用于未登录用户的浏览量去重
+    function getDeviceId() {
+        const key = 'deviceId';
+        let id = localStorage.getItem(key);
+        if (!id) {
+            id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem(key, id);
+        }
+        return id;
+    }
+
+    // 获取当前查看者ID（优先使用登录用户名，否则使用匿名设备ID）
+    function getViewerId() {
+        return socialData.currentUser ? socialData.currentUser.username : `anon_${getDeviceId()}`;
+    }
+
     function handleFollowClick() {
         if (!socialData.currentUser) {
             alert('请先登录');
@@ -710,9 +754,6 @@ document.addEventListener('DOMContentLoaded', function() {
             setFollowedUsers(currentUserId, updatedFollows);
             this.textContent = '关注';
             this.classList.remove('following');
-            this.style.background = 'var(--text-color)';
-            this.style.color = 'white';
-            this.style.border = 'none';
             showToast('已取消关注');
         } else {
             // 关注
@@ -720,9 +761,6 @@ document.addEventListener('DOMContentLoaded', function() {
             setFollowedUsers(currentUserId, followedUsers);
             this.textContent = '已关注';
             this.classList.add('following');
-            this.style.background = 'transparent';
-            this.style.color = 'var(--text-color)';
-            this.style.border = '1px solid var(--border-color)';
             showToast('关注成功！');
         }
     }

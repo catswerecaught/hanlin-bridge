@@ -1,7 +1,7 @@
 /* 社媒页面样式 */
 .social-container {
     display: grid;
-    grid-template-columns: 275px 1fr 450px;
+    grid-template-columns: 275px 1fr 445px;
     gap: 0;
     width: 100vw;
     max-width: none;
@@ -87,7 +87,7 @@
 .post-button {
     width: 90%;
     padding: 16px 0;
-    background: var(--primary-blue);
+    background: #000066;
     color: white;
     border: none;
     border-radius: 50px;
@@ -98,7 +98,7 @@
 }
 
 .post-button:hover {
-    background: #1a8cd8;
+    background: #000066;
 }
 
 /* 主内容区 */
@@ -244,13 +244,13 @@
 }
 
 .compose-tool:hover {
-    background: rgba(29, 155, 240, 0.1);
+    background: rgba(0, 0, 102, 0.1);
 }
 
 .compose-tool svg {
     width: 20px;
     height: 20px;
-    fill: var(--primary-blue);
+    fill: #000066;
 }
 
 .char-count {
@@ -259,7 +259,7 @@
 }
 
 .post-submit-btn {
-    background: var(--primary-blue);
+    background: #000066;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -272,13 +272,13 @@
 }
 
 .post-submit-btn:disabled {
-    background: #1d9bf0;
+    background: #000066;
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 .post-submit-btn:not(:disabled):hover {
-    background: #1a8cd8;
+    background: #000066;
 }
 
 /* 帖子样式 */
@@ -405,7 +405,7 @@
     color: var(--text-color);
     margin-bottom: 10px;
     margin-left: 60px;
-    margin-top: -25px;
+    margin-top: -31px;
 }
 
 .post-actions {
@@ -562,7 +562,7 @@
     overflow-y: auto;
     background: white;
     z-index: 5;
-    margin-right: 35px; /* add separation from viewport edge */
+    margin-right: 15px; /* add separation from viewport edge */
 }
 
 .right-sidebar::-webkit-scrollbar {
@@ -587,7 +587,7 @@
 
 .search-input-wrapper:focus-within {
     background: white;
-    border: 1px solid var(--primary-blue);
+    border: 1px solid #000066;
 }
 
 .search-icon {
@@ -638,9 +638,8 @@
     margin: 0 16px 16px;
 }
 
-.subscribe-btn,
-.show-more-btn {
-    background: var(--text-color);
+.subscribe-btn {
+    background: #000066;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -653,13 +652,17 @@
 
 .show-more-btn {
     background: transparent;
-    color: var(--primary-blue);
+    color: #000066;
     padding: 16px;
     width: 100%;
     text-align: left;
     margin: 0;
     font-weight: 400;
     border-radius: 0 0 16px 16px;
+}
+
+.subscribe-btn:hover {
+    background: #000066;
 }
 
 .show-more-btn:hover {
@@ -729,7 +732,7 @@
 }
 
 .follow-btn {
-    background: var(--text-color);
+    background: #000066;
     color: white;
     border: none;
     padding: 6px 16px;
@@ -741,19 +744,17 @@
 }
 
 .follow-btn:hover {
-    background: rgba(29, 29, 31, 0.8);
+    background: #000066;
 }
 
 .follow-btn.following {
-    background: transparent !important;
-    color: var(--text-color) !important;
-    border: 1px solid var(--border-color) !important;
+    background: #000066 !important;
+    color: white !important;
+    border: none !important;
 }
 
 .follow-btn.following:hover {
-    background: rgba(255, 0, 0, 0.1) !important;
-    color: red !important;
-    border-color: red !important;
+    background: #000066 !important;
 }
 
 /* 趋势列表 */
@@ -788,7 +789,7 @@
 /* 响应式设计 */
 @media (max-width: 1200px) {
     .social-container {
-        grid-template-columns: 240px 1fr 340px;
+        grid-template-columns: 240px 1fr 335px;
         width: 100%;
         max-width: 100vw;
     }
@@ -799,14 +800,14 @@
     }
     
     .right-sidebar {
-        width: 340px;
+        width: 335px;
         right: 20px;
     }
 }
 
 @media (max-width: 1000px) {
     .social-container {
-        grid-template-columns: 80px 1fr 320px;
+        grid-template-columns: 80px 1fr 315px;
     }
     
     .social-sidebar {
@@ -829,8 +830,17 @@
     }
     
     .right-sidebar {
-        width: 320px;
+        width: 315px;
         right: 20px;
+    }
+
+    /* Brand header responsive tweaks */
+    .social-brand {
+        justify-content: center;
+        padding: 6px 0 12px;
+    }
+    .social-brand-name {
+        display: none;
     }
 }
 
