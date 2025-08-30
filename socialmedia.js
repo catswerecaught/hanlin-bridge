@@ -6,7 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
         currentUser: null,
         suggestions: [],
         trends: [],
-        userInteractions: null
+        userInteractions: null,
+        searchState: {
+            isSearching: false,
+            query: '',
+            results: { users: [], posts: [] },
+            activeTab: '用户'
+        }
     };
     // 防止重复绑定全局事件
     let documentClickBound = false;
@@ -20,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const trendsList = document.getElementById('trendsList');
     const composeAvatar = document.getElementById('composeAvatar');
     const searchInput = document.getElementById('searchInput');
+    const searchIcon = document.querySelector('.search-icon');
     const subscribeBtn = document.querySelector('.subscribe-btn');
 
     // 初始化
@@ -133,9 +140,22 @@ document.addEventListener('DOMContentLoaded', function() {
             submitPost.addEventListener('click', handleSubmitPost);
         }
 
-        // 搜索功能
+        // 搜索功能 - 键盘回车触发
         if (searchInput) {
-            searchInput.addEventListener('input', handleSearch);
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                }
+            });
+        }
+        
+        // 搜索功能 - 点击搜索图标触发
+        if (searchIcon) {
+            searchIcon.addEventListener('click', function(e) {
+                e.preventDefault();
+                handleSearch();
+            });
         }
 
         // Tab切换
@@ -144,10 +164,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
                 
+                // 根据tab类型渲染内容
                 const tabType = this.dataset.tab;
-                renderPosts(tabType);
+                if (tabType === 'for-you') {
+                    renderPosts();
+                } else if (tabType === 'following') {
+                    renderFollowingPosts();
+                }
             });
         });
+        
+        // 主页导航按钮事件监听
+        const homeNavItem = document.querySelector('.social-nav-item.active');
+        if (homeNavItem) {
+            homeNavItem.addEventListener('click', function() {
+                if (socialData.searchState.isSearching) {
+                    exitSearchMode();
+                }
+            });
+        }
     }
 
     async function loadInitialData() {
@@ -914,20 +949,224 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleSearch() {
-        const query = searchInput.value.toLowerCase();
-        if (query.length < 2) {
-            renderPosts();
+        if (!searchInput) return;
+        
+        const query = searchInput.value.trim().toLowerCase();
+        console.log('执行搜索，查询:', query);
+        
+        if (query.length < 1) {
+            exitSearchMode();
             return;
         }
 
-        const filteredPosts = socialData.posts.filter(post =>
-            post.content.toLowerCase().includes(query) ||
-            post.user.name.toLowerCase().includes(query) ||
-            post.user.username.toLowerCase().includes(query)
+        // 进入搜索模式
+        socialData.searchState.isSearching = true;
+        socialData.searchState.query = query;
+        
+        // 搜索用户
+        const userResults = users.filter(user =>
+            user.name.toLowerCase().includes(query) ||
+            user.username.toLowerCase().includes(query) ||
+            (user.description && user.description.toLowerCase().includes(query))
         );
 
-        postsContainer.innerHTML = filteredPosts.map(post => createPostHTML(post)).join('');
+        // 搜索帖子
+        const postResults = socialData.posts.filter(post => {
+            if (!post || !post.content) return false;
+            
+            const content = post.content.toLowerCase();
+            const userName = (post.user && post.user.name) ? post.user.name.toLowerCase() : '';
+            const userUsername = (post.user && post.user.username) ? post.user.username.toLowerCase() : '';
+            
+            return content.includes(query) || 
+                   userName.includes(query) || 
+                   userUsername.includes(query);
+        });
+
+        socialData.searchState.results = {
+            users: userResults,
+            posts: postResults
+        };
+
+        console.log('搜索结果:', userResults.length + ' 个用户,', postResults.length + ' 个帖子');
+
+        // 始终默认显示热门tab
+        socialData.searchState.activeTab = '热门';
+        
+        renderSearchResults();
+    }
+
+    function exitSearchMode() {
+        socialData.searchState.isSearching = false;
+        socialData.searchState.query = '';
+        socialData.searchState.results = { users: [], posts: [] };
+        if (searchInput) searchInput.value = '';
+        
+        // 显示主页组件
+        const feedHeader = document.querySelector('.feed-header');
+        const postComposer = document.getElementById('postComposer');
+        if (feedHeader) feedHeader.style.display = 'flex';
+        if (postComposer) postComposer.style.display = 'block';
+        
+        renderPosts();
+    }
+
+    function renderSearchResults() {
+        if (!socialData.searchState.isSearching) return;
+        
+        // 隐藏主页组件
+        const feedHeader = document.querySelector('.feed-header');
+        const postComposer = document.getElementById('postComposer');
+        if (feedHeader) feedHeader.style.display = 'none';
+        if (postComposer) postComposer.style.display = 'none';
+        
+        const { users, posts } = socialData.searchState.results;
+        const { query, activeTab } = socialData.searchState;
+        
+        // 创建搜索结果页面结构
+        const searchHeader = `
+            <div class="search-results-header">
+                <div class="search-query-display">
+                    <svg viewBox="0 0 24 24" class="search-back-btn" title="返回">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+                    </svg>
+                    <div class="search-query-pill">
+                        <svg viewBox="0 0 24 24" class="search-query-icon">
+                            <path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path>
+                        </svg>
+                        <input type="text" class="search-query-input" value="${query}" placeholder="搜索">
+                    </div>
+                </div>
+                <div class="search-tabs">
+                    <button class="search-tab ${activeTab === '热门' ? 'active' : ''}" data-tab="热门">热门</button>
+                    <button class="search-tab ${activeTab === '最新' ? 'active' : ''}" data-tab="最新">最新</button>
+                    <button class="search-tab ${activeTab === '用户' ? 'active' : ''}" data-tab="用户">用户</button>
+                    <button class="search-tab ${activeTab === '媒体' ? 'active' : ''}" data-tab="媒体">媒体</button>
+                    <button class="search-tab ${activeTab === '列表' ? 'active' : ''}" data-tab="列表">列表</button>
+                </div>
+            </div>
+        `;
+        
+        let content = '';
+        
+        if (activeTab === '用户') {
+            if (users.length > 0) {
+                content = `
+                    <div class="search-user-results">
+                        ${users.map(user => createSearchUserHTML(user)).join('')}
+                    </div>
+                    ${users.length > 3 ? '<div class="show-more-results">查看全部</div>' : ''}
+                `;
+            } else {
+                content = '<div class="no-search-results">目前没有搜索到相关用户。</div>';
+            }
+        } else if (activeTab === '热门' || activeTab === '最新') {
+            let contentParts = [];
+            
+            // 先显示用户结果（如果有）
+            if (users.length > 0) {
+                contentParts.push(`
+                    <div class="search-section-header">用户</div>
+                    <div class="search-user-results">
+                        ${users.map(user => createSearchUserHTML(user)).join('')}
+                    </div>
+                `);
+            }
+            
+            // 再显示帖子结果
+            if (posts.length > 0) {
+                const sortedPosts = activeTab === '最新' 
+                    ? posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    : posts.sort((a, b) => (b.likes + b.retweets) - (a.likes + a.retweets));
+                
+                contentParts.push(sortedPosts.map(post => createPostHTML(post)).join(''));
+            } else if (users.length === 0) {
+                contentParts.push('<div class="no-search-results">目前没有搜索到相关内容。</div>');
+            } else {
+                contentParts.push('<div class="no-search-results">目前没有搜索到相关贴文。</div>');
+            }
+            
+            content = contentParts.join('');
+        } else {
+            content = '<div class="no-search-results">目前没有搜索到相关内容。</div>';
+        }
+        
+        postsContainer.innerHTML = searchHeader + content;
+        
+        // 添加返回按钮事件监听
+        const backBtn = document.querySelector('.search-back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', exitSearchMode);
+        }
+        
+        // 添加搜索输入框事件监听
+        const searchQueryInput = document.querySelector('.search-query-input');
+        if (searchQueryInput) {
+            searchQueryInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const newQuery = this.value.trim();
+                    if (newQuery.length >= 2) {
+                        socialData.searchState.query = newQuery;
+                        performSearch(newQuery);
+                    }
+                }
+            });
+            
+            searchQueryInput.addEventListener('input', function(e) {
+                socialData.searchState.query = this.value;
+            });
+        }
+        
+        // 添加搜索tab事件监听
+        document.querySelectorAll('.search-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                socialData.searchState.activeTab = this.dataset.tab;
+                renderSearchResults();
+            });
+        });
+        
+        // 添加用户关注按钮事件
+        document.querySelectorAll('.search-follow-btn').forEach(btn => {
+            btn.addEventListener('click', handleFollowClick);
+        });
+        
+        // 添加帖子交互事件
         addPostEventListeners();
+    }
+
+    function createSearchUserHTML(user) {
+        const currentUserId = socialData.currentUser ? socialData.currentUser.username : null;
+        const followedUsers = currentUserId ? getFollowedUsers(currentUserId) : [];
+        const isFollowing = followedUsers.includes(user.username);
+        const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
+            `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
+        
+        // 如果是当前用户自己，不显示关注按钮
+        const isSelf = currentUserId === user.username;
+        const followButton = isSelf ? '' : `
+            <button class="search-follow-btn ${isFollowing ? 'following' : ''}" data-username="${user.username}">
+                ${isFollowing ? '正在关注' : '关注'}
+            </button>
+        `;
+        
+        return `
+            <div class="search-user-item">
+                <div class="search-user-avatar">
+                    <img src="${user.avatar}" alt="${user.name}">
+                </div>
+                <div class="search-user-info">
+                    <div class="search-user-name">
+                        ${user.name}
+                        ${verifiedBadge}
+                    </div>
+                    <div class="search-user-username">@${user.username}</div>
+                </div>
+                ${followButton}
+            </div>
+        `;
     }
 
     // 工具函数
