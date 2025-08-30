@@ -625,6 +625,8 @@
     font-size: 15px;
     color: var(--text-color);
     flex: 1;
+    text-align: left;
+    padding-left: 0;
 }
 
 #searchInput::placeholder {
@@ -1000,6 +1002,228 @@
 
 .show-more-trends-btn:hover {
     background-color: #f7f7f7; /* 浅灰色背景 */
+}
+
+/* Navigation icon states */
+.home-icon .home-filled {
+    display: none;
+}
+
+.home-icon .home-outline {
+    display: block;
+}
+
+.social-nav-item.active .home-icon .home-filled {
+    display: block;
+}
+
+.social-nav-item.active .home-icon .home-outline {
+    display: none;
+}
+
+.search-icon .search-normal {
+    display: block;
+}
+
+.search-icon .search-bold {
+    display: none;
+}
+
+.social-nav-item.active .search-icon .search-normal {
+    display: none;
+}
+
+.social-nav-item.active .search-icon .search-bold {
+    display: block;
+}
+
+/* Comment section styling */
+.post-comments-section {
+    border-top: 1px solid var(--border-color);
+    margin-top: 12px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+.comment-composer {
+    display: flex;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.comment-input-container {
+    flex: 1;
+}
+
+.comment-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 15px;
+    background: transparent;
+    color: var(--text-color);
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #1d9bf0;
+}
+
+.comment-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.comment-char-count {
+    color: var(--secondary-text-color);
+    font-size: 13px;
+}
+
+.comment-submit-btn {
+    background: #1d9bf0;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.comment-submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.comment-submit-btn:not(:disabled):hover {
+    background: #1a8cd8;
+}
+
+.comments-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.comment-item {
+    display: flex;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-content {
+    flex: 1;
+}
+
+.comment-user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.comment-user-info .vip-badge {
+    position: static;
+    right: auto;
+    bottom: auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.comment-user-name {
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.comment-username {
+    color: var(--secondary-text-color);
+}
+
+.comment-time {
+    color: var(--secondary-text-color);
+    font-size: 13px;
+}
+
+.comment-text {
+    color: var(--text-color);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.comment-actions-bar {
+    display: flex;
+    gap: 16px;
+}
+
+.comment-action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.comment-action:hover {
+    background: rgba(29, 155, 240, 0.1);
+    color: #1d9bf0;
+}
+
+.comment-action.liked {
+    color: #f91880;
+}
+
+.comment-action svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* Delete comment action - destructive style */
+.comment-action[data-action="delete"] {
+    color: #ef4444; /* red tone */
+}
+.comment-action[data-action="delete"]:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
 }
 
 /* Hashtag styling in posts */

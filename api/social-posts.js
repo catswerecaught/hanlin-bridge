@@ -554,12 +554,29 @@ export default async function handler(req, res) {
             }
 
             const posts = await readPosts(apiUrl, apiToken);
-            const filteredPosts = posts.filter(p => p.id != postId);
-            
-            if (filteredPosts.length === posts.length) {
+            // 找到即将被删除的条目（可能是帖子，也可能是评论）
+            const toDelete = posts.find(p => p.id == postId);
+            if (!toDelete) {
                 return res.status(404).json({ error: 'Post not found' });
             }
-            
+
+            let filteredPosts = posts.filter(p => p.id != postId);
+
+            // 若删除的是主帖子（没有 postId 字段），则级联删除所有相关评论
+            if (toDelete && !Object.prototype.hasOwnProperty.call(toDelete, 'postId')) {
+                // 这是主帖子，删除所有相关评论
+                filteredPosts = filteredPosts.filter(p => p.postId != postId);
+            }
+            // 若删除的是评论（具有 postId 字段），则尝试同步减少父帖子的 comments 计数
+            else if (toDelete && Object.prototype.hasOwnProperty.call(toDelete, 'postId') && toDelete.postId != null) {
+                const parentId = toDelete.postId;
+                const parent = filteredPosts.find(p => p.id == parentId);
+                if (parent) {
+                    const current = Number(parent.comments) || 0;
+                    parent.comments = Math.max(0, current - 1);
+                }
+            }
+
             const success = await writePosts(filteredPosts, apiUrl, apiToken);
             if (success) {
                 res.status(200).json({ message: 'Post deleted successfully' });

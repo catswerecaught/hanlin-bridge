@@ -234,12 +234,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('API不可用，使用模拟数据，生成了', socialData.posts.length, '条帖子');
             }
 
+            // 基于已加载的数据重新计算每个主帖的评论数
+            recalculateCommentCounts();
+
             // 生成推荐关注和趋势数据
             socialData.suggestions = generateSuggestions();
             socialData.trends = generateTrends();
         } catch (error) {
             console.log('API调用失败，使用模拟数据:', error);
             socialData.posts = generateMockPosts();
+            // 回退时同样重新计算评论数
+            recalculateCommentCounts();
             socialData.suggestions = generateSuggestions();
             socialData.trends = generateTrends();
         }
@@ -407,6 +412,28 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
     }
 
+    // 重新计算每个主帖的评论数，基于 socialData.posts 中带有 postId 的评论项
+    function recalculateCommentCounts() {
+        if (!Array.isArray(socialData.posts) || socialData.posts.length === 0) return;
+
+        const counts = {};
+        for (const item of socialData.posts) {
+            const isComment = item && item.postId != null;
+            // 只要存在 postId 即视为评论（后端/本地都会带 postId）
+            if (isComment) {
+                const pid = item.postId;
+                counts[pid] = (counts[pid] || 0) + 1;
+            }
+        }
+
+        // 将统计结果写回到主贴对象
+        socialData.posts.forEach(p => {
+            if (!p.postId) {
+                p.comments = counts[p.id] || 0;
+            }
+        });
+    }
+
     async function handleSubmitPost() {
         if (!socialData.currentUser) {
             alert('请先登录');
@@ -466,13 +493,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderPosts(filter = 'recommend') {
         console.log('开始渲染帖子，当前数据:', socialData.posts);
-        let postsToShow = [...socialData.posts];
+        // 过滤掉评论类型的帖子，只显示主帖子
+        // 评论有postId字段，主帖子没有
+        let postsToShow = socialData.posts.filter(p => !p.postId);
         
         // 根据tab过滤帖子
         if (filter === 'following' && socialData.currentUser) {
             const currentUserId = socialData.currentUser.username;
             const followedUsers = getFollowedUsers(currentUserId);
-            postsToShow = socialData.posts.filter(p => {
+            postsToShow = postsToShow.filter(p => {
                 const uname = (p.user && p.user.username) || p.userId || '';
                 return followedUsers.includes(uname);
             });
@@ -671,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <svg viewBox="0 0 24 24">
                             <path d="M1.751 10c0-4.42 3.584-8.003 8.005-8.003h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6.003c-3.317 0-6.005 2.69-6.005 6.003 0 3.37 2.77 6.1 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/>
                         </svg>
-                        <span>${formatCount(post.comments)}</span>
+                        <span data-count="comments">${formatCount(post.comments)}</span>
                     </div>
                     <div class="post-action ${userRetweeted ? 'retweeted' : ''}" data-action="retweet">
                         <svg viewBox="0 0 24 24">
@@ -695,6 +724,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>${formatCount(post.views)}</span>
                     </div>
                 </div>
+                <div class="post-comments-section" style="display: none;" data-post-id="${post.id}">
+                    <div class="comment-composer">
+                        <img class="comment-avatar" src="${socialData.currentUser ? socialData.currentUser.avatar : 'images/default-avatar.jpg'}" alt="Your Avatar">
+                        <div class="comment-input-container">
+                            <textarea class="comment-input" placeholder="发布你的回复" maxlength="280"></textarea>
+                            <div class="comment-actions">
+                                <span class="comment-char-count">0/1000</span>
+                                <button class="comment-submit-btn" disabled>回复</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comments-list" data-post-id="${post.id}"></div>
+                </div>
             </article>
         `;
     }
@@ -706,9 +748,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.stopPropagation();
                 const actionType = this.dataset.action;
                 const postId = parseInt(this.closest('.post-item').dataset.postId);
-                handlePostAction(actionType, postId, this);
+                
+                if (actionType === 'comment') {
+                    toggleCommentSection(postId);
+                } else {
+                    handlePostAction(actionType, postId, this);
+                }
             });
         });
+        
+        // 评论输入事件
+        addCommentEventListeners();
 
         // 三点菜单开关
         document.querySelectorAll('.post-menu').forEach(menu => {
@@ -743,6 +793,336 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('.post-menu-dropdown.show').forEach(d => d.classList.remove('show'));
             });
             documentClickBound = true;
+        }
+    }
+
+    // 切换评论区显示/隐藏
+    function toggleCommentSection(postId) {
+        const commentSection = document.querySelector(`[data-post-id="${postId}"].post-comments-section`);
+        if (!commentSection) return;
+
+        if (commentSection.style.display === 'none') {
+            commentSection.style.display = 'block';
+            loadComments(postId);
+        } else {
+            commentSection.style.display = 'none';
+        }
+    }
+
+    // 添加评论相关事件监听器
+    function addCommentEventListeners() {
+        // 评论输入字数统计
+        document.querySelectorAll('.comment-input').forEach(input => {
+            // 移除旧的事件监听器避免重复绑定
+            input.removeEventListener('input', handleCommentInput);
+            input.addEventListener('input', handleCommentInput);
+        });
+
+        // 评论提交
+        document.querySelectorAll('.comment-submit-btn').forEach(btn => {
+            // 移除旧的事件监听器避免重复绑定
+            btn.removeEventListener('click', handleCommentSubmit);
+            btn.addEventListener('click', handleCommentSubmit);
+        });
+    }
+    
+    function handleCommentInput() {
+        const container = this.closest('.comment-input-container');
+        const charCount = container.querySelector('.comment-char-count');
+        const submitBtn = container.querySelector('.comment-submit-btn');
+        
+        if (charCount && submitBtn) {
+            const length = this.value.length;
+            charCount.textContent = `${length}/1000`;
+            submitBtn.disabled = length === 0 || length > 280;
+        }
+    }
+    
+    function handleCommentSubmit(e) {
+        e.preventDefault();
+        const commentSection = this.closest('.post-comments-section');
+        const postId = parseInt(commentSection.dataset.postId);
+        const input = commentSection.querySelector('.comment-input');
+        const content = input.value.trim();
+
+        if (content && socialData.currentUser) {
+            submitComment(postId, content, input);
+        }
+    }
+
+    // 提交评论
+    async function submitComment(postId, content, inputElement) {
+        if (!socialData.currentUser) {
+            showToast('请先登录');
+            return;
+        }
+
+        const newComment = {
+            id: Date.now(),
+            postId: postId,
+            content: content,
+            user: socialData.currentUser,
+            timestamp: new Date(),
+            likes: 0,
+            views: Math.floor(Math.random() * 50) + 1,
+            liked: false
+        };
+
+        try {
+            // 尝试保存到后端（但不添加到主推流）
+            const response = await fetch('/api/social-posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...newComment,
+                    type: 'comment', // 标记为评论类型
+                    isComment: true // 另外标记不显示在主推流
+                })
+            });
+
+            if (response.ok) {
+                const savedComment = await response.json();
+                Object.assign(newComment, savedComment);
+            }
+        } catch (error) {
+            console.log('API不可用，使用本地存储');
+        }
+
+        // 添加到评论数据
+        if (!socialData.comments) {
+            socialData.comments = [];
+        }
+        socialData.comments.push(newComment);
+
+        // 更新帖子评论数
+        const post = socialData.posts.find(p => p.id === postId);
+        if (post) {
+            post.comments = (post.comments || 0) + 1;
+            // 更稳健地更新DOM中的评论数显示（限定在对应的post元素内）
+            const postEl = document.querySelector(`.post-item[data-post-id="${postId}"]`);
+            if (postEl) {
+                const commentCountSpan = postEl.querySelector(`.post-action[data-action="comment"] span[data-count="comments"]`) 
+                    || postEl.querySelector(`.post-action[data-action="comment"] span`);
+                if (commentCountSpan) {
+                    commentCountSpan.textContent = formatCount(post.comments);
+                }
+            }
+        }
+
+        // 清空输入框
+        inputElement.value = '';
+        const charCount = inputElement.parentNode.querySelector('.comment-char-count');
+        const submitBtn = inputElement.parentNode.querySelector('.comment-submit-btn');
+        if (charCount) charCount.textContent = '0/1000';
+        if (submitBtn) submitBtn.disabled = true;
+
+        // 重新加载评论列表
+        loadComments(postId);
+        showToast('评论成功！');
+    }
+
+    // 加载评论列表
+    function loadComments(postId) {
+        const commentsList = document.querySelector(`[data-post-id="${postId}"].comments-list`);
+        if (!commentsList) return;
+
+        // 合并本地评论和数据库评论
+        const localComments = (socialData.comments || []).filter(c => c.postId === postId);
+        const dbComments = (socialData.posts || []).filter(p => p.postId === postId && (p.type === 'comment' || p.isComment));
+        
+        // 合并两个数组，去除重复（根据id）
+        const allComments = [...localComments];
+        dbComments.forEach(dbComment => {
+            if (!allComments.find(c => c.id === dbComment.id)) {
+                allComments.push(dbComment);
+            }
+        });
+        
+        if (allComments.length === 0) {
+            commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--secondary-text-color);">暂无评论</div>';
+            // 同步为 0
+            const post = socialData.posts.find(p => p.id === postId);
+            if (post) {
+                post.comments = 0;
+                const postEl = document.querySelector(`.post-item[data-post-id="${postId}"]`);
+                if (postEl) {
+                    const commentCountSpan = postEl.querySelector(`.post-action[data-action="comment"] span[data-count="comments"]`) 
+                        || postEl.querySelector(`.post-action[data-action="comment"] span`);
+                    if (commentCountSpan) {
+                        commentCountSpan.textContent = '0';
+                    }
+                }
+            }
+            return;
+        }
+
+        // 按时间倒序排列
+        allComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        commentsList.innerHTML = allComments.map(comment => createCommentHTML(comment)).join('');
+        
+        // 同步该帖的评论计数到UI与内存（避免后端计数滞后）
+        const actualCount = allComments.length;
+        const post = socialData.posts.find(p => p.id === postId);
+        if (post) {
+            post.comments = actualCount;
+            const postEl = document.querySelector(`.post-item[data-post-id="${postId}"]`);
+            if (postEl) {
+                const commentCountSpan = postEl.querySelector(`.post-action[data-action="comment"] span[data-count="comments"]`) 
+                    || postEl.querySelector(`.post-action[data-action="comment"] span`);
+                if (commentCountSpan) {
+                    commentCountSpan.textContent = formatCount(actualCount);
+                }
+            }
+        }
+
+        // 添加评论交互事件
+        addCommentActionListeners();
+    }
+
+    // 创建评论 HTML
+    function createCommentHTML(comment) {
+        const timeAgo = getTimeAgo(comment.timestamp);
+        
+        // 处理用户信息 - 兼容两种数据格式
+        const user = comment.user || {
+            name: comment.userName,
+            username: comment.userId,
+            avatar: comment.userAvatar,
+            vip: comment.userVip
+        };
+        
+        const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
+            `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
+
+        return `
+            <div class="comment-item" data-comment-id="${comment.id}">
+                <img class="comment-avatar" src="${user.avatar}" alt="${user.name}">
+                <div class="comment-content">
+                    <div class="comment-user-info">
+                        <span class="comment-user-name">${user.name}</span>
+                        ${verifiedBadge}
+                        <span class="comment-username">@${user.username}</span>
+                        <span class="comment-time">·</span>
+                        <span class="comment-time">${timeAgo}</span>
+                    </div>
+                    <div class="comment-text">${highlightHashtags(comment.content)}</div>
+                    <div class="comment-actions-bar">
+                        ${socialData.currentUser && socialData.currentUser.supreme === true ? `
+                        <div class="comment-action" data-action="delete" title="删除评论">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm9.5-9h1v9h-1v-9zm-4 0h1v9h-1v-9zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                            <span>删除</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 添加评论操作事件监听器
+    function addCommentActionListeners() {
+        document.querySelectorAll('.comment-action').forEach(action => {
+            action.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const actionType = this.dataset.action;
+                const commentId = parseInt(this.closest('.comment-item').dataset.commentId);
+                handleCommentAction(actionType, commentId, this);
+            });
+        });
+    }
+
+    // 处理评论操作（删除）
+    async function handleCommentAction(action, commentId, element) {
+        // 从本地或从 posts 集合中查找对应评论
+        const comment = (socialData.comments || []).find(c => c.id === commentId) 
+            || (socialData.posts || []).find(p => p.id === commentId && (p.postId != null));
+        if (!comment) return;
+
+        if (action === 'delete') {
+            // 仅管理员可删除
+            if (!socialData.currentUser || socialData.currentUser.supreme !== true) {
+                alert('无权限删除评论');
+                return;
+            }
+            if (!confirm('确定删除该评论？此操作不可撤销。')) return;
+
+            try {
+                const headers = { 'X-Admin-Username': socialData.currentUser.username };
+                const token = sessionStorage.getItem('supremeDeleteToken');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                let resp = await fetch(`/api/social-posts?id=${commentId}`, {
+                    method: 'DELETE',
+                    headers
+                });
+
+                if (resp.status === 403 && !token) {
+                    const input = prompt('请输入管理员令牌以删除评论：');
+                    if (input && input.trim()) {
+                        sessionStorage.setItem('supremeDeleteToken', input.trim());
+                        headers['Authorization'] = `Bearer ${input.trim()}`;
+                        resp = await fetch(`/api/social-posts?id=${commentId}`, {
+                            method: 'DELETE',
+                            headers
+                        });
+                    }
+                }
+
+                if (resp.ok) {
+                    // 从内存中移除评论
+                    if (Array.isArray(socialData.comments)) {
+                        socialData.comments = socialData.comments.filter(c => c.id !== commentId);
+                    }
+                    if (Array.isArray(socialData.posts)) {
+                        socialData.posts = socialData.posts.filter(p => p.id !== commentId);
+                    }
+
+                    // 更新所属帖子的评论计数并更新UI
+                    const parentPostId = comment.postId;
+                    if (parentPostId != null) {
+                        const parentPost = (socialData.posts || []).find(p => p.id === parentPostId);
+                        if (parentPost) {
+                            const commentsListEl = document.querySelector(`[data-post-id="${parentPostId}"].comments-list`);
+                            let remainingCount = 0;
+                            if (commentsListEl) {
+                                // 直接根据 DOM 中剩余元素数来计算，或使用数据源重新加载
+                                remainingCount = Math.max(0, commentsListEl.querySelectorAll('.comment-item').length - 1);
+                            }
+                            parentPost.comments = remainingCount;
+
+                            const postEl = document.querySelector(`.post-item[data-post-id="${parentPostId}"]`);
+                            if (postEl) {
+                                const countSpan = postEl.querySelector(`.post-action[data-action="comment"] span[data-count="comments"]`) 
+                                    || postEl.querySelector(`.post-action[data-action="comment"] span`);
+                                if (countSpan) countSpan.textContent = formatCount(remainingCount);
+                            }
+                        }
+                    }
+
+                    // 从DOM移除该评论
+                    const itemEl = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
+                    if (itemEl && itemEl.parentElement) {
+                        itemEl.parentElement.removeChild(itemEl);
+                        // 若无剩余评论，显示占位提示
+                        if (itemEl.parentElement.querySelectorAll('.comment-item').length === 0) {
+                            itemEl.parentElement.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--secondary-text-color);">暂无评论</div>';
+                        }
+                    }
+
+                    showToast('评论已删除');
+                } else {
+                    const err = await resp.json().catch(() => ({}));
+                    showToast(err.error || '删除失败');
+                }
+            } catch (e) {
+                showToast('删除失败');
+            }
+            return; // 删除无需后续PATCH
         }
     }
 
