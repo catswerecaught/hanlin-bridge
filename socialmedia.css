@@ -944,7 +944,7 @@
     font-weight: 800;
     color: #000066;
     padding: 20px 16px 16px;
-    text-align: center;
+    text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -986,20 +986,20 @@
     display: block;
     width: 100%;
     padding: 12px 16px;
-    margin: 8px 0;
+    margin: 0;
     background: transparent;
     border: none;
-    color: #1d9bf0;
+    color: #000066;
     font-size: 15px;
     font-weight: 400;
     text-align: left;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 0 0 8px 8px; /* 上方直角，下方圆角 */
     transition: background-color 0.2s;
 }
 
 .show-more-trends-btn:hover {
-    background-color: rgba(29, 155, 240, 0.1);
+    background-color: #f7f7f7; /* 浅灰色背景 */
 }
 
 /* Hashtag styling in posts */
