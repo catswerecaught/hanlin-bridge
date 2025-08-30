@@ -98,12 +98,40 @@ async function readPosts(apiUrl, apiToken) {
             return await initializePosts(apiUrl, apiToken);
         }
 
-        const posts = unwrapKV(raw);
-        if (!Array.isArray(posts)) {
+        // 解包并规范化为数组，兼容历史多种存储格式
+        let unpacked = unwrapKV(raw);
+        let postsArr = null;
+
+        // 1) 已是数组
+        if (Array.isArray(unpacked)) {
+            postsArr = unpacked;
+        }
+        // 2) 对象容器里包含 posts/value/result 等字段
+        else if (unpacked && typeof unpacked === 'object') {
+            if (Array.isArray(unpacked.posts)) postsArr = unpacked.posts;
+            else if (Array.isArray(unpacked.value)) postsArr = unpacked.value;
+            else if (Array.isArray(unpacked.result)) postsArr = unpacked.result;
+        }
+        // 3) 字符串（可能是数组的 JSON 字符串）
+        else if (typeof unpacked === 'string') {
+            try {
+                const parsed = JSON.parse(unpacked);
+                if (Array.isArray(parsed)) postsArr = parsed;
+                else if (parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.posts)) postsArr = parsed.posts;
+                    else if (Array.isArray(parsed.value)) postsArr = parsed.value;
+                    else if (Array.isArray(parsed.result)) postsArr = parsed.result;
+                }
+            } catch (e) {
+                console.error('字符串化帖子数据二次解析失败:', e);
+            }
+        }
+
+        if (!Array.isArray(postsArr)) {
             console.error('帖子数据格式无效，拒绝覆盖，抛出错误');
             throw new Error('Invalid posts format in KV');
         }
-        return posts;
+        return postsArr;
     } catch (error) {
         // 不再在读取失败时初始化，避免误覆盖历史数据
         console.error('读取帖子数据失败（不进行初始化）:', error);
