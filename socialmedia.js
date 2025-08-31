@@ -54,6 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTrends();
         // 更新订阅按钮文案
         updateSubscribeButton();
+
+        // 如果通过 URL 带有 #search 哈希进入，则自动进入搜索模式
+        if (window.location.hash === '#search') {
+            enterSearchMode();
+            updateNavActiveState('搜索');
+            if (searchInput) searchInput.focus();
+        }
     }
 
     function checkLoginStatus() {
@@ -195,6 +202,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else if (span.textContent === '搜索') {
                         enterSearchMode();
+                    } else if (span.textContent === '个人资料') {
+                        window.location.href = 'tuebo-profile.html';
                     }
                 });
             }

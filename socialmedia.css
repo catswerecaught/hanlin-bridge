@@ -71,7 +71,13 @@
 }
 
 .social-nav-item.active {
+    background-color: rgba(0, 0, 102, 0.1);
     font-weight: 700;
+}
+
+.social-nav-item.active span {
+    font-weight: bold;
+    color: #000066;
 }
 
 /* Ensure left nav icons use consistent size/color and don't inherit sidebar search input spacing */
@@ -437,6 +443,10 @@
     margin-left: 60px;
     width: 100%;
     align-items: center;
+    margin-top: 12px;
+    padding: 8px 0 8px 0; /* reduced bottom spacing for tighter layout */
+    font-size: 13px;
+    color: var(--secondary-text-color);
 }
 
 .post-action {
