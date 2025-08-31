@@ -316,6 +316,7 @@
 .post-header {
     display: flex;
     gap: 12px;
+    align-items: center;
     margin-bottom: 12px;
 }
 
@@ -570,7 +571,7 @@
 }
 
 .post-menu {
-    position: absolute;
+    position: absolute; /* pinned to top-right of the post */
     top: 8px;
     right: 8px;
     width: 34px;
@@ -1063,6 +1064,37 @@
     display: none;
 }
 
+/* Promoted post indicator */
+.post-promoted-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: absolute; /* sit next to the menu */
+    top: 8px;
+    right: 48px; /* 8px page edge + 34px menu + 6px gap */
+    height: 34px;
+    margin: 0;
+    color: #660033;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.post-promoted-indicator span {
+    /* Solid color text, gradient removed */
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    color: #660033;
+    -webkit-text-fill-color: initial;
+}
+
+.promoted-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
+}
+
 /* Comment section styling */
 .post-comments-section {
     border-top: 1px solid var(--border-color);
@@ -1101,11 +1133,11 @@
 
 .comment-input {
     width: 100%;
-    min-height: 80px;
+    min-height: 40px; /* default much smaller */
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    resize: vertical;
+    resize: none; /* we will auto-resize via JS */
     font-family: inherit;
     font-size: 15px;
     background: transparent;
@@ -1130,23 +1162,26 @@
 }
 
 .comment-submit-btn {
-    background: #1d9bf0;
+    background: #000066; /* align with post submit button */
     color: white;
     border: none;
-    padding: 8px 20px;
+    padding: 8px 16px; /* align with .post-submit-btn */
     border-radius: 20px;
-    font-weight: 600;
+    font-size: 15px; /* align with .post-submit-btn */
+    font-weight: 700; /* align with .post-submit-btn */
+    min-width: 80px; /* align with .post-submit-btn */
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .comment-submit-btn:disabled {
-    background: #ccc;
+    background: #000066;
+    opacity: 0.5; /* align with .post-submit-btn */
     cursor: not-allowed;
 }
 
 .comment-submit-btn:not(:disabled):hover {
-    background: #1a8cd8;
+    background: #000066; /* same hover color as post */
 }
 
 .comments-list {

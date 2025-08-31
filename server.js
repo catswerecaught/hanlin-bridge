@@ -96,7 +96,10 @@ async function handleApi(req, res, pathname) {
     });
   }
   try {
-    const modPath = url.pathToFileURL(file).href;
+    // 使用文件修改时间作为查询参数，避免 ESM 缓存，便于开发时热加载 API 代码
+    const st = await fs.stat(file).catch(() => null);
+    const ver = st ? st.mtimeMs : Date.now();
+    const modPath = url.pathToFileURL(file).href + `?v=${ver}`;
     const mod = await import(modPath);
     const handler = mod.default;
     if (typeof handler !== 'function') return send(res, 500, { error: 'Invalid API handler' });

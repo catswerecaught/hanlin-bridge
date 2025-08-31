@@ -445,10 +445,17 @@ export default async function handler(req, res) {
         } else if (method === 'PATCH') {
             // 更新帖子（点赞、转发等）
             const posts = await readPosts(apiUrl, apiToken);
-            const { action, userId } = req.body;
+            const incomingBody = req.body || {};
+            // 调试日志：记录收到的 PATCH 请求
+            try {
+                console.log('PATCH /api/social-posts debug:', { url: req.url, postId, body: incomingBody });
+            } catch {}
+            const { userId } = incomingBody;
+            const rawAction = incomingBody && typeof incomingBody.action !== 'undefined' ? incomingBody.action : undefined;
+            const action = typeof rawAction === 'string' ? rawAction.trim().toLowerCase() : undefined;
             
             if (!postId) {
-                return res.status(400).json({ error: 'Missing post id' });
+                return res.status(400).json({ error: 'Missing post id', debug: { url: req.url, body: incomingBody } });
             }
             const post = posts.find(p => p.id == postId);
             if (!post) {
@@ -485,6 +492,34 @@ export default async function handler(req, res) {
                     } catch {}
                     break;
                 }
+                case 'promote': {
+                    if (!userId) {
+                        return res.status(400).json({ error: 'Missing userId for promote action', debug: { receivedBody: incomingBody } });
+                    }
+                    // 验证超级管理员权限
+                    if (userId !== 'taosir') {
+                        return res.status(403).json({ error: 'Insufficient permissions for promote action' });
+                    }
+                    // 取消其他帖子的推荐状态
+                    posts.forEach(p => {
+                        if (p.promoted) p.promoted = false;
+                    });
+                    // 推荐当前帖子
+                    post.promoted = true;
+                    break;
+                }
+                case 'unpromote': {
+                    if (!userId) {
+                        return res.status(400).json({ error: 'Missing userId for unpromote action', debug: { receivedBody: incomingBody } });
+                    }
+                    // 验证超级管理员权限
+                    if (userId !== 'taosir') {
+                        return res.status(403).json({ error: 'Insufficient permissions for unpromote action' });
+                    }
+                    // 取消推荐
+                    post.promoted = false;
+                    break;
+                }
                 case 'retweet': {
                     if (!userId) {
                         return res.status(400).json({ error: 'Missing userId for retweet action' });
@@ -518,7 +553,7 @@ export default async function handler(req, res) {
                     post.views += 1;
                     break;
                 default:
-                    return res.status(400).json({ error: 'Invalid action' });
+                    return res.status(400).json({ error: 'Invalid action', debug: { receivedBody: incomingBody, rawAction, normalizedAction: action } });
             }
             
             const success = await writePosts(posts, apiUrl, apiToken);

@@ -507,8 +507,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // 按时间排序
-        postsToShow.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // 按推荐状态和时间排序 - 推荐帖子优先
+        postsToShow.sort((a, b) => {
+            // 推荐帖子优先
+            if (a.promoted && !b.promoted) return -1;
+            if (!a.promoted && b.promoted) return 1;
+            // 同等推荐状态下按时间排序
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        });
         
         console.log('准备渲染的帖子数量:', postsToShow.length);
         
@@ -680,13 +686,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="post-avatar">
                         <img src="${user.avatar}" alt="${user.name}">
                     </div>
-                    <div class="post-user-info">
-                        <span class="post-user-name">${user.name}</span>
-                        ${verifiedBadge}
-                        <span class="post-username">@${user.username}</span>
-                        <span class="post-time">·</span>
-                        <span class="post-time">${timeAgo}</span>
+                    ${post.promoted ? `
+                    <div class="post-promoted-indicator">
+                        <img src="images/recommend.png" alt="推荐" class="promoted-icon" />
+                        <span>推荐</span>
                     </div>
+                    ` : ''}
                     <div class="post-menu">
                         <svg viewBox="0 0 24 24">
                             <path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
@@ -694,8 +699,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${isSupreme ? `
                         <div class="post-menu-dropdown" data-dropdown>
                             <div class="post-menu-item" data-action="delete">删除帖子</div>
+                            <div class="post-menu-item" data-action="${post.promoted ? 'unpromote' : 'promote'}">${post.promoted ? '取消推荐' : '推荐贴文'}</div>
                         </div>
                         ` : ''}
+                    </div>
+                    <div class="post-user-info">
+                        <span class="post-user-name">${user.name}</span>
+                        ${verifiedBadge}
+                        <span class="post-username">@${user.username}</span>
+                        <span class="post-time">·</span>
+                        <span class="post-time">${timeAgo}</span>
                     </div>
                 </div>
                 <div class="post-content">${highlightHashtags(post.content)}</div>
@@ -815,11 +828,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 添加评论相关事件监听器
     function addCommentEventListeners() {
-        // 评论输入字数统计
+        // 评论输入字数统计 + 自动高度
         document.querySelectorAll('.comment-input').forEach(input => {
             // 移除旧的事件监听器避免重复绑定
             input.removeEventListener('input', handleCommentInput);
             input.addEventListener('input', handleCommentInput);
+            // 初始化高度（根据内容自适应）
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
         });
 
         // 评论提交
@@ -840,6 +856,10 @@ document.addEventListener('DOMContentLoaded', function() {
             charCount.textContent = `${length}/1000`;
             submitBtn.disabled = length === 0 || length > 280;
         }
+
+        // 文本域自动高度
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
     }
     
     function handleCommentSubmit(e) {
@@ -1187,6 +1207,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('删除失败');
             }
             return; // 删除无需执行后续PATCH同步
+        }
+
+        if (action === 'promote' || action === 'unpromote') {
+            if (!socialData.currentUser || socialData.currentUser.supreme !== true) {
+                alert('无权限操作推荐');
+                return;
+            }
+
+            try {
+                console.log('Attempting promote toggle:', { postId, action, user: socialData.currentUser && socialData.currentUser.username });
+                const response = await fetch(`/api/social-posts?id=${postId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        userId: socialData.currentUser.username
+                    })
+                });
+
+                if (response.ok) {
+                    // 更新本地数据
+                    if (action === 'promote') {
+                        // 取消其他帖子的推荐状态
+                        socialData.posts.forEach(p => {
+                            if (p.promoted) p.promoted = false;
+                        });
+                        // 推荐当前帖子
+                        post.promoted = true;
+                        showToast('帖子已推荐');
+                    } else {
+                        // 取消推荐
+                        post.promoted = false;
+                        showToast('已取消推荐');
+                    }
+
+                    // 重新渲染帖子列表
+                    renderPosts();
+                } else {
+                    let errText = '操作失败';
+                    try {
+                        const e = await response.json();
+                        if (e && (e.error || e.message)) {
+                            errText = `操作失败: ${e.error || e.message}`;
+                            if (e.debug) console.warn('Promote API debug:', e.debug);
+                        }
+                    } catch {}
+                    showToast(errText);
+                }
+            } catch (error) {
+                console.error('推荐操作失败:', error);
+                showToast('操作失败');
+            }
+            return;
         }
 
         switch (action) {
