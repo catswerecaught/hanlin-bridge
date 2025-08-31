@@ -1907,10 +1907,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatCount(count) {
-        if (count < 1000) return count.toString();
-        if (count < 10000) return (count / 1000).toFixed(1) + 'K';
+        if (typeof count !== 'number' || isNaN(count)) return '0';
+        // < 10,000: comma separated
+        if (count < 10000) return count.toLocaleString('en-US');
+        // 10,000–999,999: thousands, rounded down, no decimals
         if (count < 1000000) return Math.floor(count / 1000) + 'K';
-        return (count / 1000000).toFixed(1) + 'M';
+        // 1,000,000–999,999,999: millions with 1 decimal, trim trailing .0
+        if (count < 1000000000) {
+            const m = (count / 1000000).toFixed(1);
+            return (m.endsWith('.0') ? m.slice(0, -2) : m) + 'M';
+        }
+        // >= 1,000,000,000: billions with 1 decimal, trim trailing .0
+        const b = (count / 1000000000).toFixed(1);
+        return (b.endsWith('.0') ? b.slice(0, -2) : b) + 'B';
     }
 
     function showToast(message) {
