@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const trendsList = document.getElementById('trendsList');
     const composeAvatar = document.getElementById('composeAvatar');
     const searchInput = document.getElementById('searchInput');
-    const searchIcon = document.querySelector('.search-icon');
+    const searchIcon = document.querySelector('.search-input-wrapper .search-icon');
     const subscribeBtn = document.querySelector('.subscribe-btn');
 
     // 初始化
@@ -48,10 +48,16 @@ document.addEventListener('DOMContentLoaded', function() {
             await loadUserInteractions(socialData.currentUser.username);
         }
         
-        // 渲染页面内容
-        renderPosts();
-        renderSuggestions();
-        renderTrends();
+        // 渲染页面内容（根据容器存在性进行防护）
+        if (postsContainer) {
+            renderPosts();
+        }
+        if (suggestionsList) {
+            renderSuggestions();
+        }
+        if (trendsList) {
+            renderTrends();
+        }
         // 更新订阅按钮文案
         updateSubscribeButton();
 
@@ -501,6 +507,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderPosts(filter = 'recommend') {
+        // 页面可能没有主Feed容器（如个人资料页），做空容器防护
+        if (!postsContainer) return;
         console.log('开始渲染帖子，当前数据:', socialData.posts);
         // 过滤掉评论类型的帖子，只显示主帖子
         // 评论有postId字段，主帖子没有
@@ -624,8 +632,21 @@ document.addEventListener('DOMContentLoaded', function() {
             vip: post.userVip
         };
         
-        const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
-            `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
+        // 根据特定用户自定义认证徽章
+        let verifiedBadge = '';
+        if (user.vip === 'Pro会员' || user.vip === '普通会员') {
+            // 默认徽章
+            let badgeSrc = 'images/smverified.png';
+            // Tuebo Social 使用 verifiedoffi.png
+            if (user.username === 'user00007' || user.name === 'Tuebo Social') {
+                badgeSrc = 'images/verifiedoffi.png';
+            }
+            verifiedBadge = `<img class="vip-badge" src="${badgeSrc}" alt="认证用户">`;
+            // Oliver Tao 在认证徽章右侧追加一个矩形角标 tuebooffi.jpg（尺寸与认证徽章一致）
+            if (user.username === 'taosir' || user.name === 'Oliver Tao') {
+                verifiedBadge += `<img class="vip-badge vip-badge-rect" src="images/tuebooffi.jpg" alt="Tuebo 官方">`;
+            }
+        }
         const isSupreme = socialData.currentUser && socialData.currentUser.supreme === true;
         // 视图追踪唯一ID（登录用户或匿名设备）
         const viewerId = getViewerId();
@@ -1702,7 +1723,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (feedHeader) feedHeader.style.display = 'flex';
         if (postComposer) postComposer.style.display = 'block';
         
-        renderPosts();
+        // 恢复个人资料页的上半部分（如在该页）
+        const profileInfo = document.querySelector('.profile-info-section');
+        const profileTabs = document.querySelector('.profile-tabs');
+        if (profileInfo) profileInfo.style.display = '';
+        if (profileTabs) profileTabs.style.display = '';
+
+        // 在个人资料页恢复当前Tab内容，否则恢复主Feed
+        if (window.TueboProfile && typeof window.TueboProfile.renderCurrentTab === 'function') {
+            window.TueboProfile.renderCurrentTab();
+        } else {
+            renderPosts();
+        }
     }
 
     function renderSearchResults() {
@@ -1713,6 +1745,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const postComposer = document.getElementById('postComposer');
         if (feedHeader) feedHeader.style.display = 'none';
         if (postComposer) postComposer.style.display = 'none';
+        
+        // 在个人资料页，隐藏上半部分（横幅/头像区和标签）
+        const profileInfo = document.querySelector('.profile-info-section');
+        const profileTabs = document.querySelector('.profile-tabs');
+        if (profileInfo) profileInfo.style.display = 'none';
+        if (profileTabs) profileTabs.style.display = 'none';
         
         const { users, posts } = socialData.searchState.results;
         const { query, activeTab, showingTrends } = socialData.searchState;
@@ -1806,7 +1844,10 @@ document.addEventListener('DOMContentLoaded', function() {
             content = '<div class="no-search-results">目前没有搜索到相关内容。</div>';
         }
         
-        postsContainer.innerHTML = searchHeader + content;
+        // 在主Feed缺失时，尝试渲染到个人资料页容器
+        const targetContainer = postsContainer || document.getElementById('profilePostsContainer');
+        if (!targetContainer) return;
+        targetContainer.innerHTML = searchHeader + content;
         
         // 添加返回按钮事件监听
         const backBtn = document.querySelector('.search-back-btn');
@@ -1960,4 +2001,20 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => document.body.removeChild(toast), 300);
         }, 2000);
     }
+
+    // 提供一个可复用的右侧边栏初始化函数，供其他页面（如个人资料页）调用
+    window.initRightSidebar = function() {
+        try {
+            if (suggestionsList) {
+                renderSuggestions();
+            }
+            if (trendsList) {
+                renderTrends();
+            }
+            updateSubscribeButton();
+        } catch (e) {
+            // 静默失败，避免跨页面报错
+            console.warn('initRightSidebar 调用失败：', e);
+        }
+    };
 });

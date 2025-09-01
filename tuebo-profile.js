@@ -115,12 +115,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update profile info
         profileMainAvatar.src = currentUser.avatar || 'images/login-default.png';
-        // 显示认证徽章（与主Feed一致）
+        // 显示认证徽章（与主Feed一致，且加入特定用户自定义）
         const nameText = currentUser.name || currentUser.username;
         const showBadge = currentUser.vip === 'Pro会员' || currentUser.vip === '普通会员';
-        profileDisplayName.innerHTML = showBadge
-            ? `${nameText} <img class="vip-badge" src="images/smverified.png" alt="认证用户">`
-            : nameText;
+        if (showBadge) {
+            let badgeSrc = 'images/smverified.png';
+            // Tuebo Social 使用官方徽章
+            if (currentUser.username === 'user00007' || currentUser.name === 'Tuebo Social') {
+                badgeSrc = 'images/verifiedoffi.png';
+            }
+            let headerBadges = `<img class="vip-badge" src="${badgeSrc}" alt="认证用户">`;
+            // Oliver Tao 追加矩形角标
+            if (currentUser.username === 'taosir' || currentUser.name === 'Oliver Tao') {
+                headerBadges += ` <img class="vip-badge vip-badge-rect" src="images/tuebooffi.jpg" alt="Tuebo 官方">`;
+            }
+            profileDisplayName.innerHTML = `${nameText} ${headerBadges}`;
+        } else {
+            profileDisplayName.textContent = nameText;
+        }
         profileUsername.textContent = `@${currentUser.username}`;
         
         // Update stats
@@ -271,8 +283,18 @@ document.addEventListener('DOMContentLoaded', function() {
             vip: post.userVip
         };
         
-        const verifiedBadge = (user.vip === 'Pro会员' || user.vip === '普通会员') ? 
-            `<img class="vip-badge" src="images/smverified.png" alt="认证用户">` : '';
+        // 与主Feed一致的徽章渲染逻辑（包含特定用户）
+        let verifiedBadge = '';
+        if (user.vip === 'Pro会员' || user.vip === '普通会员') {
+            let badgeSrc = 'images/smverified.png';
+            if (user.username === 'user00007' || user.name === 'Tuebo Social') {
+                badgeSrc = 'images/verifiedoffi.png';
+            }
+            verifiedBadge = `<img class="vip-badge" src="${badgeSrc}" alt="认证用户">`;
+            if (user.username === 'taosir' || user.name === 'Oliver Tao') {
+                verifiedBadge += ` <img class="vip-badge vip-badge-rect" src="images/tuebooffi.jpg" alt="Tuebo 官方">`;
+            }
+        }
         const isSupreme = currentUser && currentUser.supreme === true;
         
         const isLiked = userInteractions.liked && userInteractions.liked.includes(post.id);

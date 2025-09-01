@@ -370,11 +370,31 @@ document.addEventListener('DOMContentLoaded', function() {
             if (user) {
                 setLoginUser(user);
                 setUserAvatar(user);
+                // 登录触发重定向处理
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const redirectParam = params.get('redirect');
+                    const sessionRedirect = sessionStorage.getItem('postLoginRedirect');
+                    const target = redirectParam || sessionRedirect;
+                    if (target) {
+                        sessionStorage.removeItem('postLoginRedirect');
+                        showLoginModal(false);
+                        window.location.href = target;
+                        return;
+                    }
+                } catch {}
                 showLoginModal(false);
             } else {
                 loginError.textContent = '用户名或密码错误';
             }
         };
+        // 若通过 URL ?login=1 进入且未登录，自动弹出登录框
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('login') === '1' && !getLoginUser()) {
+                showLoginModal(true);
+            }
+        } catch {}
     }
 
     // 权限拦截：只有Pro会员可进入趋势页面
@@ -418,4 +438,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     setupLingningAccessControl();
+
+    // 社媒页面访问控制：必须登录
+    function setupSocialmediaAccessControl() {
+        var navLinks = document.querySelectorAll('.main-nav ul li a');
+        var smLink = Array.from(navLinks).find(a => ((a.getAttribute('href') || '').endsWith('socialmedia.html')) || a.textContent.trim() === '社媒');
+        if (!smLink) return;
+        smLink.addEventListener('click', function(e) {
+            var user = getLoginUser();
+            if (!user) {
+                e.preventDefault();
+                try { sessionStorage.setItem('postLoginRedirect', 'socialmedia.html'); } catch {}
+                var modal = document.getElementById('loginModal');
+                if (modal) {
+                    showLoginModal(true);
+                } else {
+                    window.location.href = 'index.html?login=1&redirect=socialmedia.html';
+                }
+            }
+        });
+    }
+    setupSocialmediaAccessControl();
 });

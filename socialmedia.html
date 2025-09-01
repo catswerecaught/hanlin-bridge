@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社媒 - 翰林桥</title>
+    <script>
+      // 未登录用户禁止访问：在渲染前立即拦截并跳转到首页登录
+      (function () {
+        try {
+          var u = localStorage.getItem('loginUser');
+          if (!u) {
+            var redirect = encodeURIComponent('socialmedia.html');
+            window.location.replace('index.html?login=1&redirect=' + redirect);
+          }
+        } catch (e) {
+          var redirect = encodeURIComponent('socialmedia.html');
+          window.location.replace('index.html?login=1&redirect=' + redirect);
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="style.css?v=4">
     <link rel="stylesheet" href="socialmedia.css?v=13">
 </head>
@@ -178,7 +193,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="users.js"></script>
-    <script src="script.js?v=3"></script>
+    <script src="script.js?v=4"></script>
     <script src="socialmedia.js?v=5"></script>
 </body>
 </html>

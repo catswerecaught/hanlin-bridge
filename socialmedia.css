@@ -381,6 +381,17 @@
     display: inline-block;
 }
 
+/* Rectangular companion badge (e.g., for Oliver Tao) */
+.post-user-info .vip-badge-rect {
+    width: 16px; /* shrink by 2px */
+    height: 16px; /* shrink by 2px */
+    border-radius: 4px; /* rounded rectangle */
+    margin-left: 0px; /* move left by 2px (reduce gap) */
+    vertical-align: middle;
+    display: inline-block;
+    object-fit: cover;
+}
+
 .suggestion-name .vip-badge {
     position: static;
     right: auto;
