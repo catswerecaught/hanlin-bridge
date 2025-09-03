@@ -461,7 +461,7 @@ main.is-exiting {
         border: 2.5px solid #fff;
         background: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        transform: translateY(-50%) translateX(2px);
+        transform: translateY(-50%) translateX(17px);
     }
 
     .user-avatar-img,

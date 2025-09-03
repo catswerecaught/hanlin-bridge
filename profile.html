@@ -124,6 +124,10 @@
     #newProgressBtn:hover {
       background: #005ecb;
     }
+    /* 课堂进度副标题统一黑色（覆盖内联样式） */
+    .teaching-progress-card > div:first-child span {
+      color: #000 !important;
+    }
 
     .teaching-tool-wrapper textarea,
     .teaching-tool-wrapper input[type="text"],
@@ -199,14 +203,15 @@
         line-height: 1.4;
       }
       .teaching-progress-card > div:first-child span {
-        font-size: 0.9em !important;
+        font-size: 0.95em !important;
         display: block;
         margin-top: 4px;
         margin-left: 0 !important;
       }
       .edit-progress-btn, .delete-progress-btn {
-        font-size: 12px !important;
-        padding: 4px 8px !important;
+        font-size: 14px !important;
+        padding: 6px 12px !important;
+        border-radius: 12px !important;
       }
       /* 手机端导航栏优化 */
       .main-nav ul {
