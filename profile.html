@@ -124,6 +124,13 @@
     #newProgressBtn:hover {
       background: #005ecb;
     }
+    /* 表单元素在容器内不溢出 */
+    .teaching-tool-wrapper textarea,
+    .teaching-tool-wrapper input[type="text"],
+    .teaching-tool-wrapper select {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
     @media (max-width: 1100px) {
       .profile-main-row {
         flex-direction: column;
@@ -135,30 +142,91 @@
         max-width: 98vw;
       }
     }
+    @media (max-width: 768px) {
+      .teaching-tool-wrapper {
+        min-width: unset;
+        padding: 20px 3vw;
+      }
+      /* 确保班级卡片在平板上也能正常显示 */
+      .class-card-apple {
+        font-size: 15px;
+        max-width: 140px;
+      }
+    }
     @media (max-width: 600px) {
       .profile-wrapper {
+        display: none !important; /* 手机端隐藏个人资料组件 */
+      }
+      .teaching-tool-wrapper {
+        min-width: unset;
         max-width: 98vw;
-        padding: 24px 6vw 18px 6vw;
+        margin: 0 auto;
+        padding: 24px 4vw 24px 4vw;
       }
-      .profile-header {
-        gap: 10px;
+      /* 覆盖 main 的负外边距，整体下移一点 */
+      main {
+        margin-top: 10px !important;
       }
-      .profile-avatar {
-        width: 48px;
-        height: 48px;
+      /* 再给工具轻微下移，提升呼吸感 */
+      .teaching-tool-wrapper {
+        margin-top: 6px;
       }
-      .profile-vip-badge {
-        width: 16px;
-        height: 16px;
-        margin-left: -10px;
-        margin-top: 24px;
+      .profile-main-row {
+        margin: 16px auto 0 auto;
+        padding: 0 1vw;
       }
-      .profile-info-label {
-        width: 70px;
-        font-size: 15px;
+      /* 确保助学工具在手机端完整显示 */
+      .class-card-apple {
+        font-size: 14px;
+        padding: 8px 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
       }
-      .profile-info-value {
-        font-size: 15px;
+      /* 修复教学进度文本域在手机端右侧溢出 */
+      .teaching-tool-wrapper textarea.apple-input {
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+      .teaching-progress-card {
+        padding: 16px 18px 12px 18px !important;
+        margin-bottom: 12px;
+      }
+      .teaching-progress-card > div:first-child {
+        font-size: 1em !important;
+        line-height: 1.4;
+      }
+      .teaching-progress-card > div:first-child span {
+        font-size: 0.9em !important;
+        display: block;
+        margin-top: 4px;
+        margin-left: 0 !important;
+      }
+      .edit-progress-btn, .delete-progress-btn {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+      }
+      /* 手机端导航栏优化 */
+      .main-nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+      .main-nav ul li:not(.nav-highlight) {
+        display: none;
+      }
+      .main-nav ul li:nth-child(2), /* 首页 */
+      .main-nav ul li:nth-child(5), /* 灵凝 */
+      .main-nav ul li:nth-child(6), /* 定制 */
+      .main-nav ul li:nth-child(9) { /* 社媒 */
+        display: block !important;
+      }
+      .main-nav ul li a {
+        font-size: 14px;
+        padding: 8px 12px;
       }
     }
   </style>

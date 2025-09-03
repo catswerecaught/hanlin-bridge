@@ -172,6 +172,29 @@ document.addEventListener('DOMContentLoaded', function() {
     classCardList.appendChild(row);
   }
 
+  // 获取已保存的自定义班级名称
+  function getSavedCustomClassNames() {
+    const user = getCurrentUser();
+    if (!user) return [];
+    try {
+      const saved = localStorage.getItem(`customClassNames_${user.username}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // 保存自定义班级名称
+  function saveCustomClassName(className) {
+    const user = getCurrentUser();
+    if (!user) return;
+    const saved = getSavedCustomClassNames();
+    if (!saved.includes(className)) {
+      saved.push(className);
+      localStorage.setItem(`customClassNames_${user.username}`, JSON.stringify(saved));
+    }
+  }
+
   function showAddClassDialog() {
     // 弹窗式新建班级
     const modal = document.createElement('div');
@@ -192,6 +215,32 @@ document.addEventListener('DOMContentLoaded', function() {
     box.style.padding = '32px 36px 24px 36px';
     box.style.minWidth = '320px';
     box.innerHTML = '<div style="font-size:1.18em;font-weight:600;margin-bottom:18px;">新建班级</div>';
+    
+    // 创建选择模式的按钮组
+    const modeRow = document.createElement('div');
+    modeRow.style.display = 'flex';
+    modeRow.style.gap = '12px';
+    modeRow.style.marginBottom = '18px';
+    
+    const presetModeBtn = document.createElement('button');
+    presetModeBtn.textContent = '预设班级';
+    presetModeBtn.className = 'apple-btn-outline';
+    presetModeBtn.style.fontSize = '14px';
+    presetModeBtn.style.padding = '6px 12px';
+    
+    const customModeBtn = document.createElement('button');
+    customModeBtn.textContent = '自定义';
+    customModeBtn.className = 'apple-btn-outline';
+    customModeBtn.style.fontSize = '14px';
+    customModeBtn.style.padding = '6px 12px';
+    
+    modeRow.appendChild(presetModeBtn);
+    modeRow.appendChild(customModeBtn);
+    box.appendChild(modeRow);
+    
+    // 年级选择（预设/自定义共用）
+    const gradeRow = document.createElement('div');
+    gradeRow.style.margin = '0 0 12px 0';
     const gradeSelect = document.createElement('select');
     gradeSelect.className = 'apple-input';
     gradeSelect.style.marginRight = '12px';
@@ -201,6 +250,11 @@ document.addEventListener('DOMContentLoaded', function() {
       opt.textContent = g;
       gradeSelect.appendChild(opt);
     });
+    gradeRow.appendChild(gradeSelect);
+    box.appendChild(gradeRow);
+
+    // 预设模式容器
+    const presetContainer = document.createElement('div');
     const classSelect = document.createElement('select');
     classSelect.className = 'apple-input';
     for(let i=1;i<=10;i++){
@@ -209,8 +263,58 @@ document.addEventListener('DOMContentLoaded', function() {
       opt.textContent = i+'班';
       classSelect.appendChild(opt);
     }
-    box.appendChild(gradeSelect);
-    box.appendChild(classSelect);
+    // 添加已保存的自定义班级名称到选择列表
+    const savedCustomNames = getSavedCustomClassNames();
+    if (savedCustomNames.length > 0) {
+      const separator = document.createElement('option');
+      separator.textContent = '--- 自定义班级 ---';
+      separator.disabled = true;
+      classSelect.appendChild(separator);
+      savedCustomNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        classSelect.appendChild(opt);
+      });
+    }
+    presetContainer.appendChild(classSelect);
+    
+    // 自定义模式容器
+    const customContainer = document.createElement('div');
+    customContainer.style.display = 'none';
+    const customInput = document.createElement('input');
+    customInput.type = 'text';
+    customInput.placeholder = '请输入班级名称';
+    customInput.className = 'apple-input';
+    customInput.style.width = '100%';
+    customContainer.appendChild(customInput);
+    
+    box.appendChild(presetContainer);
+    box.appendChild(customContainer);
+    
+    let isCustomMode = false;
+    
+    // 模式切换
+    presetModeBtn.onclick = function() {
+      isCustomMode = false;
+      presetModeBtn.className = 'apple-btn-primary';
+      customModeBtn.className = 'apple-btn-outline';
+      presetContainer.style.display = '';
+      customContainer.style.display = 'none';
+    };
+    
+    customModeBtn.onclick = function() {
+      isCustomMode = true;
+      presetModeBtn.className = 'apple-btn-outline';
+      customModeBtn.className = 'apple-btn-primary';
+      presetContainer.style.display = 'none';
+      customContainer.style.display = '';
+      customInput.focus();
+    };
+    
+    // 默认选中预设模式
+    presetModeBtn.className = 'apple-btn-primary';
+    
     const btnRow = document.createElement('div');
     btnRow.style.display = 'flex';
     btnRow.style.gap = '18px';
@@ -226,8 +330,29 @@ document.addEventListener('DOMContentLoaded', function() {
     box.appendChild(btnRow);
     modal.appendChild(box);
     document.body.appendChild(modal);
+    
     okBtn.onclick = function(){
-      const cls = gradeSelect.value+classSelect.value;
+      let cls;
+      if (isCustomMode) {
+        const customName = customInput.value.trim();
+        if (!customName) {
+          alert('请输入班级名称');
+          return;
+        }
+        // 仅保存“自定义名称”部分，便于复用
+        saveCustomClassName(customName);
+        // 组合：年级 + 自定义名称
+        cls = gradeSelect.value + customName;
+      } else {
+        const selected = classSelect.value;
+        if (!selected || selected.startsWith('---')) {
+          alert('请选择班级');
+          return;
+        }
+        // 组合：年级 + 选择的班级或自定义名称
+        cls = gradeSelect.value + selected;
+      }
+      
       if(classList.includes(cls)){
         alert('该班级已存在');
         return;
@@ -239,9 +364,17 @@ document.addEventListener('DOMContentLoaded', function() {
       renderTeachingProgressList();
       document.body.removeChild(modal);
     };
+    
     cancelBtn.onclick = function(){
       document.body.removeChild(modal);
     };
+    
+    // 支持回车键确认
+    customInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        okBtn.click();
+      }
+    });
   }
 
   function renderTeachingProgressList() {
