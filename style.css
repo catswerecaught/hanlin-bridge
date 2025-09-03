@@ -453,7 +453,7 @@ main.is-exiting {
     }
 
     .user-avatar {
-        right: 8px;
+        right: 0;
         width: 54px;
         height: 54px;
         min-width: 54px;
@@ -461,6 +461,7 @@ main.is-exiting {
         border: 2.5px solid #fff;
         background: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transform: translateY(-50%) translateX(2px);
     }
 
     .user-avatar-img,
