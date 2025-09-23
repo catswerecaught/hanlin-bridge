@@ -515,6 +515,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     saveDraftBtn.addEventListener('click', saveDraft);
+    // 发送按钮在表单外部，手动触发表单提交
+    sendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (composeForm) {
+            // 使用浏览器原生提交流程，触发我们注册的 submit 监听
+            if (typeof composeForm.requestSubmit === 'function') {
+                composeForm.requestSubmit();
+            } else {
+                composeForm.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        }
+    });
     refreshBtn.addEventListener('click', loadEmails);
     
     // 发送邮件表单提交
@@ -532,6 +544,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!validateEmail(toEmail)) {
             alert('请输入有效的邮箱地址（格式：username@oceantie.top）');
+            return;
+        }
+        // 禁止给自己发邮件
+        if (toEmail.toLowerCase() === userEmail.toLowerCase()) {
+            alert('不能给自己发送邮件');
             return;
         }
         

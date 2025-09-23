@@ -114,6 +114,11 @@ async function handleSendEmail(req, res, apiUrl, apiToken, username) {
   if (!to.endsWith('@oceantie.top')) {
     return res.status(400).json({ error: '只能发送给 @oceantie.top 邮箱地址' });
   }
+  // 禁止给自己发邮件
+  const senderEmail = `${username}@oceantie.top`;
+  if (to.toLowerCase() === senderEmail.toLowerCase()) {
+    return res.status(400).json({ error: '不能给自己发送邮件' });
+  }
   
   const recipientUsername = to.split('@')[0];
   
