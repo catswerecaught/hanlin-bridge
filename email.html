@@ -8,9 +8,9 @@
     <style>
         .email-container {
             display: flex;
-            height: calc(100vh - 80px);
+            height: calc(100vh - 62px);
             background: #f5f5f5;
-            margin-top: 80px;
+            margin-top: 62px;
         }
         
         /* 左侧边栏 */
@@ -32,6 +32,9 @@
             cursor: pointer;
             width: calc(100% - 32px);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .compose-btn:hover {
@@ -165,6 +168,7 @@
             color: #8a8886;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -253,6 +257,9 @@
             cursor: pointer;
             font-size: 12px;
             color: #323130;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .action-btn:hover {
@@ -356,8 +363,8 @@
         /* 响应式设计 */
         @media (max-width: 768px) {
             .email-container {
-                margin-top: 60px;
-                height: calc(100vh - 60px);
+                margin-top: 52px;
+                height: calc(100vh - 52px);
             }
             
             .email-sidebar {
@@ -379,20 +386,14 @@
             color: #8a8886;
         }
         
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        
-        .empty-message {
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        
-        .empty-subtitle {
-            font-size: 14px;
-            color: #a19f9d;
-        }
+        .empty-icon { margin-bottom: 16px; }
+
+        /* 通用图标样式 */
+        .icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; }
+        .icon-lg { width: 24px; height: 24px; }
+        .icon-primary { fill: currentColor; }
+        .folder-item .left { display: inline-flex; align-items: center; gap: 8px; }
+        .empty-subtitle { font-size: 14px; color: #a19f9d; }
     </style>
 </head>
 <body>
@@ -435,22 +436,37 @@
     <div class="email-container">
         <!-- 左侧边栏 -->
         <div class="email-sidebar">
-            <button class="compose-btn" id="composeBtn">✉ 撰写</button>
+            <button class="compose-btn" id="composeBtn">
+                <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h7a1 1 0 1 1 0 2H6v14h12v-7a1 1 0 1 1 2 0v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><path d="M20.7 3.3a1 1 0 0 1 0 1.4l-8.9 8.9-3.5.9.9-3.5 8.9-8.9a1 1 0 0 1 1.4 0z"/></svg>
+                撰写
+            </button>
             <ul class="folder-list">
                 <li class="folder-item active" data-folder="inbox">
-                    <span>📥 收件箱</span>
+                    <span class="left">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18a1 1 0 0 1 1 1v9a3 3 0 0 1-3 3h-4l-2 3-2-3H5a3 3 0 0 1-3-3V5a1 1 0 0 1 1-1zm1 2v8a1 1 0 0 0 1 1h5l2 3 2-3h5a1 1 0 0 0 1-1V6H4z"/></svg>
+                        收件箱
+                    </span>
                     <span class="folder-count" id="inboxCount">0</span>
                 </li>
                 <li class="folder-item" data-folder="sent">
-                    <span>📤 已发送邮件</span>
+                    <span class="left">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12l20-9-9 20-2-8-7-3z"/></svg>
+                        已发送邮件
+                    </span>
                     <span class="folder-count" id="sentCount">0</span>
                 </li>
                 <li class="folder-item" data-folder="drafts">
-                    <span>📝 草稿</span>
+                    <span class="left">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h10l6 6v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm10 1.5V9h4.5"/><path d="M7 14h10M7 18h10M7 10h6"/></svg>
+                        草稿
+                    </span>
                     <span class="folder-count" id="draftsCount">0</span>
                 </li>
                 <li class="folder-item" data-folder="deleted">
-                    <span>🗑️ 已删除邮件</span>
+                    <span class="left">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z"/></svg>
+                        已删除邮件
+                    </span>
                     <span class="folder-count" id="deletedCount">0</span>
                 </li>
             </ul>
@@ -461,8 +477,12 @@
             <div class="email-list-header">
                 <div class="email-list-title">收件箱</div>
                 <div style="display: flex; gap: 8px;">
-                    <button class="action-btn" id="refreshBtn">🔄</button>
-                    <button class="action-btn" id="selectAllBtn">☑️</button>
+                    <button class="action-btn" id="refreshBtn" title="刷新">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 1 2.34 5.66L9 15H3v6l2.22-2.22A10 10 0 1 0 2 12h2z"/></svg>
+                    </button>
+                    <button class="action-btn" id="selectAllBtn" title="全选">
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4V4zm3 7l3 3 7-7 1.41 1.41L10 16.83 5.59 12.41 7 11z"/></svg>
+                    </button>
                 </div>
             </div>
             <div class="email-search">
@@ -477,7 +497,9 @@
         <div class="email-content">
             <!-- 阅读邮件 -->
             <div id="readingArea" class="empty-state">
-                <div class="empty-icon">📬</div>
+                <div class="empty-icon">
+                    <svg class="icon-lg icon-primary" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 16h48a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4zm0 6v26h48V22l-24 14L8 22z"/></svg>
+                </div>
                 <div class="empty-message">选择一封邮件来阅读</div>
                 <div class="empty-subtitle">您的邮箱地址: <span id="userEmailAddress">未登录</span></div>
             </div>
@@ -523,9 +545,9 @@
                             <div class="email-time" id="detailTime"></div>
                         </div>
                         <div class="email-actions">
-                            <button class="action-btn" id="replyBtn">↩️ 回复</button>
-                            <button class="action-btn" id="forwardBtn">➡️ 转发</button>
-                            <button class="action-btn" id="deleteBtn">🗑️ 删除</button>
+                            <button class="action-btn" id="replyBtn"><svg class="icon icon-primary" viewBox="0 0 24 24"><path d="M10 8V5l-7 7 7 7v-3h4a8 8 0 0 0 8-8v-2a10 10 0 0 1-10 10h-2v-4h4a6 6 0 0 0 6-6H10z"/></svg> 回复</button>
+                            <button class="action-btn" id="forwardBtn"><svg class="icon icon-primary" viewBox="0 0 24 24"><path d="M14 8V5l7 7-7 7v-3H6a6 6 0 0 1-6-6V9a9 9 0 0 0 9 9h5v-4H9a5 5 0 0 1-5-5h10z"/></svg> 转发</button>
+                            <button class="action-btn" id="deleteBtn"><svg class="icon icon-primary" viewBox="0 0 24 24"><path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z"/></svg> 删除</button>
                         </div>
                     </div>
                 </div>
@@ -537,7 +559,28 @@
     </div>
 
     <script src="users.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="script.js?v=4"></script>
     <script src="email.js"></script>
+    <script>
+      // 仅在本页确保“邮件”是唯一active的导航项
+      (function() {
+        try {
+          const links = document.querySelectorAll('.main-nav ul li a');
+          links.forEach(a => a.classList.remove('active'));
+          const emailLink = Array.from(links).find(a => (a.getAttribute('href') || '').endsWith('email.html'));
+          if (emailLink) emailLink.classList.add('active');
+          // 触发一次高亮定位
+          const highlight = document.querySelector('.nav-highlight');
+          if (highlight && emailLink && emailLink.parentElement) {
+            highlight.style.opacity = '1';
+            highlight.style.left = emailLink.parentElement.offsetLeft + 'px';
+            highlight.style.top = emailLink.parentElement.offsetTop + 'px';
+            highlight.style.width = emailLink.parentElement.offsetWidth + 'px';
+            highlight.style.height = emailLink.parentElement.offsetHeight + 'px';
+          }
+        } catch {}
+      })();
+    </script>
 </body>
 </html>

@@ -190,38 +190,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const lastPos = sessionStorage.getItem('navHighlightPos');
         const targetLi = activeLink.parentElement;
 
+        const hasGsap = typeof window !== 'undefined' && typeof window.gsap !== 'undefined';
         // Make sure the element is visible from the start
-        gsap.set(highlight, { opacity: 1 });
+        if (hasGsap) {
+            gsap.set(highlight, { opacity: 1 });
+        } else {
+            highlight.style.opacity = '1';
+        }
 
         if (lastPos) {
-            // If we have a stored position, animate from it
             const fromPos = JSON.parse(lastPos);
-            
-            gsap.fromTo(highlight, 
-                { // from
-                    left: fromPos.left,
-                    top: fromPos.top,
-                    width: fromPos.width,
-                    height: fromPos.height
-                }, 
-                { // to
-                    duration: 0.5,
-                    ease: 'power3.out',
-                    left: targetLi.offsetLeft,
-                    top: targetLi.offsetTop,
-                    width: targetLi.offsetWidth,
-                    height: targetLi.offsetHeight
-                }
-            );
+            if (hasGsap) {
+                gsap.fromTo(highlight,
+                    { left: fromPos.left, top: fromPos.top, width: fromPos.width, height: fromPos.height },
+                    { duration: 0.5, ease: 'power3.out', left: targetLi.offsetLeft, top: targetLi.offsetTop, width: targetLi.offsetWidth, height: targetLi.offsetHeight }
+                );
+            } else {
+                // Fallback: set directly to target
+                highlight.style.left = targetLi.offsetLeft + 'px';
+                highlight.style.top = targetLi.offsetTop + 'px';
+                highlight.style.width = targetLi.offsetWidth + 'px';
+                highlight.style.height = targetLi.offsetHeight + 'px';
+            }
             sessionStorage.removeItem('navHighlightPos');
         } else {
-            // Otherwise, just set it instantly without animation
-            gsap.set(highlight, {
-                left: targetLi.offsetLeft,
-                top: targetLi.offsetTop,
-                width: targetLi.offsetWidth,
-                height: targetLi.offsetHeight
-            });
+            if (hasGsap) {
+                gsap.set(highlight, { left: targetLi.offsetLeft, top: targetLi.offsetTop, width: targetLi.offsetWidth, height: targetLi.offsetHeight });
+            } else {
+                highlight.style.left = targetLi.offsetLeft + 'px';
+                highlight.style.top = targetLi.offsetTop + 'px';
+                highlight.style.width = targetLi.offsetWidth + 'px';
+                highlight.style.height = targetLi.offsetHeight + 'px';
+            }
         }
     }
 

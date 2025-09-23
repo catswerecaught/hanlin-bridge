@@ -58,6 +58,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const userEmail = generateUserEmail(currentUser.username);
     userEmailAddress.textContent = userEmail;
 
+    // 设置页眉头像（保障该页独立运行时也能显示头像）
+    function setHeaderAvatarEmailPage(user) {
+        const avatar = document.getElementById('userAvatar');
+        if (!avatar) return;
+        avatar.innerHTML = '';
+        if (user) {
+            avatar.classList.add('logged-in');
+            const img = document.createElement('img');
+            img.src = user.avatar || 'images/user00001.jpg';
+            img.alt = user.name;
+            img.className = 'user-avatar-img';
+            avatar.appendChild(img);
+            const badge = document.createElement('img');
+            badge.className = 'vip-badge';
+            if (user.vip === 'Pro会员') {
+                badge.src = 'images/vip-pro.png';
+                badge.alt = 'Pro会员';
+            } else {
+                badge.src = 'images/vip-normal.png';
+                badge.alt = '普通会员';
+            }
+            avatar.appendChild(badge);
+        } else {
+            avatar.classList.remove('logged-in');
+            const img = document.createElement('img');
+            img.src = 'images/login-default.png';
+            img.alt = '登录';
+            img.id = 'avatarImg';
+            avatar.appendChild(img);
+        }
+    }
+    setHeaderAvatarEmailPage(currentUser);
+
     // 获取用户头像初始字母
     function getAvatarInitial(name) {
         return name ? name.charAt(0).toUpperCase() : '?';
@@ -126,6 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('bodyInput').value = '';
     }
 
+    function ensureEmailShape(obj) {
+        const empty = { inbox: [], sent: [], drafts: [], deleted: [] };
+        return {
+            inbox: Array.isArray(obj?.inbox) ? obj.inbox : [],
+            sent: Array.isArray(obj?.sent) ? obj.sent : [],
+            drafts: Array.isArray(obj?.drafts) ? obj.drafts : [],
+            deleted: Array.isArray(obj?.deleted) ? obj.deleted : []
+        };
+    }
+
     // 加载邮件数据
     async function loadEmails() {
         try {
@@ -137,15 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 const data = await response.json();
-                emails = data.emails || { inbox: [], sent: [], drafts: [], deleted: [] };
+                emails = ensureEmailShape(data.emails);
             } else {
                 // 如果API失败，使用本地存储
                 const savedEmails = localStorage.getItem(`emails_${currentUser.username}`);
                 if (savedEmails) {
-                    emails = JSON.parse(savedEmails);
+                    emails = ensureEmailShape(JSON.parse(savedEmails));
                 } else {
                     // 创建示例邮件数据
-                    emails = {
+                    emails = ensureEmailShape({
                         inbox: [
                             {
                                 id: 'demo_' + Date.now(),
@@ -153,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 fromName: '系统管理员',
                                 to: userEmail,
                                 subject: '欢迎使用翰林桥邮件系统',
-                                body: `亲爱的 ${currentUser.name}，\n\n欢迎使用翰林桥邮件系统！\n\n您的邮箱地址是：${userEmail}\n\n您可以与系统中的其他用户进行邮件通信。\n\n祝您使用愉快！\n\n翰林桥团队`,
+                                body: `亲爱的 ${currentUser.name},\n\n欢迎使用翰林桥邮件系统！\n\n您的邮箱地址是：${userEmail}\n\n您可以与系统中的其他用户进行邮件通信。\n\n祝您使用愉快！\n\n翰林桥团队`,
                                 timestamp: Date.now() - 3600000, // 1小时前
                                 read: false,
                                 attachments: []
@@ -162,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         sent: [],
                         drafts: [],
                         deleted: []
-                    };
+                    });
                     saveEmailsToLocal();
                 }
             }
@@ -183,10 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 更新邮件数量显示
     function updateEmailCounts() {
-        inboxCount.textContent = emails.inbox.filter(email => !email.read).length;
-        sentCount.textContent = emails.sent.length;
-        draftsCount.textContent = emails.drafts.length;
-        deletedCount.textContent = emails.deleted.length;
+        const inbox = Array.isArray(emails?.inbox) ? emails.inbox : [];
+        const sent = Array.isArray(emails?.sent) ? emails.sent : [];
+        const drafts = Array.isArray(emails?.drafts) ? emails.drafts : [];
+        const deleted = Array.isArray(emails?.deleted) ? emails.deleted : [];
+
+        inboxCount.textContent = inbox.filter(email => !email.read).length;
+        sentCount.textContent = sent.length;
+        draftsCount.textContent = drafts.length;
+        deletedCount.textContent = deleted.length;
         
         // 隐藏计数为0的标签
         [inboxCount, sentCount, draftsCount, deletedCount].forEach(el => {
@@ -202,17 +250,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderEmailList() {
         const folderEmails = emails[currentFolder] || [];
         emailItems.innerHTML = '';
-        
+
         if (folderEmails.length === 0) {
             emailItems.innerHTML = `
                 <div style="padding: 40px 16px; text-align: center; color: #8a8886;">
-                    <div style="font-size: 24px; margin-bottom: 8px;">📭</div>
+                    <div style="margin-bottom: 8px; display: inline-block;">
+                        <svg class="icon-lg icon-primary" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 16h48a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4zm0 6v26h48V22l-24 14L8 22z"/></svg>
+                    </div>
                     <div>该文件夹为空</div>
                 </div>
             `;
             return;
         }
         
+        const iconPaperclip = '<svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.78 7.78a3 3 0 1 0 4.24 4.24l7.07-7.07a5 5 0 1 0-7.07-7.07L5.64 11.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         folderEmails.forEach(email => {
             const emailDiv = document.createElement('div');
             emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
@@ -227,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="email-preview">${preview}</div>
                 <div class="email-meta">
                     <div class="email-time">${formatTime(email.timestamp)}</div>
-                    ${email.attachments && email.attachments.length > 0 ? '<div class="email-attachment">📎</div>' : ''}
+                    ${email.attachments && email.attachments.length > 0 ? `<div class="email-attachment">${iconPaperclip}</div>` : ''}
                 </div>
             `;
             
@@ -411,23 +462,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 搜索邮件
     function searchEmails(query) {
-        if (!query.trim()) {
-            renderEmailList();
+        const q = query.trim().toLowerCase();
+        const folderEmails = emails[currentFolder] || [];
+        const list = !q ? folderEmails : folderEmails.filter(email =>
+            (email.subject || '').toLowerCase().includes(q) ||
+            (email.body || '').toLowerCase().includes(q) ||
+            (email.from || '').toLowerCase().includes(q) ||
+            (email.fromName || '').toLowerCase().includes(q)
+        );
+
+        emailItems.innerHTML = '';
+        if (list.length === 0) {
+            emailItems.innerHTML = '<div style="padding: 40px 16px; text-align: center; color: #8a8886;">未找到匹配的邮件</div>';
             return;
         }
-        
-        const folderEmails = emails[currentFolder] || [];
-        const filteredEmails = folderEmails.filter(email => 
-            email.subject.toLowerCase().includes(query.toLowerCase()) ||
-            email.body.toLowerCase().includes(query.toLowerCase()) ||
-            email.from.toLowerCase().includes(query.toLowerCase()) ||
-            (email.fromName && email.fromName.toLowerCase().includes(query.toLowerCase()))
-        );
-        
-        emailItems.innerHTML = '';
-        filteredEmails.forEach(email => {
-            // 使用相同的渲染逻辑，但应用到过滤后的邮件
-            // 这里简化处理，实际可以抽取成公共函数
+        const iconPaperclip = '<svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.78 7.78a3 3 0 1 0 4.24 4.24l7.07-7.07a5 5 0 1 0-7.07-7.07L5.64 11.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        list.forEach(email => {
+            const emailDiv = document.createElement('div');
+            emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
+            emailDiv.dataset.emailId = email.id;
+            const senderName = email.fromName || (email.from || '').split('@')[0];
+            const preview = (email.body || '').substring(0, 80) + ((email.body || '').length > 80 ? '...' : '');
+            emailDiv.innerHTML = `
+                <div class="email-sender">${senderName}</div>
+                <div class="email-subject">${email.subject || ''}</div>
+                <div class="email-preview">${preview}</div>
+                <div class="email-meta">
+                    <div class="email-time">${formatTime(email.timestamp)}</div>
+                    ${email.attachments && email.attachments.length > 0 ? `<div class=\"email-attachment\">${iconPaperclip}</div>` : ''}
+                </div>`;
+            emailDiv.addEventListener('click', () => {
+                document.querySelectorAll('.email-item').forEach(item => item.classList.remove('active'));
+                emailDiv.classList.add('active');
+                showEmailDetail();
+                displayEmailDetail(email);
+                if (!email.read) {
+                    email.read = true;
+                    emailDiv.classList.remove('unread');
+                    updateEmailCounts();
+                    saveEmailsToLocal();
+                }
+            });
+            emailItems.appendChild(emailDiv);
         });
     }
 
