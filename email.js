@@ -273,14 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
             emailDiv.dataset.emailId = email.id;
             
             const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
+            const senderInitial = getAvatarInitial(senderName);
+            const fromEmail = email.from || '';
             const preview = email.body.substring(0, 80) + (email.body.length > 80 ? '...' : '');
             
             emailDiv.innerHTML = `
-                <div class="email-sender">${senderName}</div>
+                <div class="email-top">
+                  <div class="email-left">
+                    <div class="email-avatar">${senderInitial}</div>
+                    <div style="min-width:0;">
+                      <div class="email-sender">${senderName}</div>
+                      <div class="email-from">${fromEmail.split('@')[0]}@${(fromEmail.split('@')[1]||'')}</div>
+                    </div>
+                  </div>
+                  <div class="email-time">${formatTime(email.timestamp)}</div>
+                </div>
                 <div class="email-subject">${email.subject}</div>
                 <div class="email-preview">${preview}</div>
                 <div class="email-meta">
-                    <div class="email-time">${formatTime(email.timestamp)}</div>
                     ${email.attachments && email.attachments.length > 0 ? `<div class="email-attachment">${iconPaperclip}</div>` : ''}
                 </div>
             `;
@@ -545,7 +555,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    refreshBtn.addEventListener('click', loadEmails);
+    // 刷新按钮：点击旋转一周并触发拉取
+    refreshBtn.addEventListener('click', async () => {
+        try {
+            refreshBtn.classList.add('spinning');
+            await loadEmails();
+        } finally {
+            setTimeout(() => refreshBtn.classList.remove('spinning'), 800);
+        }
+    });
     
     // 发送邮件表单提交
     composeForm.addEventListener('submit', async (e) => {
@@ -654,12 +672,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // 全选功能（简化实现）
-    selectAllBtn.addEventListener('click', () => {
-        const emailItems = document.querySelectorAll('.email-item');
-        emailItems.forEach(item => {
-            item.classList.toggle('selected');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+            const emailItems = document.querySelectorAll('.email-item');
+            emailItems.forEach(item => {
+                item.classList.toggle('selected');
+            });
         });
-    });
+    }
     
     // 初始化
     loadEmails();
