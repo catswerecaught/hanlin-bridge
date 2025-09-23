@@ -58,6 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const userEmail = generateUserEmail(currentUser.username);
     userEmailAddress.textContent = userEmail;
 
+    // 根据用户名获取显示名称（优先 users 列表中的 name）
+    function displayNameFromUsername(username) {
+        if (!username) return '';
+        const u = (typeof users !== 'undefined' && Array.isArray(users)) ? users.find(u => u.username === username) : null;
+        return u ? (u.name || username) : username;
+    }
+
     // 设置页眉头像（保障该页独立运行时也能显示头像）
     function setHeaderAvatarEmailPage(user) {
         const avatar = document.getElementById('userAvatar');
@@ -227,31 +234,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // 更新邮件数量显示
     function updateEmailCounts() {
         const inbox = Array.isArray(emails?.inbox) ? emails.inbox : [];
-        const sent = Array.isArray(emails?.sent) ? emails.sent : [];
-        const drafts = Array.isArray(emails?.drafts) ? emails.drafts : [];
-        const deleted = Array.isArray(emails?.deleted) ? emails.deleted : [];
-
-        inboxCount.textContent = inbox.filter(email => !email.read).length;
-        sentCount.textContent = sent.length;
-        draftsCount.textContent = drafts.length;
-        deletedCount.textContent = deleted.length;
-        
-        // 隐藏计数为0的标签
-        [inboxCount, sentCount, draftsCount, deletedCount].forEach(el => {
-            if (parseInt(el.textContent) === 0) {
-                el.style.display = 'none';
-            } else {
-                el.style.display = 'inline-block';
-            }
-        });
+        // 仅收件箱显示未读数
+        const unread = inbox.filter(email => !email.read).length;
+        inboxCount.textContent = String(unread);
+        inboxCount.style.display = unread > 0 ? 'inline-block' : 'none';
+        // 其他文件夹不显示计数
+        sentCount.textContent = '';
+        draftsCount.textContent = '';
+        deletedCount.textContent = '';
+        sentCount.style.display = 'none';
+        draftsCount.style.display = 'none';
+        deletedCount.style.display = 'none';
     }
 
     // 渲染邮件列表
     function renderEmailList() {
         const folderEmails = emails[currentFolder] || [];
+        // 新邮件置顶：按时间倒序
+        const folderEmailsSorted = [...folderEmails].sort((a, b) => (b?.timestamp || 0) - (a?.timestamp || 0));
         emailItems.innerHTML = '';
 
-        if (folderEmails.length === 0) {
+        if (folderEmailsSorted.length === 0) {
             emailItems.innerHTML = `
                 <div style="padding: 40px 16px; text-align: center; color: #8a8886;">
                     <div style="margin-bottom: 8px; display: inline-block;">
@@ -264,12 +267,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const iconPaperclip = '<svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.78 7.78a3 3 0 1 0 4.24 4.24l7.07-7.07a5 5 0 1 0-7.07-7.07L5.64 11.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        folderEmails.forEach(email => {
+        folderEmailsSorted.forEach(email => {
             const emailDiv = document.createElement('div');
             emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
             emailDiv.dataset.emailId = email.id;
             
-            const senderName = email.fromName || email.from.split('@')[0];
+            const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
             const preview = email.body.substring(0, 80) + (email.body.length > 80 ? '...' : '');
             
             emailDiv.innerHTML = `
@@ -295,12 +298,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 showEmailDetail();
                 displayEmailDetail(email);
                 
-                // 标记为已读
+                // 标记为已读（前端与后端同步）
                 if (!email.read) {
                     email.read = true;
                     emailDiv.classList.remove('unread');
                     updateEmailCounts();
                     saveEmailsToLocal();
+                    // 后端同步
+                    syncRead(email.id, currentFolder).catch(() => {});
                 }
             });
             
@@ -313,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentEmailId = email.id;
         
         document.getElementById('detailSubject').textContent = email.subject;
-        document.getElementById('detailSenderName').textContent = email.fromName || email.from.split('@')[0];
+        document.getElementById('detailSenderName').textContent = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
         document.getElementById('detailSenderEmail').textContent = email.from;
         document.getElementById('detailTime').textContent = new Date(email.timestamp).toLocaleString('zh-CN');
         document.getElementById('detailBody').innerHTML = email.body.replace(/\n/g, '<br>');
@@ -345,24 +350,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 删除邮件
-    function deleteEmail(emailId) {
-        if (confirm('确定要删除这封邮件吗？')) {
-            // 从当前文件夹移除邮件
-            const emailIndex = emails[currentFolder].findIndex(email => email.id === emailId);
-            if (emailIndex !== -1) {
-                const email = emails[currentFolder].splice(emailIndex, 1)[0];
-                
-                // 如果不是从已删除文件夹删除，则移动到已删除文件夹
-                if (currentFolder !== 'deleted') {
-                    emails.deleted.push(email);
-                }
-                
-                updateEmailCounts();
-                renderEmailList();
-                showReadingArea();
-                saveEmailsToLocal();
-            }
+    async function deleteEmail(emailId) {
+        if (!confirm('确定要删除这封邮件吗？')) return;
+        try {
+            const resp = await fetch(`/api/emails?emailId=${encodeURIComponent(emailId)}&folder=${encodeURIComponent(currentFolder)}` , {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${currentUser.username}` }
+            });
+            if (!resp.ok) throw new Error('删除失败');
+            // 重新拉取，确保进入“已删除邮件”并按后端状态展示
+            await loadEmails();
+            // 从非 deleted 删除时，自动切换到已删除
+            if (currentFolder !== 'deleted') selectFolder('deleted');
+            showReadingArea();
+        } catch (e) {
+            alert('删除失败，请稍后重试');
         }
+    }
+
+    async function syncRead(emailId, folder) {
+        try {
+            await fetch('/api/emails', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUser.username}`
+                },
+                body: JSON.stringify({ emailId, folder, updates: { read: true } })
+            });
+        } catch {}
     }
 
     // 发送邮件
@@ -464,12 +480,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function searchEmails(query) {
         const q = query.trim().toLowerCase();
         const folderEmails = emails[currentFolder] || [];
-        const list = !q ? folderEmails : folderEmails.filter(email =>
+        // 按时间倒序
+        const listBase = !q ? folderEmails : folderEmails.filter(email =>
             (email.subject || '').toLowerCase().includes(q) ||
             (email.body || '').toLowerCase().includes(q) ||
             (email.from || '').toLowerCase().includes(q) ||
             (email.fromName || '').toLowerCase().includes(q)
         );
+        const list = [...listBase].sort((a, b) => (b?.timestamp || 0) - (a?.timestamp || 0));
 
         emailItems.innerHTML = '';
         if (list.length === 0) {
@@ -481,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const emailDiv = document.createElement('div');
             emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
             emailDiv.dataset.emailId = email.id;
-            const senderName = email.fromName || (email.from || '').split('@')[0];
+            const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
             const preview = (email.body || '').substring(0, 80) + ((email.body || '').length > 80 ? '...' : '');
             emailDiv.innerHTML = `
                 <div class="email-sender">${senderName}</div>

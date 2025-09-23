@@ -81,12 +81,16 @@ async function handleGetEmails(req, res, apiUrl, apiToken, username) {
       // 兼容多层嵌套
       const unwrapped = unwrapKV(data.result);
       const emails = unwrapKV(unwrapped);
-      const normalized = {
+      let normalized = {
         inbox: Array.isArray(emails?.inbox) ? emails.inbox : [],
         sent: Array.isArray(emails?.sent) ? emails.sent : [],
         drafts: Array.isArray(emails?.drafts) ? emails.drafts : [],
         deleted: Array.isArray(emails?.deleted) ? emails.deleted : []
       };
+      // 清理超过24小时的已删除邮件
+      const now = Date.now();
+      const DAY = 24 * 60 * 60 * 1000;
+      normalized.deleted = normalized.deleted.filter(e => !e?.deletedAt || (now - e.deletedAt) < DAY);
       // 回写一次，消除历史多层 value 嵌套
       await fetch(`${apiUrl}/set/${userEmailKey}`, {
         method: 'POST',
@@ -322,8 +326,8 @@ async function handleDeleteEmail(req, res, apiUrl, apiToken, username) {
     if (!data.result) {
       return res.status(404).json({ error: '用户邮件数据未找到' });
     }
-    
-    const emails = JSON.parse(data.result);
+    // 兼容多层嵌套
+    const emails = unwrapKV(unwrapKV(data.result)) || {};
     const folderEmails = emails[folder];
     
     if (!folderEmails) {
@@ -340,7 +344,8 @@ async function handleDeleteEmail(req, res, apiUrl, apiToken, username) {
     
     // 如果不是从已删除文件夹删除，则移动到已删除文件夹
     if (folder !== 'deleted') {
-      emails.deleted.push(removedEmail);
+      emails.deleted = Array.isArray(emails.deleted) ? emails.deleted : [];
+      emails.deleted.push({ ...removedEmail, deletedAt: Date.now() });
     }
     
     // 保存到数据库
@@ -392,7 +397,11 @@ async function getUserDisplayName(username) {
     'user00003': '化学孙老师',
     'user00004': '化学张老师',
     'user00005': '邬学长',
-    'user00006': 'BenLi'
+    'user00006': 'BenLi',
+    'user00007': 'Tuebo Social',
+    'user00008': 'Miraitowa',
+    'user00009': '鱼游太玄',
+    'user00010': '翰林桥官方'
   };
   
   return userMap[username] || username;
