@@ -452,6 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const detailSenderEmail = document.getElementById('detailSenderEmail');
             const detailTime = document.getElementById('detailTime');
             const detailAvatar = document.getElementById('detailAvatar');
+            const replyBtnEl = document.getElementById('replyBtn');
+            const forwardBtnEl = document.getElementById('forwardBtn');
+            const deleteBtnEl = document.getElementById('deleteBtn');
             
             if (!detailSubject || !detailBody || !detailSenderName || !detailSenderEmail || !detailTime || !detailAvatar) {
                 console.error('Missing email detail elements', {
@@ -477,10 +480,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionButtons.style.display = 'flex';
                     actionButtons.style.visibility = 'visible';
                     actionButtons.style.opacity = '1';
+                    // 绑定按钮事件
+                    if (replyBtnEl) {
+                        replyBtnEl.onclick = () => replyToEmail(email);
+                    }
+                    if (forwardBtnEl) {
+                        forwardBtnEl.onclick = () => forwardEmail(email);
+                    }
+                    if (deleteBtnEl) {
+                        deleteBtnEl.onclick = () => deleteEmail(email.id);
+                    }
                 } else {
                     actionButtons.style.display = 'none';
                     actionButtons.style.visibility = 'hidden';
                     actionButtons.style.opacity = '0';
+                    // 移除事件（避免误触）
+                    if (replyBtnEl) replyBtnEl.onclick = null;
+                    if (forwardBtnEl) forwardBtnEl.onclick = null;
+                    if (deleteBtnEl) deleteBtnEl.onclick = null;
                 }
             }
             
