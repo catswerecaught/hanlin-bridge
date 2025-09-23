@@ -27,8 +27,9 @@ export default async function handler(req, res) {
       // 获取用户邮件
       await handleGetEmails(req, res, apiUrl, apiToken, username);
     } else if (req.method === 'POST') {
-      // 发送邮件或创建草稿
-      if (req.url?.includes('/send')) {
+      // 发送邮件或创建草稿（通过 action 字段）
+      const action = (req.body && req.body.action) || '';
+      if (action === 'send') {
         await handleSendEmail(req, res, apiUrl, apiToken, username);
       } else {
         await handleCreateDraft(req, res, apiUrl, apiToken, username);

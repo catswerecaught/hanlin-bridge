@@ -368,13 +368,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 发送邮件
     async function sendEmail(emailData) {
         try {
-            const response = await fetch('/api/emails/send', {
+            const response = await fetch('/api/emails', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${currentUser.username}`
                 },
-                body: JSON.stringify(emailData)
+                body: JSON.stringify({ action: 'send', ...emailData })
             });
             
             if (response.ok) {
