@@ -1,6 +1,24 @@
 const EMAIL_KEY_PREFIX = 'emails-';
 const EMAIL_COUNTER_KEY = 'email-counter';
 
+// 顶层工具：尝试多层解包 Upstash 返回的 {result: string} 以及历史写入的 {value: string} 嵌套
+function unwrapKV(raw) {
+  let data = raw;
+  let safety = 0;
+  while (safety++ < 10) {
+    if (data == null) break;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); continue; } catch { break; }
+    }
+    if (typeof data === 'object' && data.value != null) {
+      data = data.value; // 继续向里取
+      continue;
+    }
+    break;
+  }
+  return data;
+}
+
 export default async function handler(req, res) {
   const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -10,36 +28,6 @@ export default async function handler(req, res) {
       error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set' 
     });
   }
-
-// 尝试多层解包 Upstash 返回的 {result: string} 与我们历史写入的 {value: string} 嵌套
-function unwrapKV(raw) {
-  // 初始：raw 可能是字符串或对象
-  let data = raw;
-  let safety = 0;
-  while (safety++ < 10) {
-    if (data == null) break;
-    // 字符串尝试 JSON.parse
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-        continue;
-      } catch {
-        break; // 非 JSON 字符串
-      }
-    }
-    // 对象且存在 value 字段
-    if (typeof data === 'object' && data.value != null) {
-      // 如果 value 还是字符串，继续
-      if (typeof data.value === 'string') { data = data.value; continue; }
-      // 如果 value 已是对象
-      data = data.value;
-      continue;
-    }
-    break;
-  }
-  return data;
-}
-
   // 验证授权
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

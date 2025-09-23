@@ -571,14 +571,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await sendEmail(emailData);
             if (result.success) {
                 alert('邮件发送成功');
-                showReadingArea();
+                // 重新从服务器拉取，确保与Upstash同步
+                await loadEmails();
+                // 切换到已发送并展示最新列表
+                selectFolder('sent');
                 clearComposeForm();
-                updateEmailCounts();
-                
-                // 如果当前在发件箱，刷新列表
-                if (currentFolder === 'sent') {
-                    renderEmailList();
-                }
             } else {
                 alert('邮件发送失败，请重试');
             }
@@ -590,6 +587,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // 程序化选择文件夹
+    function selectFolder(folderKey) {
+        currentFolder = folderKey;
+        // 更新左侧激活态
+        document.querySelectorAll('.folder-item').forEach(li => {
+            if (li.dataset.folder === folderKey) li.classList.add('active');
+            else li.classList.remove('active');
+        });
+        // 更新标题
+        const folderNames = { inbox: '收件箱', sent: '已发送邮件', drafts: '草稿箱', deleted: '已删除邮件' };
+        emailListTitle.textContent = folderNames[folderKey] || '邮件';
+        // 渲染
+        renderEmailList();
+        showReadingArea();
+    }
+
     // 文件夹切换
     folderItems.forEach(item => {
         item.addEventListener('click', () => {
