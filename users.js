@@ -19,5 +19,5 @@ const users = [
   { name: '用户17', username: 'user00017', password: 'chaotianda', vip: '普通会员', avatar: 'images/user00017.png', supreme: false, expire: '2026-12-31' },
   { name: '用户18', username: 'user00018', password: 'sun123', vip: 'Pro会员', avatar: 'images/user00018.png', supreme: false, expire: '2027-03-31' },
   { name: '用户19', username: 'user00019', password: 'abcdef', vip: '普通会员', avatar: 'images/user00019.png', supreme: false, expire: '2026-03-31' },
-  { name: '用户20', username: 'user00020', password: '123456', vip: 'Pro会员', avatar: 'images/user00020.png', supreme: false, expire: '终身会员' }
+  { name: '翰林桥团队', username: 'hanlinbridge', password: '172635', vip: 'Pro会员', avatar: 'images/user00020.png', supreme: false, expire: '终身会员' }
 ]; 
