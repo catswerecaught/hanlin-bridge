@@ -11,6 +11,8 @@
             height: calc(100vh - 4px);
             background: #f5f5f5;
             margin-top: 4px;
+            min-height: 0; /* 允许子项滚动 */
+            overflow: hidden; /* 防止子项溢出 */
         }
         
         /* 左侧边栏 */
@@ -85,6 +87,7 @@
             border-right: 1px solid #e1e8ed;
             display: flex;
             flex-direction: column;
+            min-height: 0; /* 允许内部列表滚动 */
         }
         
         .email-list-header {
@@ -230,6 +233,7 @@
             display: flex;
             flex-direction: column;
             min-height: 0; /* 允许内部区域滚动 */
+            overflow: hidden; /* 防止内容溢出容器 */
         }
         
         .email-header {
@@ -343,6 +347,14 @@
             overflow-y: auto; /* 阅读区域可滚动 */
             line-height: 1.6;
             color: #323130;
+        }
+
+        /* 确保详情区域采用弹性布局并允许正文滚动 */
+        #emailDetail {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100%;
         }
         
         /* 撰写邮件区域 */
@@ -555,7 +567,7 @@
                 <div class="email-list-title">收件箱</div>
                 <div style="display: flex; gap: 8px;">
                     <button class="action-btn refresh-btn" id="refreshBtn" title="刷新">
-                        <img src="/images/load.png" alt="刷新">
+                        <img src="/images/load.png" alt="刷新" onerror="this.onerror=null; this.src='images/load.png'">
                     </button>
                 </div>
             </div>

@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showEmailDetail() {
         composeArea.style.display = 'none';
         readingArea.style.display = 'none';
-        emailDetail.style.display = 'block';
+        emailDetail.style.display = 'flex';
     }
 
     // 清空撰写表单
