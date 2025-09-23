@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件 - 翰林桥</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <style>
+        .email-container {
+            display: flex;
+            height: calc(100vh - 80px);
+            background: #f5f5f5;
+            margin-top: 80px;
+        }
+        
+        /* 左侧边栏 */
+        .email-sidebar {
+            width: 200px;
+            background: #fff;
+            border-right: 1px solid #e1e8ed;
+            padding: 16px 0;
+            overflow-y: auto;
+        }
+        
+        .compose-btn {
+            margin: 0 16px 20px 16px;
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: calc(100% - 32px);
+            font-weight: 600;
+        }
+        
+        .compose-btn:hover {
+            background: #106ebe;
+        }
+        
+        .folder-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .folder-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        
+        .folder-item:hover {
+            background: #f3f2f1;
+        }
+        
+        .folder-item.active {
+            background: #e3f2fd;
+            border-right: 2px solid #0078d4;
+            color: #0078d4;
+            font-weight: 600;
+        }
+        
+        .folder-count {
+            background: #0078d4;
+            color: #fff;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 12px;
+            min-width: 16px;
+            text-align: center;
+        }
+        
+        /* 邮件列表 */
+        .email-list {
+            width: 350px;
+            background: #fff;
+            border-right: 1px solid #e1e8ed;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .email-list-header {
+            padding: 16px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .email-list-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+        }
+        
+        .email-search {
+            padding: 8px 16px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 12px;
+            border: 1px solid #edebe9;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-input:focus {
+            border-color: #0078d4;
+        }
+        
+        .email-items {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .email-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f2f1;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .email-item:hover {
+            background: #f3f2f1;
+        }
+        
+        .email-item.active {
+            background: #e3f2fd;
+            border-left: 3px solid #0078d4;
+        }
+        
+        .email-item.unread {
+            background: #fff;
+            font-weight: 600;
+        }
+        
+        .email-item.unread .email-subject {
+            color: #323130;
+        }
+        
+        .email-sender {
+            font-size: 14px;
+            color: #323130;
+            font-weight: 600;
+        }
+        
+        .email-subject {
+            font-size: 13px;
+            color: #605e5c;
+            margin: 2px 0;
+        }
+        
+        .email-preview {
+            font-size: 12px;
+            color: #8a8886;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .email-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+        
+        .email-time {
+            font-size: 11px;
+            color: #8a8886;
+        }
+        
+        .email-attachment {
+            font-size: 11px;
+            color: #0078d4;
+        }
+        
+        /* 邮件内容区域 */
+        .email-content {
+            flex: 1;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .email-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .email-subject-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 16px;
+        }
+        
+        .email-sender-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .sender-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #0078d4;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .sender-details {
+            flex: 1;
+        }
+        
+        .sender-name {
+            font-weight: 600;
+            color: #323130;
+            font-size: 14px;
+        }
+        
+        .sender-email {
+            color: #605e5c;
+            font-size: 12px;
+        }
+        
+        .email-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: 1px solid #edebe9;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #323130;
+        }
+        
+        .action-btn:hover {
+            background: #f3f2f1;
+        }
+        
+        .email-body {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            line-height: 1.6;
+            color: #323130;
+        }
+        
+        /* 撰写邮件区域 */
+        .compose-area {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .compose-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .compose-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+        }
+        
+        .compose-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .send-btn {
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .send-btn:hover {
+            background: #106ebe;
+        }
+        
+        .compose-form {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 24px;
+        }
+        
+        .compose-field {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f2f1;
+        }
+        
+        .compose-label {
+            width: 60px;
+            font-size: 14px;
+            color: #605e5c;
+            font-weight: 600;
+        }
+        
+        .compose-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            padding: 4px 8px;
+        }
+        
+        .compose-body {
+            flex: 1;
+            margin-top: 16px;
+        }
+        
+        .compose-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .email-container {
+                margin-top: 60px;
+                height: calc(100vh - 60px);
+            }
+            
+            .email-sidebar {
+                width: 180px;
+            }
+            
+            .email-list {
+                width: 280px;
+            }
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #8a8886;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-message {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-subtitle {
+            font-size: 14px;
+            color: #a19f9d;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="main-nav-container">
+            <a href="index.html" class="logo"><img id="site-logo" src="images/logo.png" alt="翰林桥 Logo"></a>
+            <nav class="main-nav">
+                <ul>
+                    <li class="nav-highlight"></li>
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="tutors.html">助学人</a></li>
+                    <li><a href="trend.html">趋势</a></li>
+                    <li><a href="lingning.html">灵凝</a></li>
+                    <li><a href="customize.html">定制</a></li>
+                    <li><a href="help.html">帮助</a></li>
+                    <li><a href="cooperation.html">新闻</a></li>
+                    <li><a href="socialmedia.html">社媒</a></li>
+                    <li><a href="email.html" class="active">邮件</a></li>
+                </ul>
+            </nav>
+            <div class="user-avatar" id="userAvatar">
+                <img src="images/login-default.png" alt="登录" id="avatarImg">
+            </div>
+        </div>
+    </header>
+
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-content">
+            <span class="login-close-btn" id="loginCloseBtn">&times;</span>
+            <h2>登录</h2>
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="用户名/账号" autocomplete="username" required>
+                <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required>
+                <button type="submit">登录</button>
+            </form>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <div class="email-container">
+        <!-- 左侧边栏 -->
+        <div class="email-sidebar">
+            <button class="compose-btn" id="composeBtn">✉ 撰写</button>
+            <ul class="folder-list">
+                <li class="folder-item active" data-folder="inbox">
+                    <span>📥 收件箱</span>
+                    <span class="folder-count" id="inboxCount">0</span>
+                </li>
+                <li class="folder-item" data-folder="sent">
+                    <span>📤 已发送邮件</span>
+                    <span class="folder-count" id="sentCount">0</span>
+                </li>
+                <li class="folder-item" data-folder="drafts">
+                    <span>📝 草稿</span>
+                    <span class="folder-count" id="draftsCount">0</span>
+                </li>
+                <li class="folder-item" data-folder="deleted">
+                    <span>🗑️ 已删除邮件</span>
+                    <span class="folder-count" id="deletedCount">0</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 邮件列表 -->
+        <div class="email-list">
+            <div class="email-list-header">
+                <div class="email-list-title">收件箱</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" id="refreshBtn">🔄</button>
+                    <button class="action-btn" id="selectAllBtn">☑️</button>
+                </div>
+            </div>
+            <div class="email-search">
+                <input type="text" class="search-input" placeholder="搜索邮件..." id="searchInput">
+            </div>
+            <div class="email-items" id="emailItems">
+                <!-- 邮件列表将由JavaScript动态加载 -->
+            </div>
+        </div>
+
+        <!-- 邮件内容区域 -->
+        <div class="email-content">
+            <!-- 阅读邮件 -->
+            <div id="readingArea" class="empty-state">
+                <div class="empty-icon">📬</div>
+                <div class="empty-message">选择一封邮件来阅读</div>
+                <div class="empty-subtitle">您的邮箱地址: <span id="userEmailAddress">未登录</span></div>
+            </div>
+
+            <!-- 撰写邮件 -->
+            <div id="composeArea" class="compose-area">
+                <div class="compose-header">
+                    <div class="compose-title">撰写邮件</div>
+                    <div class="compose-actions">
+                        <button class="send-btn" id="sendBtn">发送</button>
+                        <button class="action-btn" id="saveDraftBtn">保存草稿</button>
+                        <button class="action-btn" id="cancelComposeBtn">✕</button>
+                    </div>
+                </div>
+                <form class="compose-form" id="composeForm">
+                    <div class="compose-field">
+                        <label class="compose-label">收件人:</label>
+                        <input type="text" class="compose-input" id="toInput" placeholder="输入收件人邮箱地址" required>
+                    </div>
+                    <div class="compose-field">
+                        <label class="compose-label">抄送:</label>
+                        <input type="text" class="compose-input" id="ccInput" placeholder="抄送 (可选)">
+                    </div>
+                    <div class="compose-field">
+                        <label class="compose-label">主题:</label>
+                        <input type="text" class="compose-input" id="subjectInput" placeholder="邮件主题" required>
+                    </div>
+                    <div class="compose-body">
+                        <textarea class="compose-textarea" id="bodyInput" placeholder="输入邮件内容..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 邮件详情 -->
+            <div id="emailDetail" style="display: none;">
+                <div class="email-header">
+                    <div class="email-subject-header" id="detailSubject"></div>
+                    <div class="email-sender-info">
+                        <div class="sender-avatar" id="detailAvatar"></div>
+                        <div class="sender-details">
+                            <div class="sender-name" id="detailSenderName"></div>
+                            <div class="sender-email" id="detailSenderEmail"></div>
+                            <div class="email-time" id="detailTime"></div>
+                        </div>
+                        <div class="email-actions">
+                            <button class="action-btn" id="replyBtn">↩️ 回复</button>
+                            <button class="action-btn" id="forwardBtn">➡️ 转发</button>
+                            <button class="action-btn" id="deleteBtn">🗑️ 删除</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="email-body" id="detailBody">
+                    <!-- 邮件内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="users.js"></script>
+    <script src="script.js?v=4"></script>
+    <script src="email.js"></script>
+</body>
+</html>
