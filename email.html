@@ -8,9 +8,9 @@
     <style>
         .email-container {
             display: flex;
-            height: calc(100vh - 62px);
+            height: calc(100vh - 54px);
             background: #f5f5f5;
-            margin-top: 62px;
+            margin-top: 54px;
         }
         
         /* 左侧边栏 */
@@ -363,8 +363,8 @@
         /* 响应式设计 */
         @media (max-width: 768px) {
             .email-container {
-                margin-top: 52px;
-                height: calc(100vh - 52px);
+                margin-top: 46px;
+                height: calc(100vh - 46px);
             }
             
             .email-sidebar {
@@ -464,7 +464,12 @@
                 </li>
                 <li class="folder-item" data-folder="deleted">
                     <span class="left">
-                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z"/></svg>
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M6 7h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <rect x="6" y="7" width="12" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                          <path d="M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                         已删除邮件
                     </span>
                     <span class="folder-count" id="deletedCount">0</span>
@@ -478,7 +483,11 @@
                 <div class="email-list-title">收件箱</div>
                 <div style="display: flex; gap: 8px;">
                     <button class="action-btn" id="refreshBtn" title="刷新">
-                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 1 2.34 5.66L9 15H3v6l2.22-2.22A10 10 0 1 0 2 12h2z"/></svg>
+                        <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 5a7 7 0 1 1-6.6 9.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M8 5H4V1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M4 5c3.2-3.2 8.4-3.2 11.6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </button>
                     <button class="action-btn" id="selectAllBtn" title="全选">
                         <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4V4zm3 7l3 3 7-7 1.41 1.41L10 16.83 5.59 12.41 7 11z"/></svg>
