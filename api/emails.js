@@ -258,6 +258,12 @@ async function handleUpdateEmail(req, res, apiUrl, apiToken, username) {
     return res.status(400).json({ error: '缺少邮件ID或文件夹参数' });
   }
   
+  // 验证更新内容
+  if (updates.read !== undefined && typeof updates.read !== 'boolean' && 
+      updates.favorite !== undefined && typeof updates.favorite !== 'boolean') {
+    return res.status(400).json({ error: '无效的更新内容' });
+  }
+  
   try {
     const userEmailKey = `${EMAIL_KEY_PREFIX}${username}`;
     

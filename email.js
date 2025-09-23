@@ -100,7 +100,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 获取用户头像初始字母
     function getAvatarInitial(name) {
-        return name ? name.charAt(0).toUpperCase() : '?';
+        if (!name) return '';
+        return (name || '').charAt(0).toUpperCase();
+    }
+
+    // 更新收藏状态（不在详情头部显示星标，仅更新样式与列表）
+    function updateFavoriteStatus(email) {
+        // 如果之前注入过 #favoriteIcon，将其移除
+        const injected = document.getElementById('favoriteIcon');
+        if (injected && injected.parentElement) {
+            injected.parentElement.removeChild(injected);
+        }
+
+        // 详情页标题不变色（移除可能存在的 favorite-subject）
+        const subjectEl = document.getElementById('detailSubject');
+        if (subjectEl) {
+            subjectEl.classList.remove('favorite-subject');
+        }
+
+        // 更新列表项的样式和星标填充
+        const emailItem = document.querySelector(`[data-email-id="${email.id}"]`);
+        if (emailItem) {
+            emailItem.classList.toggle('favorite-item', !!email.favorite);
+            const itemStar = emailItem.querySelector('.favorite-star');
+            if (itemStar) itemStar.classList.toggle('favorite-active', !!email.favorite);
+        }
     }
 
     // 格式化时间
@@ -153,9 +177,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showEmailDetail() {
-        composeArea.style.display = 'none';
-        readingArea.style.display = 'none';
-        emailDetail.style.display = 'flex';
+        // 隐藏其他区域
+        if (composeArea) composeArea.style.display = 'none';
+        if (readingArea) readingArea.style.display = 'none';
+        
+        // 确保邮件内容区域可见
+        const detailContainer = document.querySelector('.email-content');
+        if (detailContainer) {
+            detailContainer.style.display = 'flex';
+            detailContainer.style.visibility = 'visible';
+        }
+        
+        // 显示邮件详情区域
+        if (emailDetail) {
+            emailDetail.style.display = 'flex';
+            emailDetail.style.visibility = 'visible';
+        }
+        
+        // 确保邮件正文可见
+        const detailBody = document.getElementById('detailBody');
+        if (detailBody) {
+            detailBody.style.display = 'block';
+            detailBody.style.visibility = 'visible';
+            detailBody.style.opacity = '1';
+        }
+        
+        // 强制父元素可见
+        setTimeout(() => {
+            if (emailDetail && emailDetail.parentElement) {
+                emailDetail.parentElement.style.display = 'flex';
+                emailDetail.parentElement.style.visibility = 'visible';
+            }
+        }, 10);
     }
 
     // 清空撰写表单
@@ -174,6 +227,18 @@ document.addEventListener('DOMContentLoaded', () => {
             drafts: Array.isArray(obj?.drafts) ? obj.drafts : [],
             deleted: Array.isArray(obj?.deleted) ? obj.deleted : []
         };
+    }
+
+    // 按ID在所有文件夹中查找邮件
+    function findEmailById(targetId) {
+        if (!targetId) return null;
+        const folders = ['inbox', 'sent', 'drafts', 'deleted'];
+        for (const f of folders) {
+            const arr = Array.isArray(emails[f]) ? emails[f] : [];
+            const found = arr.find(e => e && e.id === targetId);
+            if (found) return found;
+        }
+        return null;
     }
 
     // 加载邮件数据
@@ -269,13 +334,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const iconPaperclip = '<svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.78 7.78a3 3 0 1 0 4.24 4.24l7.07-7.07a5 5 0 1 0-7.07-7.07L5.64 11.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         folderEmailsSorted.forEach(email => {
             const emailDiv = document.createElement('div');
-            emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
+            const favoriteClass = email.favorite ? ' favorite-item' : '';
+            emailDiv.className = `email-item ${!email.read ? 'unread' : ''}${favoriteClass}`;
             emailDiv.dataset.emailId = email.id;
             
             const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
             const senderInitial = getAvatarInitial(senderName);
             const fromEmail = email.from || '';
             const preview = email.body.substring(0, 80) + (email.body.length > 80 ? '...' : '');
+            const favoriteActiveClass = email.favorite ? ' favorite-active' : '';
             
             emailDiv.innerHTML = `
                 <div class="email-top">
@@ -286,7 +353,10 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div class="email-from">${fromEmail.split('@')[0]}@${(fromEmail.split('@')[1]||'')}</div>
                     </div>
                   </div>
-                  <div class="email-time">${formatTime(email.timestamp)}</div>
+                  <div class="email-time-container">
+                    <svg class="favorite-star ${email.favorite ? 'favorite-active' : ''}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+                    <div class="email-time">${formatTime(email.timestamp)}</div>
+                  </div>
                 </div>
                 <div class="email-subject">${email.subject}</div>
                 <div class="email-preview">${preview}</div>
@@ -294,6 +364,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${email.attachments && email.attachments.length > 0 ? `<div class="email-attachment">${iconPaperclip}</div>` : ''}
                 </div>
             `;
+            
+            // 添加收藏星标点击事件
+            const setupStarHandler = () => {
+                const star = emailDiv.querySelector('.favorite-star');
+                if (star) {
+                    star.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // 防止触发整个邮件项的点击
+                        
+                        // 切换收藏状态
+                        email.favorite = !email.favorite;
+                        star.classList.toggle('favorite-active', email.favorite);
+                        emailDiv.classList.toggle('favorite-item', email.favorite);
+                        
+                        // 同步到后端
+                        try {
+                            await syncFavorite(email.id, currentFolder, email.favorite);
+                            saveEmailsToLocal(); // 保存到本地
+                        } catch(err) {
+                            console.error('Failed to sync favorite:', err);
+                            // 如果失败，还原状态
+                            email.favorite = !email.favorite;
+                            star.classList.toggle('favorite-active', email.favorite);
+                            emailDiv.classList.toggle('favorite-item', email.favorite);
+                        }
+                    });
+                }
+            };
+            
+            setupStarHandler();
             
             emailDiv.addEventListener('click', () => {
                 // 移除其他邮件的激活状态
@@ -304,44 +403,97 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 激活当前邮件
                 emailDiv.classList.add('active');
                 
-                // 显示邮件详情
-                showEmailDetail();
-                displayEmailDetail(email);
-                
-                // 标记为已读（前端与后端同步）
+                // 标记为已读
                 if (!email.read) {
                     email.read = true;
                     emailDiv.classList.remove('unread');
                     updateEmailCounts();
                     saveEmailsToLocal();
-                    // 后端同步
                     syncRead(email.id, currentFolder).catch(() => {});
                 }
+                // 强制切换右侧为详情区域
+                const readingAreaEl = document.getElementById('readingArea');
+                const emailDetailEl = document.getElementById('emailDetail');
+                const contentEl = document.querySelector('.email-content');
+                if (readingAreaEl) readingAreaEl.style.display = 'none';
+                if (contentEl) contentEl.style.display = 'flex';
+                if (emailDetailEl) {
+                    emailDetailEl.style.display = 'flex';
+                    emailDetailEl.style.visibility = 'visible';
+                }
+                
+                displayEmailDetail(email.id);
+                showEmailDetail();
             });
             
             emailItems.appendChild(emailDiv);
         });
+
+        // 如果没有选中的邮件，默认选中第一个并打开
+        const firstItem = emailItems.querySelector('.email-item');
+        if (firstItem && !emailItems.querySelector('.email-item.active')) {
+            firstItem.click();
+        }
     }
 
     // 显示邮件详情
-    function displayEmailDetail(email) {
-        currentEmailId = email.id;
+    function displayEmailDetail(emailId) {
+        console.log('Displaying email detail for ID:', emailId);
+        const email = findEmailById(emailId);
+        if (!email) {
+            console.error('Email not found:', emailId);
+            return;
+        }
         
-        document.getElementById('detailSubject').textContent = email.subject;
-        document.getElementById('detailSenderName').textContent = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
-        document.getElementById('detailSenderEmail').textContent = email.from;
-        document.getElementById('detailTime').textContent = new Date(email.timestamp).toLocaleString('zh-CN');
-        document.getElementById('detailBody').innerHTML = email.body.replace(/\n/g, '<br>');
-        
-        // 设置头像
-        const avatar = document.getElementById('detailAvatar');
-        const initial = getAvatarInitial(email.fromName || email.from.split('@')[0]);
-        avatar.textContent = initial;
-        
-        // 绑定操作按钮
-        document.getElementById('replyBtn').onclick = () => replyToEmail(email);
-        document.getElementById('forwardBtn').onclick = () => forwardEmail(email);
-        document.getElementById('deleteBtn').onclick = () => deleteEmail(email.id);
+        try {
+            const detailSubject = document.getElementById('detailSubject');
+            const detailBody = document.getElementById('detailBody');
+            const detailSenderName = document.getElementById('detailSenderName');
+            const detailSenderEmail = document.getElementById('detailSenderEmail');
+            const detailTime = document.getElementById('detailTime');
+            const detailAvatar = document.getElementById('detailAvatar');
+            
+            if (!detailSubject || !detailBody || !detailSenderName || !detailSenderEmail || !detailTime || !detailAvatar) {
+                console.error('Missing email detail elements', {
+                    detailSubject, detailBody, detailSenderName, detailSenderEmail, detailTime, detailAvatar
+                });
+                return;
+            }
+            
+            // 设置内容
+            detailSubject.textContent = email.subject || '';
+            detailBody.innerHTML = (email.body || '').replace(/\n/g, '<br>');
+            
+            const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
+            detailSenderName.textContent = senderName;
+            detailSenderEmail.textContent = email.from || '';
+            detailTime.textContent = new Date(email.timestamp).toLocaleString('zh-CN');
+            detailAvatar.textContent = getAvatarInitial(senderName);
+            
+            // 只有收件箱显示回复、转发、删除按钮，其他文件夹隐藏这些操作
+            const actionButtons = document.querySelector('.email-actions');
+            if (actionButtons) {
+                if (currentFolder === 'inbox') {
+                    actionButtons.style.display = 'flex';
+                    actionButtons.style.visibility = 'visible';
+                    actionButtons.style.opacity = '1';
+                } else {
+                    actionButtons.style.display = 'none';
+                    actionButtons.style.visibility = 'hidden';
+                    actionButtons.style.opacity = '0';
+                }
+            }
+            
+            // 设置收藏状态（星标图标）
+            updateFavoriteStatus(email);
+            
+            // 设置当前查看的邮件ID
+            currentEmailId = email.id;
+            
+            console.log('Email detail displayed successfully');
+        } catch (err) {
+            console.error('Error displaying email detail:', err);
+        }
     }
 
     // 回复邮件
@@ -389,6 +541,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ emailId, folder, updates: { read: true } })
             });
         } catch {}
+    }
+
+    // 同步收藏状态到后端
+    async function syncFavorite(emailId, folder, isFavorite) {
+        try {
+            const resp = await fetch('/api/emails', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUser.username}`
+                },
+                body: JSON.stringify({ 
+                    emailId, 
+                    folder, 
+                    updates: { favorite: isFavorite } 
+                })
+            });
+            
+            if (!resp.ok) {
+                throw new Error('Failed to update favorite status');
+            }
+            
+            return resp.json();
+        } catch (err) {
+            console.error('Error syncing favorite status:', err);
+            throw err;
+        }
     }
 
     // 发送邮件
@@ -505,25 +684,73 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const iconPaperclip = '<svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.78 7.78a3 3 0 1 0 4.24 4.24l7.07-7.07a5 5 0 1 0-7.07-7.07L5.64 11.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const starIcon = '<svg class="favorite-star" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="1" fill="none"/></svg>';
         list.forEach(email => {
             const emailDiv = document.createElement('div');
-            emailDiv.className = `email-item ${!email.read ? 'unread' : ''}`;
+            const favoriteClass = email.favorite ? ' favorite-item' : '';
+            emailDiv.className = `email-item ${!email.read ? 'unread' : ''}${favoriteClass}`;
             emailDiv.dataset.emailId = email.id;
+            
             const senderName = email.fromName || displayNameFromUsername((email.from || '').split('@')[0]);
+            const senderInitial = getAvatarInitial(senderName);
+            const fromEmail = email.from || '';
             const preview = (email.body || '').substring(0, 80) + ((email.body || '').length > 80 ? '...' : '');
+            
             emailDiv.innerHTML = `
-                <div class="email-sender">${senderName}</div>
+                <div class="email-top">
+                  <div class="email-left">
+                    <div class="email-avatar">${senderInitial}</div>
+                    <div style="min-width:0;">
+                      <div class="email-sender">${senderName}</div>
+                      <div class="email-from">${fromEmail.split('@')[0]}@${(fromEmail.split('@')[1]||'')}</div>
+                    </div>
+                  </div>
+                  <div class="email-time-container">
+                    <svg class="favorite-star ${email.favorite ? 'favorite-active' : ''}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+                    <div class="email-time">${formatTime(email.timestamp)}</div>
+                  </div>
+                </div>
                 <div class="email-subject">${email.subject || ''}</div>
                 <div class="email-preview">${preview}</div>
                 <div class="email-meta">
-                    <div class="email-time">${formatTime(email.timestamp)}</div>
-                    ${email.attachments && email.attachments.length > 0 ? `<div class=\"email-attachment\">${iconPaperclip}</div>` : ''}
-                </div>`;
+                    ${email.attachments && email.attachments.length > 0 ? `<div class="email-attachment">${iconPaperclip}</div>` : ''}
+                </div>
+            `;
+            
+            // 添加收藏星标点击事件
+            const setupStarHandler = () => {
+                const star = emailDiv.querySelector('.favorite-star');
+                if (star) {
+                    star.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // 防止触发整个邮件项的点击
+                        
+                        // 切换收藏状态
+                        email.favorite = !email.favorite;
+                        star.classList.toggle('favorite-active', email.favorite);
+                        emailDiv.classList.toggle('favorite-item', email.favorite);
+                        
+                        // 同步到后端
+                        try {
+                            await syncFavorite(email.id, currentFolder, email.favorite);
+                            saveEmailsToLocal(); // 保存到本地
+                        } catch(err) {
+                            console.error('Failed to sync favorite:', err);
+                            // 如果失败，还原状态
+                            email.favorite = !email.favorite;
+                            star.classList.toggle('favorite-active', email.favorite);
+                            emailDiv.classList.toggle('favorite-item', email.favorite);
+                        }
+                    });
+                }
+            };
+            
+            setupStarHandler();
+            
             emailDiv.addEventListener('click', () => {
                 document.querySelectorAll('.email-item').forEach(item => item.classList.remove('active'));
                 emailDiv.classList.add('active');
+                displayEmailDetail(email.id);
                 showEmailDetail();
-                displayEmailDetail(email);
                 if (!email.read) {
                     email.read = true;
                     emailDiv.classList.remove('unread');
@@ -531,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveEmailsToLocal();
                 }
             });
+            
             emailItems.appendChild(emailDiv);
         });
     }
