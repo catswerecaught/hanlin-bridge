@@ -229,6 +229,7 @@
             background: #fff;
             display: flex;
             flex-direction: column;
+            min-height: 0; /* 允许内部区域滚动 */
         }
         
         .email-header {
@@ -294,6 +295,13 @@
             align-items: center;
             gap: 6px;
         }
+        .pill-btn {
+            border-radius: 9999px; /* 药丸型 */
+            color: #0078d4; /* 主色蓝 */
+            border-color: #cfe7fb;
+            font-size: 14px; /* 更大字体 */
+            padding: 6px 14px;
+        }
         /* 圆形图标按钮 */
         .icon-round {
             width: 32px;
@@ -332,7 +340,7 @@
         .email-body {
             flex: 1;
             padding: 24px;
-            overflow-y: auto;
+            overflow-y: auto; /* 阅读区域可滚动 */
             line-height: 1.6;
             color: #323130;
         }
@@ -342,6 +350,7 @@
             display: none;
             flex-direction: column;
             height: 100%;
+            overflow-y: auto; /* 撰写区域可滚动 */
         }
         
         .compose-header {
@@ -546,7 +555,7 @@
                 <div class="email-list-title">收件箱</div>
                 <div style="display: flex; gap: 8px;">
                     <button class="action-btn refresh-btn" id="refreshBtn" title="刷新">
-                        <img src="images/load.png" alt="刷新">
+                        <img src="/images/load.png" alt="刷新">
                     </button>
                 </div>
             </div>
@@ -610,8 +619,8 @@
                             <div class="email-time" id="detailTime"></div>
                         </div>
                         <div class="email-actions">
-                            <button class="action-btn" id="replyBtn">回复</button>
-                            <button class="action-btn" id="forwardBtn">转发</button>
+                            <button class="action-btn pill-btn" id="replyBtn">回复</button>
+                            <button class="action-btn pill-btn" id="forwardBtn">转发</button>
                             <button class="action-btn icon-round" id="deleteBtn" title="删除">
                               <svg class="icon icon-primary" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M6 7h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
