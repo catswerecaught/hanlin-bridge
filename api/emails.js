@@ -11,6 +11,35 @@ export default async function handler(req, res) {
     });
   }
 
+// 尝试多层解包 Upstash 返回的 {result: string} 与我们历史写入的 {value: string} 嵌套
+function unwrapKV(raw) {
+  // 初始：raw 可能是字符串或对象
+  let data = raw;
+  let safety = 0;
+  while (safety++ < 10) {
+    if (data == null) break;
+    // 字符串尝试 JSON.parse
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+        continue;
+      } catch {
+        break; // 非 JSON 字符串
+      }
+    }
+    // 对象且存在 value 字段
+    if (typeof data === 'object' && data.value != null) {
+      // 如果 value 还是字符串，继续
+      if (typeof data.value === 'string') { data = data.value; continue; }
+      // 如果 value 已是对象
+      data = data.value;
+      continue;
+    }
+    break;
+  }
+  return data;
+}
+
   // 验证授权
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -61,8 +90,22 @@ async function handleGetEmails(req, res, apiUrl, apiToken, username) {
     const data = await response.json();
     
     if (data.result) {
-      const emails = JSON.parse(data.result);
-      res.status(200).json({ emails });
+      // 兼容多层嵌套
+      const unwrapped = unwrapKV(data.result);
+      const emails = unwrapKV(unwrapped);
+      const normalized = {
+        inbox: Array.isArray(emails?.inbox) ? emails.inbox : [],
+        sent: Array.isArray(emails?.sent) ? emails.sent : [],
+        drafts: Array.isArray(emails?.drafts) ? emails.drafts : [],
+        deleted: Array.isArray(emails?.deleted) ? emails.deleted : []
+      };
+      // 回写一次，消除历史多层 value 嵌套
+      await fetch(`${apiUrl}/set/${userEmailKey}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: JSON.stringify(normalized) })
+      }).catch(() => {});
+      res.status(200).json({ emails: normalized });
     } else {
       // 用户首次使用，创建默认邮件结构
       const defaultEmails = {
@@ -235,8 +278,7 @@ async function handleUpdateEmail(req, res, apiUrl, apiToken, username) {
     if (!data.result) {
       return res.status(404).json({ error: '用户邮件数据未找到' });
     }
-    
-    const emails = JSON.parse(data.result);
+    const emails = unwrapKV(unwrapKV(data.result)) || {};
     const folderEmails = emails[folder];
     
     if (!folderEmails) {
@@ -378,7 +420,7 @@ async function addEmailToFolder(apiUrl, apiToken, username, folder, emailData) {
   });
   
   const data = await response.json();
-  let emails = data.result ? JSON.parse(data.result) : {
+  let emails = data.result ? (unwrapKV(unwrapKV(data.result)) || {}) : {
     inbox: [],
     sent: [],
     drafts: [],
