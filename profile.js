@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const user = getCurrentUser();
     if(!user) return [];
     try {
-      const res = await fetch(`/api/teaching-progress?user=${encodeURIComponent(user.username)}`);
+      const res = await fetch(`/api/health?service=teaching-progress&user=${encodeURIComponent(user.username)}`);
       if(!res.ok) return [];
       return await res.json();
     }catch{return[];}
@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function saveTeachingProgressData() {
     const user = getCurrentUser();
     if(!user) return;
-    await fetch(`/api/teaching-progress`,{
+    await fetch(`/api/health?service=teaching-progress`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({user:user.username,data:teachingProgressData})
@@ -615,7 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const user = getCurrentUser();
     if(!user) return [];
     try {
-      const res = await fetch(`/api/teaching-class?user=${encodeURIComponent(user.username)}`);
+      const res = await fetch(`/api/health?service=teaching-class&user=${encodeURIComponent(user.username)}`);
       if(!res.ok) return [];
       return await res.json();
     }catch{return[];}
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function saveClassList() {
     const user = getCurrentUser();
     if(!user) return;
-    await fetch(`/api/teaching-class`,{
+    await fetch(`/api/health?service=teaching-class`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({user:user.username,data:classList})
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const user = getCurrentUser();
     if (!user) return { amount: 0, cardType: 'M1' };
     try {
-      const res = await fetch(`/api/balance?user=${encodeURIComponent(user.username)}`);
+      const res = await fetch(`/api/health?service=balance&user=${encodeURIComponent(user.username)}`);
       if (!res.ok) return { amount: 0, cardType: 'M1' };
       return await res.json();
     } catch {
@@ -691,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function saveBalance(data) {
     const user = getCurrentUser();
     if (!user) return;
-    await fetch(`/api/balance`, {
+    await fetch(`/api/health?service=balance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: user.username, data })
