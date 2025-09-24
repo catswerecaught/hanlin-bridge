@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = getLoginUser();
         if (user) {
             // 加载用户积分
-            fetch(`/api/balance?user=${user.username}`)
+            fetch(`/api/health?service=balance&user=${user.username}`)
                 .then(response => response.json())
                 .then(data => {
                     userBalance = data.amount || 0;
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const newBalance = userBalance - 35;
         
         try {
-            const response = await fetch('/api/balance', {
+            const response = await fetch('/api/health?service=balance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
