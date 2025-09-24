@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>问卷管理 - 翰林桥</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <style>
     .admin-container { max-width: 1200px; margin: 28px auto 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e1e8ed; padding-bottom: 16px; }
@@ -141,7 +141,6 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="modalTitle">创建问卷</h3>
-        <button class="btn-success" onclick="editQuestionnaire('${qn.id}')">编辑</button>
         <button class="modal-close" id="modalClose">&times;</button>
       </div>
       <form id="qnForm">
@@ -169,11 +168,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="users.js"></script>
   <script src="script.js?v=4"></script>
-  <script>
-    // 问卷管理页面脚本
-    document.addEventListener('DOMContentLoaded', function () {
-      // 这里可以添加问卷管理的交互逻辑
-    });
-  </script>
+  <script src="questionnaire-admin.js"></script>
 </body>
 </html>
