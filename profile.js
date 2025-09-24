@@ -736,6 +736,87 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
   }
 
+  // ===== 账户管理（封禁）仅对 supreme 与 taosir 显示 =====
+  async function fetchBanMap() {
+    try {
+      const res = await fetch('/api/user-ban?list=1');
+      if (!res.ok) return {};
+      return await res.json();
+    } catch { return {}; }
+  }
+  async function setBan(username, banned) {
+    const auth = (user && user.username) ? user.username : '';
+    const res = await fetch('/api/user-ban', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth}` },
+      body: JSON.stringify({ username, banned })
+    });
+    if (!res.ok) throw new Error('ban update failed');
+    return await res.json();
+  }
+  function renderAccountManagementPanel() {
+    // 创建容器并挂到余额卡片下方
+    const panelId = 'accountManagePanel';
+    let panel = document.getElementById(panelId);
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = panelId;
+      panel.style.marginTop = '18px';
+      panel.style.padding = '16px 18px';
+      panel.style.border = '1px solid #e6e6e6';
+      panel.style.borderRadius = '14px';
+      panel.style.background = '#fff';
+      panel.innerHTML = '<div style="font-size:1.1em;font-weight:700;color:#007aff;margin-bottom:12px;">账户管理</div>' +
+                        '<div id="accountManageList" style="max-height:360px;overflow:auto;font-size:14px;color:#222;"></div>';
+      balanceCardWrapper.parentElement.insertBefore(panel, balanceCardWrapper.nextSibling);
+    }
+    (async () => {
+      const list = document.getElementById('accountManageList');
+      if (!list) return;
+      list.innerHTML = '<div style="color:#888;">加载中...</div>';
+      const banMap = await fetchBanMap();
+      // 按用户名排序，但把 taosir 放到第一位
+      const sorted = [...users].sort((a,b) => (a.username==='taosir'? -1 : b.username==='taosir' ? 1 : (a.username>b.username?1:-1)));
+      const rows = sorted.map(u => {
+        const banned = !!banMap[u.username];
+        const btnText = banned ? '解封' : '封禁';
+        const btnColor = banned ? '#34c759' : '#ff3b30';
+        const btnStyle = `padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid ${btnColor};color:${btnColor};cursor:pointer;`;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eee;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                    <img src="${u.avatar}" alt="${u.name}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">
+                    <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                      <div style="font-weight:600;">${u.name}</div>
+                      <div style="font-size:12px;color:#666;">${u.username}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    ${banned ? '<span style="font-size:12px;color:#ff3b30;">已封禁</span>' : '<span style="font-size:12px;color:#34c759;">正常</span>'}
+                    <button class="am-act" data-user="${u.username}" data-banned="${banned}" style="${btnStyle}">${btnText}</button>
+                  </div>
+                </div>`;
+      }).join('');
+      list.innerHTML = rows || '<div style="color:#888;">暂无用户</div>';
+      // 绑定事件
+      list.querySelectorAll('.am-act').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const uname = btn.getAttribute('data-user');
+          const current = btn.getAttribute('data-banned') === 'true';
+          try {
+            await setBan(uname, !current);
+            renderAccountManagementPanel();
+          } catch (e) {
+            alert('更新失败，请稍后再试');
+          }
+        });
+      });
+    })();
+  }
+  // 仅 taosir 且 supreme 才显示账户管理
+  if (user && user.username === 'taosir' && user.supreme === true && balanceCardWrapper) {
+    renderAccountManagementPanel();
+  }
+
   // 显示问卷管理面板（仅管理员）
   const questionnairePanel = document.getElementById('adminQuestionnairePanel');
   if (questionnairePanel && user.supreme === true) {
