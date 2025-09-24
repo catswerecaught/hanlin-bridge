@@ -12,6 +12,7 @@ async function fetchWithTimeout(resource, options = {}, timeout = 15000) {
     } finally {
         clearTimeout(id);
     }
+}
 
 // 解包 Upstash 返回的 result/value 以及可能的多层字符串化
 function unwrapKV(result) {
@@ -37,7 +38,6 @@ function unwrapKV(result) {
     } catch {
         return null;
     }
-}
 }
 
 // 生成查询密钥
@@ -125,29 +125,13 @@ export default async function handler(req, res) {
             const { key, admin, limit } = req.query;
 
             if (admin === 'true') {
-                // 管理员查看所有问题（使用 /scan 替代已弃用的 /keys）
-                const count = Math.max(1, Math.min(Number(limit) || 200, 500));
-                let listResponse = await fetchWithTimeout(`${apiUrl}/scan`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ prefix: QUESTIONS_KEY_PREFIX, limit: count })
-                });
-
-                // 若 /scan 不可用，兼容性回退到 /keys
-                if (!listResponse.ok) {
-                    const legacy = await fetchWithTimeout(`${apiUrl}/keys/${QUESTIONS_KEY_PREFIX}*`, {
-                        headers: { 'Authorization': `Bearer ${apiToken}` }
-                    }).catch(() => null);
-                    if (!legacy || !legacy.ok) {
-                        const status = legacy ? `${legacy.status} ${legacy.statusText}` : 'no response';
-                        throw new Error(`Failed to fetch questions list via /scan and /keys fallback (${status})`);
-                    }
-                    listResponse = legacy;
+                // 管理员查看所有问题：直接使用 /keys 列出所有匹配键
+                const listResponse = await fetchWithTimeout(`${apiUrl}/keys/${QUESTIONS_KEY_PREFIX}*`, {
+                  headers: { 'Authorization': `Bearer ${apiToken}` }
+                }).catch(() => null);
+                if (!listResponse || !listResponse.ok) {
+                  return res.status(200).json({ questions: [] });
                 }
-
                 const listData = await listResponse.json();
                 const keys = Array.isArray(listData.keys) ? listData.keys : (listData.result || []);
                 const questions = [];

@@ -677,13 +677,37 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ===== 余额卡片组件 =====
+  // 与后端保持一致的卡种门槛
+  const CARD_LEVELS = [
+    { type: '大众M1', threshold: 0 },
+    { type: '大众M2', threshold: 1000 },
+    { type: '金卡M1', threshold: 50000 },
+    { type: '金卡M2', threshold: 200000 },
+    { type: '金玉兰M1', threshold: 500000 },
+    { type: '金玉兰M2', threshold: 2000000 },
+    { type: '金玉兰M3', threshold: 5000000 },
+    { type: '至臻明珠M1', threshold: 10000000 },
+    { type: '至臻明珠M2', threshold: 50000000 },
+    { type: '至臻明珠M3', threshold: 100000000 },
+  ];
+  function getCardType(amount) {
+    let card = CARD_LEVELS[0].type;
+    for (const level of CARD_LEVELS) {
+      if (amount >= level.threshold) card = level.type; else break;
+    }
+    return card;
+  }
   async function fetchBalance() {
     const user = getCurrentUser();
     if (!user) return { amount: 0, cardType: 'M1' };
     try {
       const res = await fetch(`/api/health?service=balance&user=${encodeURIComponent(user.username)}`);
       if (!res.ok) return { amount: 0, cardType: 'M1' };
-      return await res.json();
+      const data = await res.json();
+      const amount = Number(data?.amount ?? 0);
+      // 始终在前端再计算一次，避免旧数据或缓存导致仅显示“M1”
+      const cardType = getCardType(amount);
+      return { amount, cardType };
     } catch {
       return { amount: 0, cardType: 'M1' };
     }
