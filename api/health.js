@@ -167,13 +167,33 @@ async function handleBalance(req, res) {
     return res.status(400).json({ error: 'Missing user parameter' });
   }
   const key = `balance-${user}`;
+  // 卡种等级与门槛（与 ai-chat.js 保持一致）
+  const CARD_LEVELS = [
+    { type: '大众M1', threshold: 0 },
+    { type: '大众M2', threshold: 1000 },
+    { type: '金卡M1', threshold: 50000 },
+    { type: '金卡M2', threshold: 200000 },
+    { type: '金玉兰M1', threshold: 500000 },
+    { type: '金玉兰M2', threshold: 2000000 },
+    { type: '金玉兰M3', threshold: 5000000 },
+    { type: '至臻明珠M1', threshold: 10000000 },
+    { type: '至臻明珠M2', threshold: 50000000 },
+    { type: '至臻明珠M3', threshold: 100000000 },
+  ];
+  function getCardType(amount) {
+    let card = CARD_LEVELS[0].type;
+    for (const level of CARD_LEVELS) {
+      if (amount >= level.threshold) card = level.type; else break;
+    }
+    return card;
+  }
   if (req.method === 'GET') {
     try {
       const response = await fetch(`${apiUrl}/get/${key}`, {
         headers: { 'Authorization': `Bearer ${apiToken}` }
       });
       if (!response.ok) {
-        return res.status(200).json({ amount: 0, cardType: 'M1' });
+        return res.status(200).json({ amount: 0, cardType: getCardType(0) });
       }
       const data = await response.json();
       let result = data.result?.value || data.result;
@@ -181,10 +201,13 @@ async function handleBalance(req, res) {
         try { result = JSON.parse(result); } catch {}
       }
       while (result && result.value) result = result.value;
-      res.status(200).json(result || { amount: 0, cardType: 'M1' });
+      const amount = Number((result && result.amount) ?? 0);
+      // 始终根据 amount 计算卡种，避免旧数据中 cardType='M1' 之类的简写导致显示不正确
+      const cardType = getCardType(amount);
+      res.status(200).json({ amount, cardType });
     } catch (error) {
       console.error('Balance fetch error:', error);
-      res.status(200).json({ amount: 0, cardType: 'M1' });
+      res.status(200).json({ amount: 0, cardType: getCardType(0) });
     }
   } else if (req.method === 'POST') {
     try {
@@ -198,15 +221,18 @@ async function handleBalance(req, res) {
         body = JSON.parse(rawBody);
       }
       const { data: balanceData } = body;
+      const amount = Number(balanceData?.amount ?? 0);
+      const cardType = balanceData?.cardType || getCardType(amount);
+      const toStore = { amount, cardType };
       const response = await fetch(`${apiUrl}/set/${key}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: balanceData })
+        body: JSON.stringify({ value: toStore })
       });
       if (!response.ok) {
         return res.status(500).json({ error: 'Failed to update balance' });
       }
-      res.status(200).json({ success: true });
+      res.status(200).json({ success: true, amount, cardType });
     } catch (error) {
       console.error('Balance update error:', error);
       res.status(500).json({ error: 'Internal server error' });
