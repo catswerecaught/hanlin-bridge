@@ -88,7 +88,7 @@ export default async function handler(req, res) {
 
   // Handle user ban functionality if the path indicates it
   const urlObj = new URL(req.url, `http://${req.headers.host}`);
-  const isBanRequest = urlObj.searchParams.has('ban') || urlObj.searchParams.has('list');
+  const isBanRequest = urlObj.searchParams.has('ban') || urlObj.searchParams.has('list') || urlObj.searchParams.has('username');
   
   if (isBanRequest) {
     return await handleUserBan(req, res, apiUrl, apiToken, urlObj);
