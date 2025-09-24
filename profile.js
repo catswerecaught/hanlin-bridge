@@ -739,14 +739,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // ===== 账户管理（封禁）仅对 supreme 与 taosir 显示 =====
   async function fetchBanMap() {
     try {
-      const res = await fetch('/api/user-ban?list=1');
+      const res = await fetch('/api/user-interactions?list=1');
       if (!res.ok) return {};
       return await res.json();
     } catch { return {}; }
   }
   async function setBan(username, banned) {
     const auth = (user && user.username) ? user.username : '';
-    const res = await fetch('/api/user-ban', {
+    const res = await fetch('/api/user-interactions?ban=1', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth}` },
       body: JSON.stringify({ username, banned })

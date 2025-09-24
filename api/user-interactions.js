@@ -76,14 +76,22 @@ async function writeUserInteractions(userId, interactions, apiUrl, apiToken) {
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!apiUrl || !apiToken) {
     return res.status(500).json({ error: 'KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set' });
+  }
+
+  // Handle user ban functionality if the path indicates it
+  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+  const isBanRequest = urlObj.searchParams.has('ban') || urlObj.searchParams.has('list');
+  
+  if (isBanRequest) {
+    return await handleUserBan(req, res, apiUrl, apiToken, urlObj);
   }
 
   const userId = (req.query && (req.query.userId || req.query.uid)) || (req.body && req.body.userId);
@@ -128,6 +136,55 @@ export default async function handler(req, res) {
     }
   }
 
-  res.setHeader('Allow', ['GET', 'PATCH']);
+  res.setHeader('Allow', ['GET', 'PATCH', 'PUT']);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
+}
+
+// User ban functionality merged into user-interactions API
+const BAN_KEY = 'user-ban-map';
+
+async function handleUserBan(req, res, apiUrl, apiToken, urlObj) {
+  const authHeader = req.headers.authorization || '';
+  const requester = authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : '';
+
+  try {
+    if (req.method === 'GET') {
+      const wantList = urlObj.searchParams.get('list') === '1';
+      const username = urlObj.searchParams.get('username') || '';
+
+      const resp = await fetch(`${apiUrl}/get/${BAN_KEY}`, { headers: { Authorization: `Bearer ${apiToken}` } });
+      const data = await resp.json().catch(() => ({}));
+      const map = unwrapKV(unwrapKV(data?.result)) || {};
+
+      if (wantList) return res.status(200).json(map);
+      if (!username) return res.status(400).json({ error: 'username required' });
+      return res.status(200).json({ banned: !!map[username] });
+    }
+
+    if (req.method === 'PUT') {
+      if (requester !== 'taosir') {
+        return res.status(403).json({ error: 'forbidden' });
+      }
+      const { username, banned } = req.body || {};
+      if (!username || typeof banned !== 'boolean') {
+        return res.status(400).json({ error: 'invalid body' });
+      }
+      // Get current map
+      const getResp = await fetch(`${apiUrl}/get/${BAN_KEY}`, { headers: { Authorization: `Bearer ${apiToken}` } });
+      const getData = await getResp.json().catch(() => ({}));
+      const map = unwrapKV(unwrapKV(getData?.result)) || {};
+      if (banned) map[username] = true; else delete map[username];
+      await fetch(`${apiUrl}/set/${BAN_KEY}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: JSON.stringify(map) })
+      });
+      return res.status(200).json({ success: true, username, banned });
+    }
+
+    return res.status(405).json({ error: 'method not allowed' });
+  } catch (e) {
+    console.error('user-ban error', e);
+    return res.status(500).json({ error: 'internal error' });
+  }
 }

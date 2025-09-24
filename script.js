@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const u = getLoginUser();
         if (!u) return false;
         try {
-            const res = await fetch(`/api/user-ban?username=${encodeURIComponent(u.username)}`);
+            const res = await fetch(`/api/user-interactions?username=${encodeURIComponent(u.username)}`);
             if (!res.ok) return false;
             const data = await res.json();
             return !!data.banned;
