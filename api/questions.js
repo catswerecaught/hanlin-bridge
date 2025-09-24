@@ -12,6 +12,32 @@ async function fetchWithTimeout(resource, options = {}, timeout = 15000) {
     } finally {
         clearTimeout(id);
     }
+
+// 解包 Upstash 返回的 result/value 以及可能的多层字符串化
+function unwrapKV(result) {
+    try {
+        let data = result;
+        // 若是字符串，多次尝试解析
+        for (let i = 0; i < 3 && typeof data === 'string'; i++) {
+            try { data = JSON.parse(data); } catch { break; }
+        }
+        // 连续解 value 层
+        let guard = 0;
+        while (data && typeof data === 'object' && 'value' in data && guard++ < 3) {
+            data = data.value;
+            for (let i = 0; i < 2 && typeof data === 'string'; i++) {
+                try { data = JSON.parse(data); } catch { break; }
+            }
+        }
+        // 兜底字符串解析
+        if (typeof data === 'string') {
+            try { data = JSON.parse(data); } catch {}
+        }
+        return data;
+    } catch {
+        return null;
+    }
+}
 }
 
 // 生成查询密钥
@@ -140,33 +166,31 @@ export default async function handler(req, res) {
 
                             if (getResponse.ok) {
                                 const questionData = await getResponse.json();
-                                if (questionData.result) {
-                                    const parsedData = typeof questionData.result === 'string'
-                                        ? JSON.parse(questionData.result)
-                                        : questionData.result;
-
+                                if (questionData.result != null) {
+                                    const parsed = unwrapKV(questionData.result) || {};
                                     // 获取对应的答案
                                     const answerKey = questionKey.replace(QUESTIONS_KEY_PREFIX, ANSWERS_KEY_PREFIX);
                                     const answerResponse = await fetchWithTimeout(`${apiUrl}/get/${answerKey}`, {
-                                        headers: {
-                                            'Authorization': `Bearer ${apiToken}`
-                                        }
+                                        headers: { 'Authorization': `Bearer ${apiToken}` }
                                     });
 
-                                    let answer = null;
+                                    let answerObj = null;
                                     if (answerResponse.ok) {
                                         const answerData = await answerResponse.json();
-                                        if (answerData.result) {
-                                            answer = typeof answerData.result === 'string'
-                                                ? JSON.parse(answerData.result)
-                                                : answerData.result;
+                                        if (answerData.result != null) {
+                                            answerObj = unwrapKV(answerData.result) || null;
                                         }
                                     }
 
+                                    const derivedKey = questionKey.replace(QUESTIONS_KEY_PREFIX, '');
                                     questions.push({
-                                        ...parsedData,
-                                        answer: answer ? answer.answer : null,
-                                        answerTime: answer ? answer.timestamp : null
+                                        key: parsed.key || derivedKey,
+                                        question: parsed.question || '',
+                                        timestamp: parsed.timestamp || null,
+                                        ip: parsed.ip || '-',
+                                        status: parsed.status || 'pending',
+                                        answer: answerObj ? (answerObj.answer || null) : null,
+                                        answerTime: answerObj ? (answerObj.timestamp || null) : null
                                     });
                                 }
                             }
@@ -204,9 +228,7 @@ export default async function handler(req, res) {
                     return res.status(404).json({ error: '问题不存在或密钥无效' });
                 }
 
-                const parsedQuestion = typeof questionData.result === 'string' 
-                    ? JSON.parse(questionData.result) 
-                    : questionData.result;
+                const parsedQuestion = unwrapKV(questionData.result) || {};
 
                 // 获取答案信息
                 const answerResponse = await fetch(`${apiUrl}/get/${ANSWERS_KEY_PREFIX}${key}`, {
@@ -219,9 +241,7 @@ export default async function handler(req, res) {
                 if (answerResponse.ok) {
                     const answerData = await answerResponse.json();
                     if (answerData.result) {
-                        answer = typeof answerData.result === 'string' 
-                            ? JSON.parse(answerData.result) 
-                            : answerData.result;
+                        answer = unwrapKV(answerData.result) || null;
                     }
                 }
 
@@ -280,9 +300,7 @@ export default async function handler(req, res) {
 
             // 更新问题状态
             const questionData = await questionResponse.json();
-            const parsedQuestion = typeof questionData.result === 'string' 
-                ? JSON.parse(questionData.result) 
-                : questionData.result;
+            const parsedQuestion = unwrapKV(questionData.result) || {};
             
             parsedQuestion.status = 'answered';
 
