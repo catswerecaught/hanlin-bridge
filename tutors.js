@@ -235,6 +235,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 初始化联系方式模态框
+    function initContactModal() {
+        const modal = document.getElementById('contactModal');
+        const closeBtn = document.querySelector('.close-modal-btn');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        }
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // 为所有"联系"按钮添加点击事件
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('contact-btn')) {
+                modal.style.display = 'block';
+            }
+        });
+    }
+
     displayAllTutors();
     highlightTutorFromURL();
     initContactModal();
