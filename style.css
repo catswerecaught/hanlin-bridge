@@ -924,3 +924,42 @@ transition: background 0.2s;
     align-items: flex-start;
     gap: 48px;
 }
+
+/* ===== Balance Card Animated Backgrounds ===== */
+/* Container sizing already handled inline; here we add animated overlays */
+.balance-card-mplus [class^="balance-card-bg-"],
+.balance-card-mplus [class*=" balance-card-bg-"] {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle moving crystal-like light overlay */
+.balance-card-mplus [class^="balance-card-bg-" ]::after,
+.balance-card-mplus [class*=" balance-card-bg-" ]::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  top: -20%;
+  width: 140%;
+  height: 140%;
+  background:
+    radial-gradient(60% 50% at 20% 50%, rgba(255,255,255,0.45), rgba(255,255,255,0) 60%),
+    radial-gradient(40% 35% at 80% 40%, rgba(255,255,255,0.25), rgba(255,255,255,0) 65%),
+    linear-gradient(90deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: crystalFlow 12s ease-in-out infinite;
+}
+
+/* Stronger neon shimmer for 至臻明珠 */
+.balance-card-mplus .balance-card-bg-至臻明珠::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(45% 40% at 30% 60%, rgba(126,214,255,0.12), rgba(126,214,255,0) 60%),
+    radial-gradient(45% 40% at 70% 35%, rgba(178,224,255,0.10), rgba(178,224,255,0) 60%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: crystalFlow 10s ease-in-out infinite;
+}
