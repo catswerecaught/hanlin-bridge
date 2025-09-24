@@ -397,7 +397,71 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch {}
     }
 
-    // 权限拦截：只有Pro会员可进入趋势页面
+    // ======= 封禁拦截（Upstash） =======
+    async function isUserBanned() {
+        const u = getLoginUser();
+        if (!u) return false;
+        try {
+            const res = await fetch(`/api/user-ban?username=${encodeURIComponent(u.username)}`);
+            if (!res.ok) return false;
+            const data = await res.json();
+            return !!data.banned;
+        } catch { return false; }
+    }
+    function showFreezeNotice() {
+        const msg = '因违反相关规定，您的账户已被冻结。';
+        // toast 优先，否则 alert
+        let toast = document.getElementById('freezeToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'freezeToast';
+            toast.style.position = 'fixed';
+            toast.style.left = '50%';
+            toast.style.top = '90px';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(34,34,34,0.96)';
+            toast.style.color = '#fff';
+            toast.style.fontSize = '16px';
+            toast.style.padding = '12px 22px';
+            toast.style.borderRadius = '12px';
+            toast.style.zIndex = '4000';
+            toast.style.boxShadow = '0 4px 18px rgba(0,0,0,0.18)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity .25s';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        setTimeout(()=> toast.style.opacity = '0', 1500);
+    }
+    async function setupBanInterceptors() {
+        const banned = await isUserBanned();
+        if (!banned) return;
+        const restrictedPaths = ['trend.html','lingning.html','customize.html','cooperation.html','socialmedia.html','email.html'];
+        const restrictedNames = ['趋势','灵凝','定制','新闻','社媒','邮件'];
+        // 1) 导航拦截
+        const navList = document.querySelectorAll('.main-nav ul li a');
+        navList.forEach(a => {
+            const href = a.getAttribute('href') || '';
+            const text = a.textContent.trim();
+            const hit = restrictedPaths.some(p => href.endsWith(p)) || restrictedNames.includes(text);
+            if (hit) {
+                a.addEventListener('click', function(e){
+                    e.preventDefault();
+                    showFreezeNotice();
+                });
+            }
+        });
+        // 2) 直接访问 URL 拦截（当前页即受限）
+        const nowPath = window.location.pathname;
+        if (restrictedPaths.some(p => nowPath.endsWith(p))) {
+            showFreezeNotice();
+            setTimeout(()=>{ window.location.href = 'index.html'; }, 900);
+        }
+    }
+    setupBanInterceptors();
+
+    // 权限拦截：只有Pro会员可进入趋势页面（保留原有逻辑）
     function setupTrendAccessControl() {
         // 只在非 trend.html 页面拦截
         if (window.location.pathname.endsWith('trend.html')) return;
