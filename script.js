@@ -231,7 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const href = link.getAttribute('href');
             // Only store for valid, internal page links
             if (href && href !== '#' && !href.startsWith('javascript:') && !link.classList.contains('active')) {
-                const currentActiveLi = document.querySelector('.main-nav ul li a.active').parentElement;
+                const activeLink = document.querySelector('.main-nav ul li a.active');
+                const currentActiveLi = activeLink ? activeLink.parentElement : null;
                 if (currentActiveLi) {
                     const pos = {
                         left: currentActiveLi.offsetLeft,

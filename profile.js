@@ -818,10 +818,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     return await res.json();
   }
   // 会员编辑弹窗
-  function showMembershipEditModal(username, currentVip, currentExpire, currentSupreme) {
+  async function showMembershipEditModal(username, currentVip, currentExpire, currentSupreme) {
     // 移除已存在的模态框
     const existingModal = document.getElementById('membershipEditModal');
     if (existingModal) existingModal.remove();
+    
+    // 如果传入的数据不完整，从线上获取最新数据
+    if (!currentVip || currentVip === 'undefined') {
+      try {
+        const membership = await MembershipService.getUserMembership(username);
+        currentVip = membership.vip || '普通会员';
+        currentExpire = membership.expire || '';
+        currentSupreme = membership.supreme || false;
+      } catch (error) {
+        console.warn('获取会员信息失败，使用默认值');
+        currentVip = '普通会员';
+        currentExpire = '';
+        currentSupreme = false;
+      }
+    }
+    
+    // 处理空值
+    currentExpire = currentExpire || '';
+    currentSupreme = currentSupreme === true || currentSupreme === 'true';
     
     // 创建模态框
     const modal = document.createElement('div');
@@ -998,13 +1017,13 @@ document.addEventListener('DOMContentLoaded', async function() {
       
       // 绑定会员编辑事件
       list.querySelectorAll('.am-edit-membership').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const username = btn.getAttribute('data-user');
           const currentVip = btn.getAttribute('data-vip');
           const currentExpire = btn.getAttribute('data-expire');
           const currentSupreme = btn.getAttribute('data-supreme') === 'true';
           
-          showMembershipEditModal(username, currentVip, currentExpire, currentSupreme);
+          await showMembershipEditModal(username, currentVip, currentExpire, currentSupreme);
         });
       });
     })();
