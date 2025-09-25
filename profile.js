@@ -3,37 +3,9 @@
 // 显示会员等级、到期时间、用户名、账号、密码（星号/显示切换）
 // 进入个人主页自动弹出登出按钮
 
-// 更新个人资料显示
-function updateUserProfile() {
-  const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
-  if (!user.name) return;
-  
-  console.log('🔄 刷新个人资料显示');
-  
-  // 重新执行个人资料更新逻辑
-  const wrapper = document.querySelector('.profile-wrapper');
-  if (wrapper) {
-    // 重新生成个人资料内容
-    location.reload(); // 简单粗暴但有效的方法
-  }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-  const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
+  let user = JSON.parse(localStorage.getItem('loginUser') || '{}');
   if (!user.name) {
-    window.location.href = 'index.html';
-    return;
-  }
-  
-  // 监听会员状态变化事件
-  window.addEventListener('membershipStatusChanged', (event) => {
-    console.log('🔄 检测到会员状态变化，准备刷新显示');
-    setTimeout(() => {
-      updateUserProfile();
-    }, 200);
-  });
-  
-  if (!user || typeof user !== 'object') {
     window.location.href = 'index.html';
     return;
   }
@@ -951,11 +923,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loginUser.supreme = supreme;
         localStorage.setItem('loginUser', JSON.stringify(loginUser));
         console.log(`✅ 已更新 localStorage 中的当前用户: ${username}`);
-        
-        // 触发页面刷新事件，让其他地方的显示也更新
-        window.dispatchEvent(new CustomEvent('membershipStatusChanged', {
-          detail: { username, vip, expire, supreme }
-        }));
       }
       
       // 关闭模态框
@@ -964,18 +931,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // 刷新面板
       renderAccountManagementPanel();
       
-      // 如果是当前用户，刷新个人资料显示
+      // 如果是当前用户，简单刷新页面
       const currentUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
       if (currentUser.username === username) {
-        // 延迟一点再刷新，让事件先处理
         setTimeout(() => {
-          if (typeof updateUserProfile === 'function') {
-            updateUserProfile();
-          } else {
-            // 如果没有更新函数，直接刷新页面
-            window.location.reload();
-          }
-        }, 100);
+          window.location.reload();
+        }, 500);
       }
       
       const statusMessage = cloudUpdateSuccess ? 
