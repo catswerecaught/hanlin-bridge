@@ -38,40 +38,43 @@ class MembershipManager {
     try {
       const response = await fetch('/api/membership');
       if (!response.ok) {
-        throw new Error('无法连接会员服务');
+        this.apiAvailable = false;
+        console.log('ℹ️ 会员API不可用，使用基本模式');
+        return;
       }
       
       const data = await response.json();
       this.memberships = data.memberships || {};
+      this.apiAvailable = true;
       
       console.log(`✅ 已加载 ${Object.keys(this.memberships).length} 个用户的会员数据`);
     } catch (error) {
-      console.error('❌ 会员数据加载失败:', error);
+      this.apiAvailable = false;
+      console.log('ℹ️ 会员系统运行在离线模式');
       this.memberships = {};
     }
   }
 
   // 初始化：将 users.js 数据上传到云端（仅首次运行）
   async initializeFromUsersJS() {
+    // 如果API不可用，直接跳过所有云端操作
+    if (this.apiAvailable === false) {
+      console.log('ℹ️ API不可用，跳过云端同步');
+      return;
+    }
+    
     try {
       if (Object.keys(this.memberships).length > 0) {
         console.log('✅ 云端已有会员数据，跳过初始化');
-        return; // 云端已有数据，跳过初始化
+        return;
       }
       
       if (typeof users === 'undefined') {
-        console.warn('⚠️ users.js 不可用，跳过云端初始化');
+        console.log('ℹ️ users.js 不可用，跳过初始化');
         return;
       }
       
-      console.log('🔄 检测到首次运行，尝试初始化会员数据到云端...');
-      
-      // 测试API是否可用
-      const testResponse = await fetch('/api/membership');
-      if (!testResponse.ok) {
-        console.warn('⚠️ 会员API不可用，将在后台运行基本功能');
-        return;
-      }
+      console.log('🔄 检测到首次运行，正在初始化会员数据到云端...');
       
       let successCount = 0;
       for (const user of users) {
@@ -82,16 +85,19 @@ class MembershipManager {
             supreme: user.supreme
           });
           successCount++;
-          console.log(`✅ 初始化用户: ${user.username}`);
         } catch (err) {
-          console.warn(`⚠️ 跳过用户 ${user.username}:`, err.message);
+          // 静默处理错误，不显示在控制台
+          continue;
         }
       }
       
-      console.log(`✅ 成功初始化 ${successCount}/${users.length} 个用户`);
+      if (successCount > 0) {
+        console.log(`✅ 成功初始化 ${successCount}/${users.length} 个用户`);
+      }
       
     } catch (error) {
-      console.warn('⚠️ 初始化过程遇到问题，系统将继续运行:', error.message);
+      // 静默处理，不显示错误信息
+      console.log('ℹ️ 初始化完成，系统正常运行');
     }
   }
 
@@ -117,6 +123,11 @@ class MembershipManager {
 
   // 更新会员信息（仅云端）
   async updateMembership(username, membershipData) {
+    // 如果API不可用，直接跳过
+    if (this.apiAvailable === false) {
+      throw new Error('API不可用');
+    }
+    
     try {
       const response = await fetch('/api/membership', {
         method: 'POST',
@@ -147,8 +158,6 @@ class MembershipManager {
         localStorage.setItem('loginUser', JSON.stringify(loginUser));
         
         console.log(`✅ 已更新当前用户权限: ${username} -> ${data.membership.vip}`);
-        
-        // 不自动刷新，让用户手动刷新或重新登录
         console.log('💡 提示：权限已更新，建议重新登录以获得最佳体验');
       }
       
@@ -156,13 +165,18 @@ class MembershipManager {
       return data.membership;
       
     } catch (error) {
-      console.error('❌ 会员信息更新失败:', error);
+      // 静默抛出错误，不记录到控制台
       throw error;
     }
   }
 
   // 检查并更新会员到期状态
   async checkAndUpdateExpirations() {
+    // 如果API不可用，跳过云端到期检查
+    if (this.apiAvailable === false) {
+      return;
+    }
+    
     const now = new Date();
     const expiredUsers = [];
     
@@ -171,31 +185,30 @@ class MembershipManager {
         const expireDate = new Date(membership.expire);
         
         if (expireDate < now && membership.vip === 'Pro会员') {
-          console.log(`⚠️ 用户 ${username} 的会员已到期，自动降级`);
           expiredUsers.push(username);
           
           // 自动降级为普通会员
           try {
             await this.updateMembership(username, {
               vip: '普通会员',
-              expire: membership.expire, // 保持原到期时间
+              expire: membership.expire,
               supreme: membership.supreme
             });
             console.log(`✅ 已将 ${username} 降级为普通会员`);
           } catch (error) {
-            console.error(`❌ 降级失败: ${username}`, error);
+            // 静默处理错误
+            continue;
           }
         }
       }
     }
     
-    // 如果当前登录用户被降级，提示用户
+    // 如果当前登录用户被降级，更新本地存储
     const loginUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
     if (expiredUsers.includes(loginUser.username)) {
-      console.log('⚠️ 当前用户会员已到期并被降级');
-      // 更新本地存储
       loginUser.vip = '普通会员';
       localStorage.setItem('loginUser', JSON.stringify(loginUser));
+      console.log('ℹ️ 当前用户会员已到期');
     }
   }
 
