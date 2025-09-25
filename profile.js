@@ -941,7 +941,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            ${vipButton}
             <span style="font-size:12px;color:${banned ? '#ff3b30' : '#34c759'};">${banned ? '已封禁' : '正常'}</span>
             <button class="am-act" 
               data-user="${u.username}" 
@@ -949,6 +948,7 @@ document.addEventListener('DOMContentLoaded', function() {
               style="padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid ${btnColor};color:${btnColor};cursor:pointer;">
               ${btnText}
             </button>
+            ${vipButton}
           </div>
         </div>
       `;}).join('');

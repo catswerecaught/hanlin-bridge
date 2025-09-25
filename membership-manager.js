@@ -23,7 +23,10 @@ class MembershipManager {
   async syncMemberships() {
     try {
       const response = await fetch('/api/membership');
-      if (!response.ok) return;
+      if (!response.ok) {
+        console.log('会员 API 不可用，使用本地数据');
+        return;
+      }
       
       const data = await response.json();
       this.memberships = data.memberships || {};
@@ -32,15 +35,29 @@ class MembershipManager {
       if (Object.keys(this.memberships).length === 0 && typeof users !== 'undefined') {
         console.log('初始化会员数据到云端...');
         for (const user of users) {
-          await this.updateMembership(user.username, {
-            vip: user.vip,
-            expire: user.expire,
-            supreme: user.supreme
-          });
+          try {
+            await this.updateMembership(user.username, {
+              vip: user.vip,
+              expire: user.expire,
+              supreme: user.supreme
+            });
+          } catch (err) {
+            console.log(`跳过用户 ${user.username} 的云端同步:`, err.message);
+          }
         }
       }
     } catch (error) {
-      console.error('同步会员数据失败:', error);
+      console.log('会员系统在离线模式下运行，使用本地 users.js 数据');
+      // 离线模式：直接从 users.js 加载数据
+      if (typeof users !== 'undefined') {
+        users.forEach(user => {
+          this.memberships[user.username] = {
+            vip: user.vip,
+            expire: user.expire,
+            supreme: user.supreme
+          };
+        });
+      }
     }
   }
 
@@ -67,6 +84,7 @@ class MembershipManager {
   // 更新会员信息
   async updateMembership(username, membershipData) {
     try {
+      // 尝试云端更新
       const response = await fetch('/api/membership', {
         method: 'POST',
         headers: {
@@ -78,27 +96,47 @@ class MembershipManager {
         })
       });
 
-      if (!response.ok) throw new Error('更新失败');
-      
-      const data = await response.json();
-      
-      // 更新本地缓存
-      this.memberships[username] = data.membership;
-      
-      // 更新本地 localStorage
-      const loginUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
-      if (loginUser.username === username) {
-        loginUser.vip = membershipData.vip || loginUser.vip;
-        loginUser.expire = membershipData.expire || loginUser.expire;
-        loginUser.supreme = membershipData.supreme !== undefined ? membershipData.supreme : loginUser.supreme;
-        localStorage.setItem('loginUser', JSON.stringify(loginUser));
+      if (response.ok) {
+        const data = await response.json();
+        // 更新本地缓存
+        this.memberships[username] = data.membership;
+        console.log(`✅ 云端更新成功: ${username}`);
+      } else {
+        throw new Error('云端更新失败');
       }
-      
-      return data.membership;
     } catch (error) {
-      console.error('更新会员信息失败:', error);
-      throw error;
+      console.log(`⚠️ 云端不可用，仅更新本地数据: ${username}`);
     }
+    
+    // 无论云端是否成功，都更新本地数据（主要数据源）
+    const user = users.find(u => u.username === username);
+    if (user) {
+      user.vip = membershipData.vip || user.vip;
+      user.expire = membershipData.expire || user.expire;
+      user.supreme = membershipData.supreme !== undefined ? membershipData.supreme : user.supreme;
+      
+      console.log(`✅ 已同步到本地 users.js: ${username} -> ${user.vip}, 到期: ${user.expire}`);
+    }
+    
+    // 更新本地缓存
+    this.memberships[username] = {
+      vip: membershipData.vip || (user && user.vip),
+      expire: membershipData.expire || (user && user.expire),
+      supreme: membershipData.supreme !== undefined ? membershipData.supreme : (user && user.supreme)
+    };
+    
+    // 如果修改的是当前用户，更新 localStorage
+    const loginUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
+    if (loginUser.username === username) {
+      loginUser.vip = membershipData.vip || loginUser.vip;
+      loginUser.expire = membershipData.expire || loginUser.expire;
+      loginUser.supreme = membershipData.supreme !== undefined ? membershipData.supreme : loginUser.supreme;
+      localStorage.setItem('loginUser', JSON.stringify(loginUser));
+      
+      console.log(`✅ 已同步当前用户登录状态: ${username}`);
+    }
+    
+    return this.memberships[username];
   }
 
   // 检查会员到期
