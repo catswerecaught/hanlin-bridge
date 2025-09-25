@@ -7,12 +7,33 @@ class UserTrackingModal {
   }
 
   init() {
+    // 添加红点动画样式
+    this.addRedDotStyles();
     // 创建模态框
     this.createModal();
     // 绑定头像点击事件
     this.bindAvatarClicks();
     // 初始化红点显示
     this.initRedDots();
+    
+    // 添加全局方法供调试使用
+    window.refreshRedDots = () => this.initRedDots();
+  }
+
+  addRedDotStyles() {
+    // 检查是否已添加样式
+    if (document.getElementById('redDotStyles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'redDotStyles';
+    style.textContent = `
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   createModal() {
@@ -127,14 +148,28 @@ class UserTrackingModal {
     if (!panel) return;
 
     panel.addEventListener('click', (e) => {
-      // 检查是否点击了头像
-      const img = e.target.closest('img');
+      // 检查是否点击了头像或头像包装器
+      const img = e.target.closest('img') || e.target.closest('.avatar-wrapper')?.querySelector('img');
       if (!img && e.target.tagName !== 'IMG') return;
       
       const targetImg = img || e.target;
       
-      // 从父元素中找到用户名
-      const userItem = targetImg.closest('[data-user]') || targetImg.closest('div');
+      // 从父元素中找到用户名，需要向上查找更多层级
+      let userItem = targetImg.closest('[data-user]');
+      if (!userItem) {
+        // 如果没找到，向上查找包含 data-user 的容器
+        let currentElement = targetImg.parentElement;
+        for (let i = 0; i < 10; i++) { // 最多向上查找10层
+          if (!currentElement) break;
+          const dataUserElement = currentElement.querySelector('[data-user]');
+          if (dataUserElement) {
+            userItem = currentElement;
+            break;
+          }
+          currentElement = currentElement.parentElement;
+        }
+      }
+      
       if (!userItem) return;
       
       // 尝试从不同位置获取用户名
@@ -391,28 +426,108 @@ class UserTrackingModal {
   }
 
   addRedDot(username) {
-    // 找到对应用户的头像
-    const userElement = document.querySelector(`[data-user="${username}"]`);
-    if (!userElement) return;
+    // 更直接的查找策略：先找到按钮，然后找到同一行的头像
+    const userButton = document.querySelector(`[data-user="${username}"]`);
+    if (!userButton) return;
 
-    const avatar = userElement.closest('div').querySelector('img');
-    if (!avatar) return;
+    let avatar = null;
+    
+    // 策略1: 向上找到最近的flex容器（用户行）
+    let currentElement = userButton;
+    for (let i = 0; i < 5; i++) { // 最多向上查找5层
+      currentElement = currentElement.parentElement;
+      if (!currentElement) break;
+      
+      const style = window.getComputedStyle(currentElement);
+      if (style.display === 'flex' || 
+          currentElement.style.display === 'flex' ||
+          currentElement.style.justifyContent === 'space-between') {
+        // 在这个flex容器中查找img
+        avatar = currentElement.querySelector('img');
+        if (avatar) break;
+      }
+    }
+    
+    // 策略2: 如果还没找到，在按钮的兄弟元素中查找
+    if (!avatar && userButton.parentElement) {
+      let sibling = userButton.parentElement.previousElementSibling;
+      while (sibling && !avatar) {
+        avatar = sibling.querySelector('img');
+        sibling = sibling.previousElementSibling;
+      }
+    }
+    
+    // 策略3: 最后的兜底，按照用户名匹配
+    if (!avatar) {
+      const panel = document.getElementById('accountManagePanel');
+      if (panel) {
+        const allImgs = panel.querySelectorAll('img');
+        for (const img of allImgs) {
+          // 检查img的alt属性或附近文本是否包含用户ID
+          if (img.alt && img.alt.includes(username)) {
+            avatar = img;
+            break;
+          }
+          // 或者检查同一行是否有对应的data-user
+          const rowContainer = img.closest('div[style*="display:flex"], div[style*="justify-content"]');
+          if (rowContainer && rowContainer.querySelector(`[data-user="${username}"]`)) {
+            avatar = img;
+            break;
+          }
+        }
+      }
+    }
 
-    // 确保头像容器是相对定位
-    const avatarContainer = avatar.parentElement;
-    const computedStyle = window.getComputedStyle(avatarContainer);
-    if (computedStyle.position === 'static') {
-      avatarContainer.style.position = 'relative';
+    if (!avatar) {
+      console.warn(`无法找到用户 ${username} 的头像元素`);
+      return;
     }
 
     // 移除已存在的红点
     this.removeRedDot(username);
 
-    // 添加红点
+    // 创建专门的头像包装器，确保红点只显示在头像上
+    let avatarWrapper = avatar.parentElement;
+    
+    // 检查当前父元素是否已经是我们创建的包装器
+    if (!avatarWrapper.classList.contains('avatar-wrapper')) {
+      // 创建新的包装器
+      const newWrapper = document.createElement('div');
+      newWrapper.className = 'avatar-wrapper';
+      newWrapper.style.cssText = `
+        position: relative !important;
+        display: inline-block !important;
+        width: 26px !important;
+        height: 26px !important;
+      `;
+      
+      // 将头像插入到包装器中
+      avatar.parentElement.insertBefore(newWrapper, avatar);
+      newWrapper.appendChild(avatar);
+      avatarWrapper = newWrapper;
+    }
+
+    // 添加红点到头像包装器
     const redDot = document.createElement('div');
     redDot.className = 'red-dot';
     redDot.dataset.username = username;
-    avatarContainer.appendChild(redDot);
+    
+    // 直接设置内联样式，确保样式生效
+    redDot.style.cssText = `
+      position: absolute !important;
+      top: -2px !important;
+      right: -2px !important;
+      width: 8px !important;
+      height: 8px !important;
+      background: #ff3b30 !important;
+      border-radius: 50% !important;
+      border: 1.5px solid white !important;
+      z-index: 9999 !important;
+      animation: pulse 2s infinite !important;
+      pointer-events: none !important;
+    `;
+    
+    avatarWrapper.appendChild(redDot);
   }
 
   removeRedDot(username) {
@@ -452,12 +567,22 @@ class UserTrackingModal {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-  // 延迟初始化，确保账户管理面板已加载
-  setTimeout(() => {
-    // 只有管理员才能使用此功能
-    const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
-    if (user && user.supreme === true) {
-      new UserTrackingModal();
-    }
-  }, 1000);
+  // 只有管理员才能使用此功能
+  const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
+  if (user && user.supreme === true) {
+    // 等待账户管理面板加载完成
+    const waitForPanel = () => {
+      const panel = document.getElementById('accountManagePanel');
+      if (panel && panel.children.length > 0) {
+        // 面板已加载，创建追踪模态框
+        new UserTrackingModal();
+      } else {
+        // 面板还没加载，继续等待
+        setTimeout(waitForPanel, 500);
+      }
+    };
+    
+    // 延迟一点时间再开始检查，让其他脚本有时间加载面板
+    setTimeout(waitForPanel, 800);
+  }
 });
