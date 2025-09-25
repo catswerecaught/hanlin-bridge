@@ -3,17 +3,27 @@
 // 显示会员等级、到期时间、用户名、账号、密码（星号/显示切换）
 // 进入个人主页自动弹出登出按钮
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   let user = JSON.parse(localStorage.getItem('loginUser') || '{}');
   if (!user.name) {
     window.location.href = 'index.html';
     return;
   }
-  // 2. 每次刷新页面都用本地users数组同步最新会员信息
-  const latest = users.find(u => u.username === user.username);
-  if (latest) {
-    user = { ...latest };
-    localStorage.setItem('loginUser', JSON.stringify(user));
+  
+  // 从线上获取最新的完整用户信息（包括会员信息）
+  try {
+    user = await MembershipService.getCurrentUserInfo();
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    // 如果获取失败，使用基础信息继续
+    const baseUser = users.find(u => u.username === user.username);
+    if (baseUser) {
+      user = { ...baseUser, vip: '普通会员', expire: null, supreme: false };
+    }
   }
 
   // 2. 渲染个人主页内容
@@ -877,53 +887,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const expire = document.getElementById('expireInput').value;
     const supreme = document.getElementById('supremeCheck').checked;
     
-    let cloudUpdateSuccess = false;
-    
     try {
-      // 尝试更新到云端
-      const response = await fetch('/api/membership', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username,
-          vip,
-          expire,
-          supreme
-        })
+      // 使用会员服务更新信息
+      await MembershipService.updateUserMembership(username, {
+        vip,
+        expire,
+        supreme
       });
-      
-      if (response.ok) {
-        cloudUpdateSuccess = true;
-        console.log('✅ 云端更新成功');
-      } else {
-        console.log('⚠️ 云端更新失败，使用本地更新');
-      }
-    } catch (error) {
-      console.log('⚠️ 云端不可用，使用本地更新');
-    }
-    
-    // 无论云端是否成功，都更新本地数据
-    try {
-      // 更新 users 数组
-      const user = users.find(u => u.username === username);
-      if (user) {
-        user.vip = vip;
-        user.expire = expire;
-        user.supreme = supreme;
-        console.log(`✅ 已更新 users.js 中的用户: ${username}`);
-      }
-      
-      // 如果修改的是当前用户，更新 localStorage
-      const loginUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
-      if (loginUser.username === username) {
-        loginUser.vip = vip;
-        loginUser.expire = expire;
-        loginUser.supreme = supreme;
-        localStorage.setItem('loginUser', JSON.stringify(loginUser));
-        console.log(`✅ 已更新 localStorage 中的当前用户: ${username}`);
-      }
       
       // 关闭模态框
       document.getElementById('membershipEditModal').remove();
@@ -931,7 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 刷新面板
       renderAccountManagementPanel();
       
-      // 如果是当前用户，简单刷新页面
+      // 如果是当前用户，刷新页面显示最新信息
       const currentUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
       if (currentUser.username === username) {
         setTimeout(() => {
@@ -939,15 +909,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
       }
       
-      const statusMessage = cloudUpdateSuccess ? 
-        '会员信息已更新并同步到云端' : 
-        '会员信息已更新（本地模式）';
-      
-      alert(statusMessage);
+      alert('会员信息已更新');
       
     } catch (error) {
-      console.error('本地更新失败:', error);
-      alert('更新失败，请重试');
+      console.error('更新会员信息失败:', error);
+      alert('更新失败: ' + error.message);
     }
   };
 
@@ -974,19 +940,26 @@ document.addEventListener('DOMContentLoaded', function() {
       const banMap = await fetchBanMap();
       // 按用户名排序，但把 taosir 放到第一位
       const sorted = [...users].sort((a,b) => (a.username==='taosir'? -1 : b.username==='taosir' ? 1 : (a.username>b.username?1:-1)));
+      // 获取所有用户的会员信息
+      const allMemberships = await MembershipService.getAllMemberships();
+      
       const rows = sorted.map(u => {
         const banned = !!banMap[u.username];
         const btnText = banned ? '解封' : '封禁';
         const btnColor = banned ? '#34c759' : '#ff3b30';
         const btnStyle = `padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid ${btnColor};color:${btnColor};cursor:pointer;`;
-        const vipButton = u.vip ? `<button class="am-edit-membership" 
+        
+        // 从线上获取会员信息
+        const membership = allMemberships[u.username] || { vip: '普通会员', expire: null, supreme: false };
+        const vipButton = `<button class="am-edit-membership" 
               data-user="${u.username}"
-              data-vip="${u.vip}"
-              data-expire="${u.expire}"
-              data-supreme="${u.supreme}"
+              data-vip="${membership.vip}"
+              data-expire="${membership.expire || ''}"
+              data-supreme="${membership.supreme || false}"
               style="padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid #007aff;color:#007aff;cursor:pointer;font-size:12px;">
-              ${u.vip}
-            </button>` : '';
+              ${membership.vip}
+            </button>`;
+            
         return `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eee;">
           <div style="display:flex;align-items:center;gap:10px;min-width:0;">
