@@ -778,6 +778,123 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!res.ok) throw new Error('ban update failed');
     return await res.json();
   }
+  // 会员编辑弹窗
+  function showMembershipEditModal(username, currentVip, currentExpire, currentSupreme) {
+    // 移除已存在的模态框
+    const existingModal = document.getElementById('membershipEditModal');
+    if (existingModal) existingModal.remove();
+    
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.id = 'membershipEditModal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+      <div style="background:white;border-radius:18px;padding:24px;width:400px;max-width:90%;">
+        <h3 style="margin:0 0 20px 0;color:#333;">编辑会员信息 - ${username}</h3>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:4px;color:#666;font-size:14px;">会员等级</label>
+          <select id="vipSelect" style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+            <option value="普通会员" ${currentVip === '普通会员' ? 'selected' : ''}>普通会员</option>
+            <option value="Pro会员" ${currentVip === 'Pro会员' ? 'selected' : ''}>Pro会员</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:4px;color:#666;font-size:14px;">到期时间</label>
+          <input type="text" id="expireInput" value="${currentExpire}" 
+            placeholder="YYYY-MM-DD 或 终身会员"
+            style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+        </div>
+        
+        <div style="margin-bottom:20px;">
+          <label style="display:flex;align-items:center;gap:8px;color:#666;font-size:14px;">
+            <input type="checkbox" id="supremeCheck" ${currentSupreme ? 'checked' : ''}>
+            管理员权限
+          </label>
+        </div>
+        
+        <div style="display:flex;gap:12px;">
+          <button onclick="saveMembership('${username}')" 
+            style="flex:1;padding:10px;background:#007aff;color:white;border:none;border-radius:10px;cursor:pointer;">
+            保存
+          </button>
+          <button onclick="document.getElementById('membershipEditModal').remove()" 
+            style="flex:1;padding:10px;background:#f0f0f0;color:#333;border:none;border-radius:10px;cursor:pointer;">
+            取消
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  }
+  
+  // 保存会员信息
+  window.saveMembership = async function(username) {
+    const vip = document.getElementById('vipSelect').value;
+    const expire = document.getElementById('expireInput').value;
+    const supreme = document.getElementById('supremeCheck').checked;
+    
+    try {
+      // 更新到云端
+      const response = await fetch('/api/membership', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username,
+          vip,
+          expire,
+          supreme
+        })
+      });
+      
+      if (!response.ok) throw new Error('更新失败');
+      
+      // 更新本地数据
+      const user = users.find(u => u.username === username);
+      if (user) {
+        user.vip = vip;
+        user.expire = expire;
+        user.supreme = supreme;
+      }
+      
+      // 如果修改的是当前用户，更新 localStorage
+      const loginUser = JSON.parse(localStorage.getItem('loginUser') || '{}');
+      if (loginUser.username === username) {
+        loginUser.vip = vip;
+        loginUser.expire = expire;
+        loginUser.supreme = supreme;
+        localStorage.setItem('loginUser', JSON.stringify(loginUser));
+      }
+      
+      // 关闭模态框
+      document.getElementById('membershipEditModal').remove();
+      
+      // 刷新面板
+      renderAccountManagementPanel();
+      
+      alert('会员信息已更新');
+    } catch (error) {
+      console.error('更新会员信息失败:', error);
+      alert('更新失败，请重试');
+    }
+  };
+
   function renderAccountManagementPanel() {
     // 创建容器并挂到余额卡片下方
     const panelId = 'accountManagePanel';
@@ -806,32 +923,59 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnText = banned ? '解封' : '封禁';
         const btnColor = banned ? '#34c759' : '#ff3b30';
         const btnStyle = `padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid ${btnColor};color:${btnColor};cursor:pointer;`;
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eee;">
-                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                    <img src="${u.avatar}" alt="${u.name}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">
-                    <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                      <div style="font-weight:600;">${u.name}</div>
-                      <div style="font-size:12px;color:#666;">${u.username}</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:10px;">
-                    ${banned ? '<span style="font-size:12px;color:#ff3b30;">已封禁</span>' : '<span style="font-size:12px;color:#34c759;">正常</span>'}
-                    <button class="am-act" data-user="${u.username}" data-banned="${banned}" style="${btnStyle}">${btnText}</button>
-                  </div>
-                </div>`;
-      }).join('');
+        const vipButton = u.vip ? `<button class="am-edit-membership" 
+              data-user="${u.username}"
+              data-vip="${u.vip}"
+              data-expire="${u.expire}"
+              data-supreme="${u.supreme}"
+              style="padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid #007aff;color:#007aff;cursor:pointer;font-size:12px;">
+              ${u.vip}
+            </button>` : '';
+        return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eee;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <img src="${u.avatar}" alt="${u.name}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              <div style="font-weight:600;">${u.name}</div>
+              <div style="font-size:12px;color:#666;">${u.username}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${vipButton}
+            <span style="font-size:12px;color:${banned ? '#ff3b30' : '#34c759'};">${banned ? '已封禁' : '正常'}</span>
+            <button class="am-act" 
+              data-user="${u.username}" 
+              data-banned="${banned}"
+              style="padding:6px 10px;border-radius:10px;background:transparent;border:1.5px solid ${btnColor};color:${btnColor};cursor:pointer;">
+              ${btnText}
+            </button>
+          </div>
+        </div>
+      `;}).join('');
       list.innerHTML = rows || '<div style="color:#888;">暂无用户</div>';
-      // 绑定事件
+      // 绑定封禁/解封事件
       list.querySelectorAll('.am-act').forEach(btn => {
         btn.addEventListener('click', async () => {
           const uname = btn.getAttribute('data-user');
-          const current = btn.getAttribute('data-banned') === 'true';
+          const isBanned = btn.getAttribute('data-banned') === 'true';
           try {
-            await setBan(uname, !current);
+            await setBan(uname, !isBanned);
             renderAccountManagementPanel();
           } catch (e) {
             alert('更新失败，请稍后再试');
           }
+        });
+      });
+      
+      // 绑定会员编辑事件
+      list.querySelectorAll('.am-edit-membership').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const username = btn.getAttribute('data-user');
+          const currentVip = btn.getAttribute('data-vip');
+          const currentExpire = btn.getAttribute('data-expire');
+          const currentSupreme = btn.getAttribute('data-supreme') === 'true';
+          
+          showMembershipEditModal(username, currentVip, currentExpire, currentSupreme);
         });
       });
     })();

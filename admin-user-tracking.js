@@ -299,6 +299,7 @@ class UserTrackingModal {
     const html = records.map(record => {
       const time = new Date(record.timestamp).toLocaleString('zh-CN');
       const page = this.getPageName(record.page);
+      const device = this.parseDeviceInfo(record.userAgent);
       
       return `
         <div class="tracking-item">
@@ -309,6 +310,9 @@ class UserTrackingModal {
               </div>
               <div style="font-size:13px;color:#666;">
                 IP: ${record.ip || '-'} · 访问页面: ${page}
+              </div>
+              <div style="font-size:12px;color:#999;margin-top:3px;">
+                ${device}
               </div>
             </div>
             <div style="text-align:right;">
@@ -322,6 +326,36 @@ class UserTrackingModal {
     }).join('');
 
     document.getElementById('trackingList').innerHTML = html;
+  }
+
+  parseDeviceInfo(userAgent) {
+    if (!userAgent) return '未知设备';
+    
+    let os = '';
+    let browser = '';
+    
+    // 检测操作系统
+    if (userAgent.includes('Windows')) os = 'Win';
+    else if (userAgent.includes('Mac')) os = 'Mac';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
+    
+    // 检测浏览器
+    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browser = 'Chrome';
+    else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
+    else if (userAgent.includes('Firefox')) browser = 'Firefox';
+    else if (userAgent.includes('Edg')) browser = 'Edge';
+    
+    // 检测设备类型
+    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
+    const icon = isMobile ? '📱' : '💻';
+    
+    let result = icon;
+    if (os) result += ` ${os}`;
+    if (browser) result += ` · ${browser}`;
+    
+    return result || '未知设备';
   }
 
   getPageName(path) {
