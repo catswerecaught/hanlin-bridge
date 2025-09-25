@@ -90,7 +90,18 @@ export default async function handler(req, res) {
       if (getResponse.ok) {
         const data = await getResponse.json();
         if (data.result) {
-          const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+          // 解包 Upstash 的嵌套数据结构
+          let parsed = data.result;
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch {}
+          }
+          // 处理 {value: [...]} 结构
+          if (parsed && typeof parsed === 'object' && 'value' in parsed) {
+            parsed = parsed.value;
+          }
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch {}
+          }
           records = Array.isArray(parsed) ? parsed : [];
         }
       }
@@ -142,7 +153,19 @@ export default async function handler(req, res) {
         return res.status(200).json({ records: [] });
       }
 
-      const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+      // 解包 Upstash 的嵌套数据结构
+      let parsed = data.result;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch {}
+      }
+      // 处理 {value: [...]} 结构
+      if (parsed && typeof parsed === 'object' && 'value' in parsed) {
+        parsed = parsed.value;
+      }
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch {}
+      }
+      
       const records = Array.isArray(parsed) ? parsed : [];
       
       // 限制返回数量
