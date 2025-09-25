@@ -1001,6 +1001,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         </div>
       `;}).join('');
       list.innerHTML = rows || '<div style="color:#888;">暂无用户</div>';
+      
+      // 通知红点功能用户列表已渲染
+      if (window.refreshRedDots) {
+        console.log('📱 用户列表已渲染，刷新红点状态');
+        setTimeout(() => {
+          window.refreshRedDots();
+        }, 100);
+      }
+      
       // 绑定封禁/解封事件
       list.querySelectorAll('.am-act').forEach(btn => {
         btn.addEventListener('click', async () => {

@@ -424,38 +424,63 @@ class UserTrackingModal {
   }
 
   async initRedDots() {
+    console.log('🔴 开始初始化红点功能...');
+    
     // 获取账户管理面板中的所有用户
     const panel = document.getElementById('accountManagePanel');
-    if (!panel) return;
+    if (!panel) {
+      console.log('❌ 未找到账户管理面板');
+      return;
+    }
 
     // 收集所有用户名
     const userElements = panel.querySelectorAll('[data-user]');
     const usernames = Array.from(userElements).map(el => el.dataset.user).filter(Boolean);
     
-    if (usernames.length === 0) return;
+    console.log('👥 找到用户:', usernames);
+    
+    if (usernames.length === 0) {
+      console.log('❌ 没有找到用户元素');
+      return;
+    }
 
     try {
+      console.log('🌐 正在检查用户追踪状态...');
       // 批量检查用户状态
       const response = await fetch(`/api/tracking-status?usernames=${usernames.join(',')}`);
-      if (!response.ok) return;
+      
+      if (!response.ok) {
+        console.log('❌ API 请求失败:', response.status, response.statusText);
+        return;
+      }
 
       const data = await response.json();
       const statusMap = data.status;
+      
+      console.log('📊 获取到状态数据:', statusMap);
 
+      let redDotCount = 0;
       // 为每个有新记录的用户添加红点
       userElements.forEach(userEl => {
         const username = userEl.dataset.user;
         const status = statusMap[username];
         
+        console.log(`🔍 检查用户 ${username}:`, status);
+        
         if (status && status.hasNewRecords) {
+          console.log(`🔴 为用户 ${username} 添加红点`);
           this.addRedDot(username);
+          redDotCount++;
         } else {
+          console.log(`⚪ 移除用户 ${username} 的红点`);
           this.removeRedDot(username);
         }
       });
+      
+      console.log(`✅ 红点初始化完成，共添加了 ${redDotCount} 个红点`);
 
     } catch (error) {
-      console.error('Failed to load user status:', error);
+      console.error('❌ 加载用户状态失败:', error);
     }
   }
 
@@ -600,23 +625,52 @@ class UserTrackingModal {
 }
 
 // 初始化
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // 只有管理员才能使用此功能
-  const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
+  let user = JSON.parse(localStorage.getItem('loginUser') || '{}');
+  
+  // 如果有MembershipService，获取最新的用户信息（包括supreme权限）
+  if (window.MembershipService && user.username) {
+    try {
+      const latestUser = await MembershipService.getCurrentUserInfo();
+      if (latestUser) {
+        user = latestUser;
+      }
+    } catch (error) {
+      console.warn('获取最新用户信息失败，使用本地数据', error);
+    }
+  }
+  
+  console.log('🔍 红点功能权限检查:', user.username, 'supreme:', user.supreme);
+  
   if (user && user.supreme === true) {
-    // 等待账户管理面板加载完成
+    console.log('✅ 用户有管理员权限，启动红点功能');
+    // 等待账户管理面板和用户列表加载完成
     const waitForPanel = () => {
       const panel = document.getElementById('accountManagePanel');
-      if (panel && panel.children.length > 0) {
-        // 面板已加载，创建追踪模态框
+      const userElements = panel ? panel.querySelectorAll('[data-user]') : [];
+      
+      console.log('🔍 面板检查:', {
+        panelExists: !!panel,
+        panelHasChildren: panel ? panel.children.length : 0,
+        userElementsFound: userElements.length,
+        usernames: Array.from(userElements).map(el => el.dataset.user)
+      });
+      
+      if (panel && userElements.length > 0) {
+        // 面板和用户列表都已加载
+        console.log('✅ 账户管理面板和用户列表已加载，初始化红点功能');
         new UserTrackingModal();
       } else {
-        // 面板还没加载，继续等待
+        // 面板或用户列表还没加载，继续等待
+        console.log('⏳ 等待账户管理面板和用户列表加载...');
         setTimeout(waitForPanel, 500);
       }
     };
     
     // 延迟一点时间再开始检查，让其他脚本有时间加载面板
     setTimeout(waitForPanel, 800);
+  } else {
+    console.log('❌ 用户没有管理员权限，跳过红点功能');
   }
 });
