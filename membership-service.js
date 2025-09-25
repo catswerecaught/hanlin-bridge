@@ -87,16 +87,24 @@ class MembershipService {
       const response = await fetch('/api/membership');
       if (!response.ok) {
         console.warn('会员API不可用，返回默认会员信息');
-        // API不可用时，返回默认的会员信息
         return this.getDefaultMemberships();
       }
       
       const data = await response.json();
       const memberships = data.memberships || {};
       
-      // 如果返回空对象，使用默认数据
+      // 如果返回空对象，尝试初始化数据
       if (Object.keys(memberships).length === 0) {
-        console.warn('API返回空数据，使用默认会员信息');
+        console.log('🔄 检测到空会员数据，正在初始化...');
+        const initialized = await this.initializeBasicMemberships();
+        if (initialized) {
+          // 重新获取数据
+          const retryResponse = await fetch('/api/membership');
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            return retryData.memberships || this.getDefaultMemberships();
+          }
+        }
         return this.getDefaultMemberships();
       }
       
@@ -104,6 +112,46 @@ class MembershipService {
     } catch (error) {
       console.warn('获取会员信息失败，使用默认数据:', error);
       return this.getDefaultMemberships();
+    }
+  }
+  
+  // 初始化基础会员数据到 Upstash
+  static async initializeBasicMemberships() {
+    try {
+      console.log('🚀 开始初始化基础会员数据...');
+      
+      const basicMemberships = [
+        { username: 'taosir', vip: 'Pro会员', expire: '终身会员', supreme: true },
+        { username: 'user00002', vip: 'Pro会员', expire: '终身会员', supreme: false },
+        { username: 'user00003', vip: 'Pro会员', expire: '终身会员', supreme: false },
+        { username: 'user00007', vip: '普通会员', expire: '2025-09-15', supreme: false },
+        { username: 'user00012', vip: 'Pro会员', expire: '终身会员', supreme: false }
+      ];
+      
+      let successCount = 0;
+      for (const membership of basicMemberships) {
+        try {
+          const response = await fetch('/api/membership', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(membership)
+          });
+          
+          if (response.ok) {
+            successCount++;
+            console.log(`✅ 初始化用户: ${membership.username}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ 初始化失败: ${membership.username}`, error);
+        }
+      }
+      
+      console.log(`✅ 成功初始化 ${successCount}/${basicMemberships.length} 个用户`);
+      return successCount > 0;
+      
+    } catch (error) {
+      console.error('初始化会员数据失败:', error);
+      return false;
     }
   }
   
@@ -144,3 +192,17 @@ class MembershipService {
 
 // 全局可访问
 window.MembershipService = MembershipService;
+
+// 提供手动初始化函数
+window.initializeMemberships = async function() {
+  console.log('🔄 手动初始化会员数据...');
+  const result = await MembershipService.initializeBasicMemberships();
+  if (result) {
+    console.log('✅ 初始化完成，请刷新页面查看效果');
+    alert('会员数据初始化完成！请刷新页面查看效果。');
+  } else {
+    console.log('❌ 初始化失败');
+    alert('初始化失败，请检查网络连接和API配置。');
+  }
+  return result;
+};

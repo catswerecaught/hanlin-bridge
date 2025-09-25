@@ -25,16 +25,11 @@ export default async function handler(req, res) {
       
       if (!username) {
         // 获取所有用户的会员信息
-        const scanResponse = await fetch(`${apiUrl}/scan`, {
-          method: 'POST',
+        // Upstash Redis scan 命令需要使用 SCAN 0 MATCH pattern
+        const scanResponse = await fetch(`${apiUrl}/scan/0?match=${MEMBERSHIP_KEY_PREFIX}*&count=1000`, {
           headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            prefix: MEMBERSHIP_KEY_PREFIX,
-            limit: 1000
-          })
+            'Authorization': `Bearer ${apiToken}`
+          }
         });
 
         if (!scanResponse.ok) {
@@ -45,24 +40,41 @@ export default async function handler(req, res) {
         const memberships = {};
 
         // 解析所有会员数据
-        if (scanData.result && Array.isArray(scanData.result)) {
-          for (const item of scanData.result) {
-            if (item.key && item.value) {
-              const username = item.key.replace(MEMBERSHIP_KEY_PREFIX, '');
-              let data = item.value;
-              
-              // 解析嵌套的 JSON
-              if (typeof data === 'string') {
-                try { data = JSON.parse(data); } catch {}
+        // Upstash scan 返回格式: { result: [cursor, [key1, key2, ...]] }
+        if (scanData.result && Array.isArray(scanData.result) && scanData.result.length >= 2) {
+          const keys = scanData.result[1] || [];
+          
+          // 批量获取所有key的值
+          if (keys.length > 0) {
+            for (const key of keys) {
+              try {
+                const getResponse = await fetch(`${apiUrl}/get/${key}`, {
+                  headers: { 'Authorization': `Bearer ${apiToken}` }
+                });
+                
+                if (getResponse.ok) {
+                  const getData = await getResponse.json();
+                  if (getData.result) {
+                    const username = key.replace(MEMBERSHIP_KEY_PREFIX, '');
+                    let data = getData.result;
+                    
+                    // 解析嵌套的 JSON
+                    if (typeof data === 'string') {
+                      try { data = JSON.parse(data); } catch {}
+                    }
+                    if (data && typeof data === 'object' && 'value' in data) {
+                      data = data.value;
+                    }
+                    if (typeof data === 'string') {
+                      try { data = JSON.parse(data); } catch {}
+                    }
+                    
+                    memberships[username] = data;
+                  }
+                }
+              } catch (error) {
+                console.error(`Failed to get membership for key ${key}:`, error);
               }
-              if (data && typeof data === 'object' && 'value' in data) {
-                data = data.value;
-              }
-              if (typeof data === 'string') {
-                try { data = JSON.parse(data); } catch {}
-              }
-              
-              memberships[username] = data;
             }
           }
         }
