@@ -229,6 +229,14 @@ document.addEventListener('DOMContentLoaded', function() {
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             const href = link.getAttribute('href');
+            
+            // 拦截社媒链接，检查Pro权限
+            if (href === 'socialmedia.html') {
+                e.preventDefault();
+                checkProAccessForSocialMedia(href);
+                return;
+            }
+            
             // Only store for valid, internal page links
             if (href && href !== '#' && !href.startsWith('javascript:') && !link.classList.contains('active')) {
                 const activeLink = document.querySelector('.main-nav ul li a.active');
@@ -245,6 +253,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // 检查Pro权限访问社媒
+    async function checkProAccessForSocialMedia(href) {
+        const user = JSON.parse(localStorage.getItem('loginUser') || '{}');
+        
+        if (!user.username) {
+            const redirect = encodeURIComponent(href);
+            window.location.href = 'index.html?login=1&redirect=' + redirect;
+            return;
+        }
+        
+        // 使用membership-validator检查权限
+        if (window.validateProAccess) {
+            const hasAccess = await window.validateProAccess();
+            if (hasAccess) {
+                window.location.href = href;
+            }
+            // 如果没有权限，validateProAccess会显示弹窗
+        } else {
+            // Fallback: 简单检查vip字段
+            if (user.vip === 'Pro会员' || user.expire === '终身会员') {
+                window.location.href = href;
+            } else {
+                alert('社媒功能仅向Pro会员开放');
+            }
+        }
+    }
 
     // --- END OF SMOOTH NAVIGATION LOGIC ---
 

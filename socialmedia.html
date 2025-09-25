@@ -5,17 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社媒 - 翰林桥</title>
     <script>
-      // 未登录用户禁止访问：在渲染前立即拦截并跳转到首页登录
+      // Pro会员权限检查：在渲染前立即拦截
       (function () {
         try {
           var u = localStorage.getItem('loginUser');
           if (!u) {
             var redirect = encodeURIComponent('socialmedia.html');
             window.location.replace('index.html?login=1&redirect=' + redirect);
+            return;
           }
+          
+          // 解析用户信息
+          var user = JSON.parse(u);
+          if (!user || !user.username) {
+            var redirect = encodeURIComponent('socialmedia.html');
+            window.location.replace('index.html?login=1&redirect=' + redirect);
+            return;
+          }
+          
+          // 临时显示页面（在验证Pro权限前）
+          document.documentElement.style.visibility = 'hidden';
+          
+          // 页面加载完成后验证Pro权限
+          document.addEventListener('DOMContentLoaded', function() {
+            // 使用membership-validator进行Pro权限检查
+            if (window.validateProAccess) {
+              window.validateProAccess().then(function(hasAccess) {
+                if (hasAccess) {
+                  document.documentElement.style.visibility = 'visible';
+                } else {
+                  // 没有Pro权限，跳转回首页
+                  window.location.replace('index.html');
+                }
+              });
+            } else {
+              // 如果validator不可用，检查vip字段
+              if (user.vip === 'Pro会员' || user.expire === '终身会员') {
+                document.documentElement.style.visibility = 'visible';
+              } else {
+                alert('社媒功能仅向Pro会员开放');
+                window.location.replace('index.html');
+              }
+            }
+          });
+          
         } catch (e) {
-          var redirect = encodeURIComponent('socialmedia.html');
-          window.location.replace('index.html?login=1&redirect=' + redirect);
+          console.error('权限检查失败:', e);
+          window.location.replace('index.html');
         }
       })();
     </script>
@@ -195,6 +231,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="users.js"></script>
     <script src="script.js?v=4"></script>
+    <script src="membership-service.js"></script>
+    <script src="membership-validator.js"></script>
     <script src="socialmedia.js?v=5"></script>
     <script src="user-tracking.js"></script>
     <script src="admin-user-tracking.js"></script>

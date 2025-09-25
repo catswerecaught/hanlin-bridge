@@ -126,24 +126,23 @@
                         </tbody>
                     </table>
                 </div>
-            </section>
         </div>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="users.js"></script>
+    <script src="membership-service.js"></script>
+    <script src="membership-validator.js"></script>
     <script src="script.js?v=4"></script>
-    <!-- Trigger Vercel Deploy -->
-
+    <script src="user-tracking.js"></script>
+    <script src="admin-user-tracking.js"></script>
     <script>
-    // 翰林会员展开动画
     const vipBtn = document.getElementById('hanlinVipJoinBtn');
     const vipBenefits = document.getElementById('hanlinVipBenefits');
     vipBtn.addEventListener('click', function() {
         if (vipBenefits.style.display === 'none') {
             vipBenefits.style.display = '';
             vipBenefits.style.maxHeight = vipBenefits.scrollHeight + 'px';
-            vipBenefits.style.opacity = 1;
             setTimeout(()=>{
                 document.getElementById('hanlinVipSection').scrollIntoView({behavior: 'smooth', block: 'center'});
             }, 100);
