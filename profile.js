@@ -34,37 +34,72 @@ document.addEventListener('DOMContentLoaded', function() {
     balanceCardWrapper.style.margin = '18px 0 0 0';
     wrapper.appendChild(balanceCardWrapper);
   }
-  // 会员等级与样式
+  // 检查会员到期状态
+  let actualVip = user.vip;
+  let isExpired = false;
+  
+  // 检查是否过期（排除终身会员）
+  if (user.expire && user.expire !== '终身会员' && user.expire !== 'forever' && user.expire !== '终身') {
+    const now = new Date();
+    const expireDate = new Date(user.expire);
+    
+    if (expireDate < now) {
+      isExpired = true;
+      // 如果已过期且是Pro会员，降级为普通会员
+      if (user.vip === 'Pro会员') {
+        actualVip = '普通会员';
+        console.log(`⚠️ 用户 ${user.username} 会员已于 ${user.expire} 过期，自动降级为普通会员`);
+        
+        // 更新 localStorage
+        const updatedUser = { ...user, vip: '普通会员' };
+        localStorage.setItem('loginUser', JSON.stringify(updatedUser));
+      }
+    }
+  }
+  
+  // 会员等级与样式（使用实际状态）
   let vipText = '非会员';
   let vipClass = '';
-  if (user.vip === 'Pro会员') {
+  if (actualVip === 'Pro会员') {
     vipText = 'Pro会员';
     vipClass = 'profile-vip-pro';
-  } else if (user.vip === '普通会员') {
+  } else if (actualVip === '普通会员') {
     vipText = '普通会员';
     vipClass = 'profile-vip-normal';
   }
-  // 头像和认证标识
+  
+  // 头像和认证标识（使用实际状态）
   let badge = '';
-  if (user.vip === 'Pro会员') {
+  if (actualVip === 'Pro会员') {
     badge = '<img class="profile-vip-badge" src="images/vip-pro.png" alt="Pro会员" style="position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;">';
-  } else if (user.vip === '普通会员') {
+  } else if (actualVip === '普通会员') {
     badge = '<img class="profile-vip-badge" src="images/vip-normal.png" alt="普通会员" style="position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;">';
   }
+  
+  // 个人简介文本（使用实际状态）
   let subText = '';
-  if (user.vip === 'Pro会员') {
+  if (actualVip === 'Pro会员') {
     subText = `尊敬的${user.name || user.username || '用户'}，您已解锁全部会员权益。`;
-  } else if (user.vip === '普通会员') {
-    subText = '普通会员';
+  } else if (actualVip === '普通会员') {
+    subText = isExpired ? `${user.name || user.username || '用户'}，您的Pro会员已过期` : '普通会员';
   } else {
     subText = '非会员';
   }
   // 会员到期时间显示逻辑
   let expireText = '-';
-  if (user.expire === 'forever' || user.expire === '终身') {
+  let expireStyle = '';
+  
+  if (user.expire === 'forever' || user.expire === '终身会员' || user.expire === '终身') {
     expireText = '终身会员';
+    expireStyle = 'color: #34c759; font-weight: 600;';
   } else if (user.expire) {
-    expireText = user.expire;
+    if (isExpired) {
+      expireText = `${user.expire} (已过期)`;
+      expireStyle = 'color: #ff3b30; font-weight: 600;';
+    } else {
+      expireText = user.expire;
+      expireStyle = 'color: #333;';
+    }
   }
   wrapper.innerHTML = `
     <div class="profile-header" style="display:flex;align-items:center;gap:18px;margin-bottom:28px;">
@@ -78,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
     <div class="profile-info-row"><div class="profile-info-label">会员等级</div><div class="profile-info-value ${vipClass}">${vipText}</div></div>
-    <div class="profile-info-row"><div class="profile-info-label">到期时间</div><div class="profile-info-value">${expireText}</div></div>
+    <div class="profile-info-row"><div class="profile-info-label">到期时间</div><div class="profile-info-value" style="${expireStyle}">${expireText}</div></div>
     <div class="profile-info-row"><div class="profile-info-label">用户名</div><div class="profile-info-value">${user.name || '-'}</div></div>
     <div class="profile-info-row"><div class="profile-info-label">账号</div><div class="profile-info-value">${user.username || '-'}</div></div>
     <div class="profile-info-row"><div class="profile-info-label">密码</div><div class="profile-info-value"><span class="profile-password" id="profilePassword">******</span><button class="profile-show-btn" id="showPwdBtn">显示</button></div></div>
