@@ -42,7 +42,7 @@ function getClientIP(req) {
 export default async function handler(req, res) {
   // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {
@@ -176,8 +176,37 @@ export default async function handler(req, res) {
         total: records.length
       });
 
+    } else if (req.method === 'DELETE') {
+      // 清除用户登录记录
+      const { username } = req.query;
+      
+      if (!username) {
+        return res.status(400).json({ error: '缺少用户名' });
+      }
+
+      const key = `${TRACKING_KEY_PREFIX}${username}`;
+      
+      // 删除记录（使用 POST 方法设置 null 值来删除）
+      const deleteResponse = await fetch(`${apiUrl}/set/${key}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(null)
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error('Failed to delete tracking data');
+      }
+
+      return res.status(200).json({ 
+        success: true,
+        message: '登录记录已清除'
+      });
+
     } else {
-      res.setHeader('Allow', ['GET', 'POST']);
+      res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
       return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 

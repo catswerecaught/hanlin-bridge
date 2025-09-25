@@ -50,6 +50,12 @@ class UserTrackingModal {
               加载中...
             </div>
           </div>
+          
+          <div style="margin-top:16px;text-align:center;border-top:1px solid #e0e0e0;padding-top:16px;">
+            <button id="clearTrackingBtn" style="background:#ff3b30;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;">
+              🗑️ 清除登录记录
+            </button>
+          </div>
         </div>
       </div>
       <style>
@@ -88,6 +94,11 @@ class UserTrackingModal {
       if (e.target === this.modal) {
         this.hideModal();
       }
+    });
+
+    // 绑定清除按钮
+    document.getElementById('clearTrackingBtn').addEventListener('click', () => {
+      this.clearTrackingData();
     });
   }
 
@@ -274,6 +285,51 @@ class UserTrackingModal {
     };
     
     return pageNames[path] || path || '未知页面';
+  }
+
+  async clearTrackingData() {
+    if (!this.currentUsername) return;
+    
+    if (!confirm(`确定要清除 ${this.currentUsername} 的所有登录记录吗？此操作不可撤销。`)) {
+      return;
+    }
+
+    const clearBtn = document.getElementById('clearTrackingBtn');
+    const originalText = clearBtn.textContent;
+    clearBtn.textContent = '清除中...';
+    clearBtn.disabled = true;
+
+    try {
+      const response = await fetch(`/api/user-tracking?username=${encodeURIComponent(this.currentUsername)}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('删除失败');
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // 重新加载数据显示空状态
+        document.getElementById('totalVisits').textContent = '0';
+        document.getElementById('lastVisit').textContent = '-';
+        document.getElementById('activeLocation').textContent = '-';
+        document.getElementById('trackingList').innerHTML = `
+          <div style="text-align:center;color:#999;padding:40px;">
+            暂无访问记录
+          </div>
+        `;
+        
+        alert('登录记录已清除');
+      } else {
+        throw new Error(data.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('清除记录失败:', error);
+      alert('清除失败: ' + error.message);
+    } finally {
+      clearBtn.textContent = originalText;
+      clearBtn.disabled = false;
+    }
   }
 
   hideModal() {
