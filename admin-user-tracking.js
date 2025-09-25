@@ -11,6 +11,8 @@ class UserTrackingModal {
     this.createModal();
     // 绑定头像点击事件
     this.bindAvatarClicks();
+    // 初始化红点显示
+    this.initRedDots();
   }
 
   createModal() {
@@ -53,7 +55,7 @@ class UserTrackingModal {
           
           <div style="margin-top:16px;text-align:center;border-top:1px solid #e0e0e0;padding-top:16px;">
             <button id="clearTrackingBtn" style="background:#ff3b30;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;">
-              🗑️ 清除登录记录
+              清除登录记录
             </button>
           </div>
         </div>
@@ -73,6 +75,23 @@ class UserTrackingModal {
         }
         .tracking-item:last-child {
           border-bottom: none;
+        }
+        .red-dot {
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          width: 8px;
+          height: 8px;
+          background: #ff3b30;
+          border-radius: 50%;
+          border: 1.5px solid white;
+          z-index: 10;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
         }
       </style>
     `;
@@ -176,6 +195,9 @@ class UserTrackingModal {
       
       // 显示记录列表
       this.displayRecords(records);
+      
+      // 标记为已读并移除红点
+      await this.markAsRead(username);
       
     } catch (error) {
       console.error('Error loading tracking data:', error);
@@ -329,6 +351,96 @@ class UserTrackingModal {
     } finally {
       clearBtn.textContent = originalText;
       clearBtn.disabled = false;
+    }
+  }
+
+  async initRedDots() {
+    // 获取账户管理面板中的所有用户
+    const panel = document.getElementById('accountManagePanel');
+    if (!panel) return;
+
+    // 收集所有用户名
+    const userElements = panel.querySelectorAll('[data-user]');
+    const usernames = Array.from(userElements).map(el => el.dataset.user).filter(Boolean);
+    
+    if (usernames.length === 0) return;
+
+    try {
+      // 批量检查用户状态
+      const response = await fetch(`/api/tracking-status?usernames=${usernames.join(',')}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const statusMap = data.status;
+
+      // 为每个有新记录的用户添加红点
+      userElements.forEach(userEl => {
+        const username = userEl.dataset.user;
+        const status = statusMap[username];
+        
+        if (status && status.hasNewRecords) {
+          this.addRedDot(username);
+        } else {
+          this.removeRedDot(username);
+        }
+      });
+
+    } catch (error) {
+      console.error('Failed to load user status:', error);
+    }
+  }
+
+  addRedDot(username) {
+    // 找到对应用户的头像
+    const userElement = document.querySelector(`[data-user="${username}"]`);
+    if (!userElement) return;
+
+    const avatar = userElement.closest('div').querySelector('img');
+    if (!avatar) return;
+
+    // 确保头像容器是相对定位
+    const avatarContainer = avatar.parentElement;
+    const computedStyle = window.getComputedStyle(avatarContainer);
+    if (computedStyle.position === 'static') {
+      avatarContainer.style.position = 'relative';
+    }
+
+    // 移除已存在的红点
+    this.removeRedDot(username);
+
+    // 添加红点
+    const redDot = document.createElement('div');
+    redDot.className = 'red-dot';
+    redDot.dataset.username = username;
+    avatarContainer.appendChild(redDot);
+  }
+
+  removeRedDot(username) {
+    const existingDot = document.querySelector(`.red-dot[data-username="${username}"]`);
+    if (existingDot) {
+      existingDot.remove();
+    }
+  }
+
+  async markAsRead(username) {
+    try {
+      const response = await fetch('/api/user-tracking', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: username,
+          action: 'mark_read'
+        })
+      });
+
+      if (response.ok) {
+        // 移除红点
+        this.removeRedDot(username);
+      }
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
     }
   }
 

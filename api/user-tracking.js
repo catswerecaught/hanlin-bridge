@@ -42,7 +42,7 @@ function getClientIP(req) {
 export default async function handler(req, res) {
   // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {
@@ -168,12 +168,54 @@ export default async function handler(req, res) {
       
       const records = Array.isArray(parsed) ? parsed : [];
       
+      // 检查是否有新记录（获取最后已读时间）
+      const readKey = `user-tracking-read-${username}`;
+      const readResponse = await fetch(`${apiUrl}/get/${readKey}`, {
+        headers: { 'Authorization': `Bearer ${apiToken}` }
+      });
+
+      let hasNewRecords = false;
+      let lastReadAt = null;
+
+      if (readResponse.ok) {
+        const readData = await readResponse.json();
+        if (readData.result) {
+          let readInfo = readData.result;
+          if (typeof readInfo === 'string') {
+            try { readInfo = JSON.parse(readInfo); } catch {}
+          }
+          if (readInfo && typeof readInfo === 'object' && 'value' in readInfo) {
+            readInfo = readInfo.value;
+          }
+          if (typeof readInfo === 'string') {
+            try { readInfo = JSON.parse(readInfo); } catch {}
+          }
+          
+          if (readInfo && readInfo.lastReadAt) {
+            lastReadAt = readInfo.lastReadAt;
+            // 检查是否有比最后已读时间更新的记录
+            const lastReadTime = new Date(lastReadAt);
+            hasNewRecords = records.some(record => 
+              record.timestamp && new Date(record.timestamp) > lastReadTime
+            );
+          } else {
+            hasNewRecords = records.length > 0;
+          }
+        } else {
+          hasNewRecords = records.length > 0;
+        }
+      } else {
+        hasNewRecords = records.length > 0;
+      }
+      
       // 限制返回数量
       const limitedRecords = records.slice(0, parseInt(limit));
 
       return res.status(200).json({ 
         records: limitedRecords,
-        total: records.length
+        total: records.length,
+        hasNewRecords,
+        lastReadAt
       });
 
     } else if (req.method === 'DELETE') {
@@ -205,8 +247,41 @@ export default async function handler(req, res) {
         message: '登录记录已清除'
       });
 
+    } else if (req.method === 'PUT') {
+      // 标记用户记录为已读
+      const { username, action } = req.body;
+      
+      if (!username || action !== 'mark_read') {
+        return res.status(400).json({ error: '参数无效' });
+      }
+
+      // 存储已读标记，格式：user-tracking-read-{username}
+      const readKey = `user-tracking-read-${username}`;
+      const readData = {
+        lastReadAt: new Date().toISOString(),
+        readBy: 'admin' // 可以扩展为具体的管理员用户名
+      };
+
+      const markResponse = await fetch(`${apiUrl}/set/${readKey}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ value: readData })
+      });
+
+      if (!markResponse.ok) {
+        throw new Error('Failed to mark as read');
+      }
+
+      return res.status(200).json({ 
+        success: true,
+        message: '已标记为已读'
+      });
+
     } else {
-      res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
       return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
