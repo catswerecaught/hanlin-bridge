@@ -90,6 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('找到存储的用户数据:', userData);
                 // 从users数组中找到完整的用户信息，找不到则直接返回存储对象
                 const foundUser = users.find(user => user.username === userData.username || user.name === userData.username) || userData;
+                
+                // 为特定用户添加supreme权限
+                if (foundUser.username === 'taosir' || foundUser.username === 'hanlinbridge') {
+                    foundUser.supreme = true;
+                }
+                
                 console.log('匹配到的用户:', foundUser);
                 return foundUser;
             } catch (e) {
