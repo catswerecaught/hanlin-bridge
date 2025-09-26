@@ -225,18 +225,40 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
         let userPoints = 1000;
         if (pointsRes.ok) {
           const { result } = await pointsRes.json();
+          console.log('用户积分原始数据:', { userPointsKey, result });
           if (result) {
-            const data = typeof result === 'string' ? JSON.parse(result) : result;
-            userPoints = data.points || 1000;
+            let data = result;
+            try {
+              // 第一层解析
+              if (typeof data === 'string') {
+                data = JSON.parse(data);
+              }
+              // 检查是否有value字段（Upstash包装）
+              if (data && typeof data === 'object' && 'value' in data) {
+                data = data.value;
+                if (typeof data === 'string') {
+                  data = JSON.parse(data);
+                }
+              }
+              console.log('解析后的用户积分数据:', data);
+              userPoints = data.points || 1000;
+            } catch (e) {
+              console.error('解析用户积分失败:', e);
+              userPoints = 1000;
+            }
           }
         }
+        
+        console.log('当前用户积分:', userPoints, '捐助金额:', amount);
         
         if (userPoints < amount) {
           return res.status(400).json({ message: '积分不足' });
         }
         
         userPoints -= amount;
-        await fetch(`${apiUrl}/set/${userPointsKey}`, {
+        console.log('扣除后用户积分:', userPoints);
+        
+        const savePointsRes = await fetch(`${apiUrl}/set/${userPointsKey}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiToken}`,
@@ -244,6 +266,12 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           },
           body: JSON.stringify({ value: JSON.stringify({ points: userPoints }) })
         });
+        
+        if (!savePointsRes.ok) {
+          console.error('保存用户积分失败:', await savePointsRes.text());
+          throw new Error('保存用户积分失败');
+        }
+        console.log('用户积分保存成功');
         
         const now = new Date();
         const monthKey = `${CHARITY_KEY_PREFIX}${now.getFullYear()}-${now.getMonth() + 1}`;
@@ -380,9 +408,27 @@ async function handleUserPointsRequest(req, res, apiUrl, apiToken, username) {
     let points = 1000;
     if (pointsRes.ok) {
       const { result } = await pointsRes.json();
+      console.log('用户积分查询原始数据:', { userPointsKey, result });
       if (result) {
-        const data = typeof result === 'string' ? JSON.parse(result) : result;
-        points = data.points || 1000;
+        let data = result;
+        try {
+          // 第一层解析
+          if (typeof data === 'string') {
+            data = JSON.parse(data);
+          }
+          // 检查是否有value字段（Upstash包装）
+          if (data && typeof data === 'object' && 'value' in data) {
+            data = data.value;
+            if (typeof data === 'string') {
+              data = JSON.parse(data);
+            }
+          }
+          console.log('解析后的用户积分查询数据:', data);
+          points = data.points || 1000;
+        } catch (e) {
+          console.error('解析用户积分查询失败:', e);
+          points = 1000;
+        }
       }
     } else {
       await fetch(`${apiUrl}/set/${userPointsKey}`, {
