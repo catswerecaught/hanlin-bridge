@@ -4,6 +4,28 @@ const TREND_KEY = 'trend-doc-data';
 const CHARITY_KEY_PREFIX = 'charity-';
 const USER_POINTS_KEY_PREFIX = 'user-points-';
 
+// 卡种等级与门槛（与health.js保持一致）
+const CARD_LEVELS = [
+  { type: '大众M1', threshold: 0 },
+  { type: '大众M2', threshold: 1000 },
+  { type: '金卡M1', threshold: 50000 },
+  { type: '金卡M2', threshold: 200000 },
+  { type: '金玉兰M1', threshold: 500000 },
+  { type: '金玉兰M2', threshold: 2000000 },
+  { type: '金玉兰M3', threshold: 5000000 },
+  { type: '至臻明珠M1', threshold: 10000000 },
+  { type: '至臻明珠M2', threshold: 50000000 },
+  { type: '至臻明珠M3', threshold: 100000000 },
+];
+
+function getCardType(amount) {
+  let card = CARD_LEVELS[0].type;
+  for (const level of CARD_LEVELS) {
+    if (amount >= level.threshold) card = level.type; else break;
+  }
+  return card;
+}
+
 export default async function handler(req, res) {
   const apiUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const apiToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -217,34 +239,35 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
     
     if (action === 'donate') {
       try {
-        const userPointsKey = `${USER_POINTS_KEY_PREFIX}${username}`;
-        const pointsRes = await fetch(`${apiUrl}/get/${userPointsKey}`, {
+        // 使用与health.js相同的balance系统
+        const balanceKey = `balance-${username}`;
+        const balanceRes = await fetch(`${apiUrl}/get/${balanceKey}`, {
           headers: { Authorization: `Bearer ${apiToken}` }
         });
         
-        let userPoints = 1000;
-        if (pointsRes.ok) {
-          const { result } = await pointsRes.json();
-          console.log('用户积分原始数据:', { userPointsKey, result });
+        let userPoints = 0;
+        if (balanceRes.ok) {
+          const { result } = await balanceRes.json();
+          console.log('用户积分原始数据:', { balanceKey, result });
           if (result) {
             let data = result;
             try {
-              // 第一层解析
+              // 解析Upstash数据结构
+              if (data && typeof data === 'object' && 'value' in data) {
+                data = data.value;
+              }
               if (typeof data === 'string') {
                 data = JSON.parse(data);
               }
-              // 检查是否有value字段（Upstash包装）
-              if (data && typeof data === 'object' && 'value' in data) {
+              // 检查嵌套的value结构
+              while (data && data.value) {
                 data = data.value;
-                if (typeof data === 'string') {
-                  data = JSON.parse(data);
-                }
               }
               console.log('解析后的用户积分数据:', data);
-              userPoints = data.points || 1000;
+              userPoints = Number(data?.amount ?? 0);
             } catch (e) {
               console.error('解析用户积分失败:', e);
-              userPoints = 1000;
+              userPoints = 0;
             }
           }
         }
@@ -258,17 +281,23 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
         userPoints -= amount;
         console.log('扣除后用户积分:', userPoints);
         
-        const savePointsRes = await fetch(`${apiUrl}/set/${userPointsKey}`, {
+        // 保存到balance系统，与health.js保持一致
+        const saveBalanceRes = await fetch(`${apiUrl}/set/${balanceKey}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ value: JSON.stringify({ points: userPoints }) })
+          body: JSON.stringify({ 
+            value: { 
+              amount: userPoints, 
+              cardType: getCardType(userPoints) 
+            } 
+          })
         });
         
-        if (!savePointsRes.ok) {
-          console.error('保存用户积分失败:', await savePointsRes.text());
+        if (!saveBalanceRes.ok) {
+          console.error('保存用户积分失败:', await saveBalanceRes.text());
           throw new Error('保存用户积分失败');
         }
         console.log('用户积分保存成功');

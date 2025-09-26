@@ -174,10 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function getUserPoints(username) {
         try {
-            const response = await fetch(`/api/trend?type=userPoints&username=${username}`);
+            const response = await fetch(`/api/health?service=balance&user=${username}`);
             if (response.ok) {
                 const data = await response.json();
-                return data.points || 0;
+                return data.amount || 0;
             }
         } catch (error) {
             console.error('获取用户积分失败:', error);
