@@ -15,9 +15,15 @@ export default async function handler(req, res) {
   }
 
   // 处理公益相关请求
-  const { type, username } = req.query;
+  const queryType = req.query.type;
+  const bodyType = req.body ? req.body.type : null;
+  const type = queryType || bodyType;
+  const username = req.query.username;
+  
+  console.log('API请求调试:', { method: req.method, queryType, bodyType, type, body: req.body });
   
   if (type === 'charity') {
+    console.log('处理公益请求');
     return handleCharityRequest(req, res, apiUrl, apiToken);
   }
   
@@ -109,6 +115,8 @@ export default async function handler(req, res) {
 
 // 处理公益请求
 async function handleCharityRequest(req, res, apiUrl, apiToken) {
+  console.log('handleCharityRequest调用:', { method: req.method, body: req.body });
+  
   if (req.method === 'GET') {
     const now = new Date();
     const monthKey = `${CHARITY_KEY_PREFIX}${now.getFullYear()}-${now.getMonth() + 1}`;
