@@ -17,12 +17,12 @@
 }
 
 .charity-left {
-    flex: 0 0 480px;
+    flex: 0 0 465px;
     z-index: 1;
 }
 
 .charity-right {
-    flex: 0 0 520px;
+    flex: 0 0 505px;
     z-index: 2;
     margin-left: 1px;
 }
@@ -317,6 +317,19 @@
     color: #ffc107;
 }
 
+.charity-image {
+    margin-top: 30px;
+}
+
+.charity-pic {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
 @media (max-width: 1200px) {
     .charity-container {
         max-width: 1100px;
@@ -324,11 +337,11 @@
     }
     
     .charity-left {
-        flex: 0 0 450px;
+        flex: 0 0 435px;
     }
     
     .charity-right {
-        flex: 0 0 480px;
+        flex: 0 0 465px;
         margin-left: 1px;
     }
 }
@@ -340,11 +353,11 @@
     }
     
     .charity-left {
-        flex: 0 0 420px;
+        flex: 0 0 405px;
     }
     
     .charity-right {
-        flex: 0 0 440px;
+        flex: 0 0 425px;
         margin-left: 1px;
     }
 }
