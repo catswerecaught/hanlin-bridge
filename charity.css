@@ -24,7 +24,7 @@
 .charity-right {
     flex: 0 0 450px;
     z-index: 2;
-    margin-left: 40px;
+    margin-left: 20px;
 }
 
 .charity-header {
@@ -61,6 +61,16 @@
     font-size: 1.2rem;
     margin-bottom: 25px;
     color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.charity-icon {
+    width: 24px;
+    height: 24px;
 }
 
 .progress-bar {
@@ -87,23 +97,40 @@
 }
 
 .progress-current, .progress-target {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.progress-current span, .progress-target span {
+.progress-current {
+    align-items: flex-start;
+    color: #ffc107;
+}
+
+.progress-target {
+    align-items: flex-end;
+}
+
+.progress-amount {
     font-size: 1.8rem;
     font-weight: 700;
-    display: block;
-    margin-bottom: 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.progress-amount span {
+    font-size: 1.8rem;
+}
+
+.progress-amount .unit {
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .progress-current small, .progress-target small {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.6);
-}
-
-.progress-current {
-    color: #ffc107;
 }
 
 .donation-section {
