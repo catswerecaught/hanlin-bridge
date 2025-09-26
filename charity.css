@@ -1,7 +1,7 @@
 /* 公益页面样式 */
 .charity-main {
     min-height: 100vh;
-    padding: 80px 20px 40px;
+    padding: 20px 20px 40px;
     background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%);
     color: #fff;
 }
@@ -152,7 +152,7 @@
     border-radius: 20px;
     padding: 40px;
     margin-bottom: 40px;
-    margin-top: 30px;
+    margin-top: 40px;
     color: #333;
     position: relative;
     width: 100%;
