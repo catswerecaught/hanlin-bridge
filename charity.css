@@ -12,16 +12,21 @@
     display: flex;
     gap: 60px;
     align-items: flex-start;
+    position: relative;
 }
 
 .charity-left {
     flex: 1;
+    min-width: 0;
     max-width: 500px;
+    z-index: 1;
 }
 
 .charity-right {
     flex: 1;
+    min-width: 0;
     max-width: 500px;
+    z-index: 2;
 }
 
 .charity-header {
@@ -109,6 +114,9 @@
     padding: 30px;
     margin-bottom: 40px;
     color: #333;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .donation-tabs {

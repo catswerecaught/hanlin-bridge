@@ -138,13 +138,30 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
       let monthlyTotal = 0;
       if (monthRes.ok) {
         const { result } = await monthRes.json();
-        console.log('读取月度数据:', { monthKey, result });
+        console.log('读取月度数据原始结果:', { monthKey, result });
         if (result) {
-          const data = typeof result === 'string' ? JSON.parse(result) : result;
-          monthlyTotal = data.total || 0;
+          // Upstash数据可能需要多层解析
+          let data = result;
+          try {
+            // 第一层解析
+            if (typeof data === 'string') {
+              data = JSON.parse(data);
+            }
+            // 检查是否有value字段（Upstash包装）
+            if (data && typeof data === 'object' && 'value' in data) {
+              data = data.value;
+              if (typeof data === 'string') {
+                data = JSON.parse(data);
+              }
+            }
+            console.log('解析后的月度数据:', data);
+            monthlyTotal = data.total || 0;
+          } catch (e) {
+            console.error('解析月度数据失败:', e, result);
+          }
         }
       }
-      console.log('当前月度总额:', monthlyTotal);
+      console.log('最终月度总额:', monthlyTotal);
       
       const donorsKey = `${CHARITY_KEY_PREFIX}donors`;
       const donorsRes = await fetch(`${apiUrl}/get/${donorsKey}`, {
@@ -154,9 +171,26 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
       let recentDonors = [];
       if (donorsRes.ok) {
         const { result } = await donorsRes.json();
+        console.log('读取捐助者数据原始结果:', { donorsKey, result });
         if (result) {
-          const data = typeof result === 'string' ? JSON.parse(result) : result;
-          recentDonors = data.donors || [];
+          let data = result;
+          try {
+            // 第一层解析
+            if (typeof data === 'string') {
+              data = JSON.parse(data);
+            }
+            // 检查是否有value字段（Upstash包装）
+            if (data && typeof data === 'object' && 'value' in data) {
+              data = data.value;
+              if (typeof data === 'string') {
+                data = JSON.parse(data);
+              }
+            }
+            console.log('解析后的捐助者数据:', data);
+            recentDonors = data.donors || [];
+          } catch (e) {
+            console.error('解析捐助者数据失败:', e, result);
+          }
         }
       }
       
@@ -221,9 +255,23 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
         let monthlyTotal = 0;
         if (monthRes.ok) {
           const { result } = await monthRes.json();
+          console.log('POST-读取现有月度数据:', result);
           if (result) {
-            const data = typeof result === 'string' ? JSON.parse(result) : result;
-            monthlyTotal = data.total || 0;
+            let data = result;
+            try {
+              if (typeof data === 'string') {
+                data = JSON.parse(data);
+              }
+              if (data && typeof data === 'object' && 'value' in data) {
+                data = data.value;
+                if (typeof data === 'string') {
+                  data = JSON.parse(data);
+                }
+              }
+              monthlyTotal = data.total || 0;
+            } catch (e) {
+              console.error('POST-解析现有月度数据失败:', e);
+            }
           }
         }
         
@@ -252,9 +300,23 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
         let donors = [];
         if (donorsRes.ok) {
           const { result } = await donorsRes.json();
+          console.log('POST-读取现有捐助者数据:', result);
           if (result) {
-            const data = typeof result === 'string' ? JSON.parse(result) : result;
-            donors = data.donors || [];
+            let data = result;
+            try {
+              if (typeof data === 'string') {
+                data = JSON.parse(data);
+              }
+              if (data && typeof data === 'object' && 'value' in data) {
+                data = data.value;
+                if (typeof data === 'string') {
+                  data = JSON.parse(data);
+                }
+              }
+              donors = data.donors || [];
+            } catch (e) {
+              console.error('POST-解析现有捐助者数据失败:', e);
+            }
           }
         }
         
