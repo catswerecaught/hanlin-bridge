@@ -214,24 +214,27 @@
         border-radius: 12px !important;
       }
       /* 手机端导航栏优化 */
-      .main-nav ul {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-      }
-      .main-nav ul li:not(.nav-highlight) {
-        display: none;
-      }
-      .main-nav ul li:nth-child(2), /* 首页 */
-      .main-nav ul li:nth-child(5), /* 灵凝 */
-      .main-nav ul li:nth-child(6), /* 定制 */
-      .main-nav ul li:nth-child(9) { /* 社媒 */
-        display: block !important;
-      }
-      .main-nav ul li a {
-        font-size: 14px;
-        padding: 8px 12px;
+      @media (max-width: 768px) {
+        .main-nav ul {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 4px;
+        }
+        .main-nav ul li:not(.nav-highlight) {
+          display: none;
+        }
+        .main-nav ul li:nth-child(2), /* 首页 */
+        .main-nav ul li:nth-child(5), /* 灵凝 */
+        .main-nav ul li:nth-child(6), /* 定制 */
+        .main-nav ul li:nth-child(9), /* 社媒 */
+        .main-nav ul li:nth-child(11) { /* 公益 */
+          display: block !important;
+        }
+        .main-nav ul li a {
+          font-size: 12px;
+          padding: 6px 8px;
+        }
       }
     }
   </style>
@@ -253,6 +256,7 @@
           <li><a href="cooperation.html">新闻</a></li>
           <li><a href="socialmedia.html">社媒</a></li>
           <li><a href="email.html">邮件</a></li>
+          <li><a href="charity.html">公益</a></li>
         </ul>
       </nav>
       <div class="user-avatar" id="userAvatar">
@@ -260,6 +264,7 @@
       </div>
     </div>
   </header>
+
   <div class="login-modal" id="loginModal">
     <div class="login-modal-content">
       <span class="login-close-btn" id="loginCloseBtn">&times;</span>
