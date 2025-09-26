@@ -392,8 +392,8 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           anonymous,
           timestamp: Date.now()
         });
-        // 只保留最近10条记录
-        donors = donors.slice(0, 10);
+        // 只保留最近3条记录
+        donors = donors.slice(0, 3);
         
         console.log('保存捐助者列表:', { donorsKey, donors });
         

@@ -17,12 +17,12 @@
 }
 
 .charity-left {
-    flex: 0 0 465px;
+    flex: 0 0 455px;
     z-index: 1;
 }
 
 .charity-right {
-    flex: 0 0 505px;
+    flex: 0 0 495px;
     z-index: 2;
     margin-left: 1px;
 }
@@ -337,11 +337,11 @@
     }
     
     .charity-left {
-        flex: 0 0 435px;
+        flex: 0 0 425px;
     }
     
     .charity-right {
-        flex: 0 0 465px;
+        flex: 0 0 455px;
         margin-left: 1px;
     }
 }
@@ -353,11 +353,11 @@
     }
     
     .charity-left {
-        flex: 0 0 405px;
+        flex: 0 0 395px;
     }
     
     .charity-right {
-        flex: 0 0 425px;
+        flex: 0 0 415px;
         margin-left: 1px;
     }
 }
