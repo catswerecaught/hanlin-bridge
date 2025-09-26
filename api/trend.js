@@ -115,6 +115,15 @@ export default async function handler(req, res) {
 
 // 处理公益请求
 async function handleCharityRequest(req, res, apiUrl, apiToken) {
+  // 设置CORS头
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   console.log('handleCharityRequest调用:', { method: req.method, body: req.body });
   
   if (req.method === 'GET') {
@@ -157,6 +166,18 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
     }
   } else if (req.method === 'POST') {
     const { action, username, amount, anonymous } = req.body;
+    
+    console.log('POST请求数据:', { action, username, amount, anonymous });
+    
+    if (action !== 'donate') {
+      console.log('无效的action:', action);
+      return res.status(400).json({ error: '无效的操作类型' });
+    }
+    
+    if (!username || !amount) {
+      console.log('缺少必要参数:', { username, amount });
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
     
     if (action === 'donate') {
       try {
