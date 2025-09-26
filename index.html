@@ -141,18 +141,18 @@
     const vipBenefits = document.getElementById('hanlinVipBenefits');
     vipBtn.addEventListener('click', function() {
         if (vipBenefits.style.display === 'none') {
-            vipBenefits.style.display = '';
+            vipBenefits.style.display = 'block';
             vipBenefits.style.maxHeight = vipBenefits.scrollHeight + 'px';
+            vipBenefits.style.opacity = '1';
             setTimeout(()=>{
                 document.getElementById('hanlinVipSection').scrollIntoView({behavior: 'smooth', block: 'center'});
             }, 100);
         } else {
             vipBenefits.style.maxHeight = '0';
-            vipBenefits.style.opacity = 0;
+            vipBenefits.style.opacity = '0';
             setTimeout(()=>{vipBenefits.style.display = 'none';}, 250);
         }
     });
     </script>
-    <script src="user-tracking.js"></script>
 </body>
 </html>
