@@ -138,11 +138,13 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
       let monthlyTotal = 0;
       if (monthRes.ok) {
         const { result } = await monthRes.json();
+        console.log('读取月度数据:', { monthKey, result });
         if (result) {
           const data = typeof result === 'string' ? JSON.parse(result) : result;
           monthlyTotal = data.total || 0;
         }
       }
+      console.log('当前月度总额:', monthlyTotal);
       
       const donorsKey = `${CHARITY_KEY_PREFIX}donors`;
       const donorsRes = await fetch(`${apiUrl}/get/${donorsKey}`, {
@@ -226,7 +228,9 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
         }
         
         monthlyTotal += amount;
-        await fetch(`${apiUrl}/set/${monthKey}`, {
+        console.log('保存月度总额:', { monthKey, monthlyTotal });
+        
+        const saveMonthRes = await fetch(`${apiUrl}/set/${monthKey}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiToken}`,
@@ -234,6 +238,11 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           },
           body: JSON.stringify({ value: JSON.stringify({ total: monthlyTotal }) })
         });
+        
+        if (!saveMonthRes.ok) {
+          console.error('保存月度总额失败:', await saveMonthRes.text());
+          throw new Error('保存月度总额失败');
+        }
         
         const donorsKey = `${CHARITY_KEY_PREFIX}donors`;
         const donorsRes = await fetch(`${apiUrl}/get/${donorsKey}`, {
@@ -264,10 +273,12 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           anonymous,
           timestamp: Date.now()
         });
-        
+        // 只保留最近10条记录
         donors = donors.slice(0, 10);
         
-        await fetch(`${apiUrl}/set/${donorsKey}`, {
+        console.log('保存捐助者列表:', { donorsKey, donors });
+        
+        const saveDonorsRes = await fetch(`${apiUrl}/set/${donorsKey}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiToken}`,
@@ -275,6 +286,11 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           },
           body: JSON.stringify({ value: JSON.stringify({ donors }) })
         });
+        
+        if (!saveDonorsRes.ok) {
+          console.error('保存捐助者列表失败:', await saveDonorsRes.text());
+          throw new Error('保存捐助者列表失败');
+        }
         
         res.status(200).json({ success: true });
         

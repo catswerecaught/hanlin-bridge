@@ -182,11 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 alert(`感谢您的捐助！已成功捐助 ${amount} 积分`);
                 
-                // 更新页面数据
-                monthlyTotal += amount;
-                updateProgress();
-                
-                // 重新加载数据
+                // 重新加载数据（不要临时更新，直接从服务器获取最新数据）
                 await loadCharityData();
             } else {
                 const error = await response.json();
