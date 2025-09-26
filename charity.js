@@ -58,10 +58,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressFill = document.getElementById('progressFill');
         
         currentEl.textContent = monthlyTotal.toLocaleString();
-        targetEl.textContent = (targetAmount - monthlyTotal).toLocaleString();
         
-        const percentage = Math.min((monthlyTotal / targetAmount) * 100, 100);
-        progressFill.style.width = percentage + '%';
+        // 如果捐款已达到或超过目标
+        if (monthlyTotal >= targetAmount) {
+            targetEl.textContent = '0';
+            progressFill.style.width = '100%';
+            
+            // 显示完成状态
+            const progressInfo = document.querySelector('.progress-info');
+            if (progressInfo && !document.querySelector('.completion-message')) {
+                const completionMsg = document.createElement('div');
+                completionMsg.className = 'completion-message';
+                completionMsg.innerHTML = '<span style="color: #4CAF50; font-weight: bold;">🎉 本月目标已达成！感谢您的爱心捐助！</span>';
+                progressInfo.appendChild(completionMsg);
+            }
+        } else {
+            targetEl.textContent = (targetAmount - monthlyTotal).toLocaleString();
+            const percentage = Math.min((monthlyTotal / targetAmount) * 100, 100);
+            progressFill.style.width = percentage + '%';
+        }
     }
     
     function displayDonors(donors) {

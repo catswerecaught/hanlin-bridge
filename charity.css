@@ -7,10 +7,10 @@
 }
 
 .charity-container {
-    max-width: 1400px;
+    max-width: 1500px;
     margin: 0 auto;
     display: flex;
-    gap: 120px;
+    gap: 20px;
     align-items: flex-start;
     position: relative;
     justify-content: center;
@@ -22,9 +22,9 @@
 }
 
 .charity-right {
-    flex: 0 0 450px;
+    flex: 0 0 520px;
     z-index: 2;
-    margin-left: 20px;
+    margin-left: 1px;
 }
 
 .charity-header {
@@ -133,11 +133,26 @@
     color: rgba(255, 255, 255, 0.6);
 }
 
+.completion-message {
+    margin-top: 15px;
+    text-align: center;
+    padding: 10px;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 8px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+}
+
 .donation-section {
     background: #fff;
     border-radius: 20px;
-    padding: 30px;
+    padding: 40px;
     margin-bottom: 40px;
+    margin-top: 30px;
     color: #333;
     position: relative;
     width: 100%;
@@ -239,6 +254,7 @@
     border-radius: 20px;
     padding: 30px;
     backdrop-filter: blur(10px);
+    margin-top: 0;
 }
 
 .recent-donors h3 {
@@ -301,10 +317,26 @@
     color: #ffc107;
 }
 
+@media (max-width: 1200px) {
+    .charity-container {
+        max-width: 1100px;
+        gap: 20px;
+    }
+    
+    .charity-left {
+        flex: 0 0 450px;
+    }
+    
+    .charity-right {
+        flex: 0 0 480px;
+        margin-left: 1px;
+    }
+}
+
 @media (max-width: 1024px) {
     .charity-container {
         max-width: 1000px;
-        gap: 80px;
+        gap: 20px;
     }
     
     .charity-left {
@@ -312,8 +344,8 @@
     }
     
     .charity-right {
-        flex: 0 0 400px;
-        margin-left: 20px;
+        flex: 0 0 440px;
+        margin-left: 1px;
     }
 }
 
