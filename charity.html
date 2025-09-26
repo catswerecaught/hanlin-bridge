@@ -34,58 +34,62 @@
 
     <main class="charity-main">
         <div class="charity-container">
-            <div class="charity-header">
-                <h1>为困境儿童筑起<br>"爱心之桥"。</h1>
-                <p>您的每一笔积分捐助都将化作帮力中国困境儿童的力量。每月达到指定积分额度后，翰林桥将向联合国儿童基金会驻华办事处捐款10元。您的可选择匿名捐款。我们相信："积善成德，而神明自得，圣心备焉"。</p>
-            </div>
-
-            <div class="charity-progress">
-                <h3>🔵 翰林桥月捐活动 <span id="currentMonth">2025年9月</span></h3>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-info">
-                    <div class="progress-current">
-                        <span id="currentAmount">0</span>积分
-                        <small>已筹集</small>
-                    </div>
-                    <div class="progress-target">
-                        <span id="targetAmount">5,250</span>积分
-                        <small>距离目标</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="donation-section">
-                <div class="donation-tabs">
-                    <button class="donation-tab active">一次捐助</button>
+            <div class="charity-left">
+                <div class="charity-header">
+                    <h1>为困境儿童筑起"爱心之桥"。</h1>
+                    <p>您的每一笔积分捐助都将化作帮力中国困境儿童的力量。每月达到指定积分额度后，翰林桥将向联合国儿童基金会驻华办事处捐款10元。您的可选择匿名捐款。我们相信："积善成德，而神明自得，圣心备焉"。</p>
                 </div>
 
-                <div class="donation-form">
-                    <h3>选择捐助金额</h3>
-                    <div class="amount-grid">
-                        <button class="amount-btn" data-amount="50">50 积分</button>
-                        <button class="amount-btn active" data-amount="100">100 积分</button>
-                        <button class="amount-btn" data-amount="150">150 积分</button>
-                        <button class="amount-btn" data-amount="200">200 积分</button>
-                        <input type="number" class="custom-amount" id="customAmount" placeholder="自定义金额" min="1" max="10000">
+                <div class="charity-progress">
+                    <h3>🔵 翰林桥月捐活动 <span id="currentMonth">2025年9月</span></h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
                     </div>
-
-                    <div class="donation-options">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="anonymousDonation">
-                            <span>匿名捐助</span>
-                        </label>
+                    <div class="progress-info">
+                        <div class="progress-current">
+                            <span id="currentAmount">0</span>积分
+                            <small>已筹集</small>
+                        </div>
+                        <div class="progress-target">
+                            <span id="targetAmount">5,250</span>积分
+                            <small>距离目标</small>
+                        </div>
                     </div>
-
-                    <button class="donate-btn" id="donateBtn">确认捐助</button>
                 </div>
             </div>
 
-            <div class="recent-donors">
-                <h3>最近的捐助者</h3>
-                <div class="donors-list" id="donorsList">
-                    <!-- 动态加载捐助者列表 -->
+            <div class="charity-right">
+                <div class="donation-section">
+                    <div class="donation-tabs">
+                        <button class="donation-tab active">一次捐助</button>
+                    </div>
+
+                    <div class="donation-form">
+                        <h3>选择捐助金额</h3>
+                        <div class="amount-grid">
+                            <button class="amount-btn" data-amount="50">50 积分</button>
+                            <button class="amount-btn active" data-amount="100">100 积分</button>
+                            <button class="amount-btn" data-amount="150">150 积分</button>
+                            <button class="amount-btn" data-amount="200">200 积分</button>
+                            <input type="number" class="custom-amount" id="customAmount" placeholder="自定义金额" min="1" max="10000">
+                        </div>
+
+                        <div class="donation-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="anonymousDonation">
+                                <span>匿名捐助</span>
+                            </label>
+                        </div>
+
+                        <button class="donate-btn" id="donateBtn">确认捐助</button>
+                    </div>
+                </div>
+
+                <div class="recent-donors">
+                    <h3>最近的捐助者</h3>
+                    <div class="donors-list" id="donorsList">
+                        <!-- 动态加载捐助者列表 -->
+                    </div>
                 </div>
             </div>
         </div>

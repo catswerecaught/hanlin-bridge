@@ -27,19 +27,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadCharityData() {
         try {
+            console.log('🔄 开始加载公益数据...');
             const response = await fetch('/api/trend?type=charity');
+            console.log('📊 API响应状态:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('💾 获取到的数据:', data);
                 
                 // 更新进度
                 monthlyTotal = data.monthlyTotal || 0;
+                console.log('📈 当前月度总额:', monthlyTotal);
                 updateProgress();
                 
                 // 显示最近捐助者
                 displayDonors(data.recentDonors || []);
+            } else {
+                console.error('❌ API响应失败:', response.status, response.statusText);
             }
         } catch (error) {
-            console.error('加载公益数据失败:', error);
+            console.error('💥 加载公益数据失败:', error);
             // 使用默认数据
             displayDonors([]);
         }

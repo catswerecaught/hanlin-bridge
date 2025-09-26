@@ -7,29 +7,42 @@
 }
 
 .charity-container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
+    display: flex;
+    gap: 60px;
+    align-items: flex-start;
+}
+
+.charity-left {
+    flex: 1;
+    max-width: 500px;
+}
+
+.charity-right {
+    flex: 1;
+    max-width: 500px;
 }
 
 .charity-header {
-    text-align: center;
-    margin-bottom: 60px;
+    text-align: left;
+    margin-bottom: 40px;
 }
 
 .charity-header h1 {
-    font-size: 3.5rem;
+    font-size: 3.2rem;
     font-weight: 700;
     line-height: 1.2;
     margin-bottom: 30px;
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
 }
 
 .charity-header p {
     font-size: 1.1rem;
     line-height: 1.8;
     color: rgba(255, 255, 255, 0.85);
-    max-width: 700px;
-    margin: 0 auto;
+    text-align: left;
 }
 
 .charity-progress {
@@ -278,8 +291,19 @@
 }
 
 @media (max-width: 768px) {
+    .charity-container {
+        flex-direction: column;
+        gap: 40px;
+    }
+    
+    .charity-left,
+    .charity-right {
+        max-width: none;
+    }
+    
     .charity-header h1 {
         font-size: 2.5rem;
+        white-space: normal;
     }
     
     .amount-grid {
