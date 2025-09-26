@@ -1,4 +1,6 @@
 // Removed verbose env logging to avoid leaking secrets in logs
+import fs from 'fs';
+import path from 'path';
 
 const TREND_KEY = 'trend-doc-data';
 const CHARITY_KEY_PREFIX = 'charity-';
@@ -24,6 +26,27 @@ function getCardType(amount) {
     if (amount >= level.threshold) card = level.type; else break;
   }
   return card;
+}
+
+// 读取用户数据
+function getUsersData() {
+  try {
+    const usersPath = path.join(process.cwd(), 'users.js');
+    const usersContent = fs.readFileSync(usersPath, 'utf-8');
+    // 提取users数组
+    const usersMatch = usersContent.match(/const users = \[([\s\S]*?)\];/);
+    if (usersMatch) {
+      const usersArrayString = `[${usersMatch[1]}]`;
+      return eval(usersArrayString);
+    }
+  } catch (e) {
+    console.error('读取users.js失败:', e);
+  }
+  // 回退到默认数据
+  return [
+    { name: 'Oliver Tao', username: 'taosir', avatar: 'images/user00001.jpg' },
+    { name: 'Tuebo Social', username: 'user00007', avatar: 'images/user00007.jpg' }
+  ];
 }
 
 export default async function handler(req, res) {
@@ -377,11 +400,7 @@ async function handleCharityRequest(req, res, apiUrl, apiToken) {
           }
         }
         
-        const users = [
-          { username: 'taosir', name: 'Oliver Tao', avatar: 'images/user00001.jpg' },
-          { username: 'user00002', name: '生物杨老师', avatar: 'images/user00002.jpg' },
-          { username: 'user00003', name: '化学孙老师', avatar: 'images/user00003.jpg' }
-        ];
+        const users = getUsersData();
         
         const user = users.find(u => u.username === username) || { username, name: username, avatar: 'images/login-default.png' };
         
