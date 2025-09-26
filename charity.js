@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
         donorsList.innerHTML = donors.map(donor => `
             <div class="donor-item">
                 <div class="donor-info">
-                    <img src="${donor.anonymous ? 'images/anonymous.png' : donor.avatar}" alt="${donor.name}" class="donor-avatar">
+                    <img src="${donor.anonymous ? 'images/anonymous.png' : donor.avatar}" alt="${donor.anonymous ? '匿名捐助者' : donor.name}" class="donor-avatar">
                     <div class="donor-details">
                         <div class="donor-name">${donor.anonymous ? '匿名捐助者' : donor.name}</div>
                         <div class="donor-time">${formatTime(donor.timestamp)}</div>
