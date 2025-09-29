@@ -35,11 +35,18 @@ export default async function handler(req, res) {
             fullMessage = `对话历史:\n${historyContext}\n\n当前用户消息: ${message}\n\n请基于以上对话历史回答用户的问题。`;
         }
 
-        const response = await callAIService(fullMessage);
+        // 优先调用外部AI服务，失败则优雅回退到备用AI，避免返回500
+        let aiResponse;
+        try {
+            aiResponse = await callAIService(fullMessage);
+        } catch (e) {
+            console.error('主AI服务调用失败，启用备用AI:', e);
+            aiResponse = await callBackupAI(message);
+        }
+
+        console.log('AI回复:', aiResponse);
         
-        console.log('AI回复:', response);
-        
-        res.status(200).json({ response });
+        res.status(200).json({ response: aiResponse });
         
     } catch (error) {
         console.error('AI聊天API错误:', error);

@@ -159,14 +159,14 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-radius: 18px;
     background: var(--card-background);
-    background-image: url('images/activity-placeholder.jpg');
+    background-image: url('images/activity-placeholder.jpg?v=20250930');
     background-size: cover;
     background-position: center;
     overflow: hidden;
 }
 
 .activity-wrapper.second {
-    background-image: url('images/activity-placeholder2.jpg');
+    background-image: url('images/activity-placeholder2.jpg?v=20250930');
 }
 
 .activity-card {
