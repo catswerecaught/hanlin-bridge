@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function init() {
         // 检查用户登录状态
-        checkLoginStatus();
+        await checkLoginStatus();
         
         // 初始化事件监听器
         initEventListeners();
@@ -69,9 +69,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function checkLoginStatus() {
+    async function checkLoginStatus() {
         const currentUser = getCurrentUser();
         if (currentUser) {
+            // 获取用户的最新会员信息
+            try {
+                const membershipResponse = await fetch(`/api/membership?username=${currentUser.username}`);
+                if (membershipResponse.ok) {
+                    const membershipData = await membershipResponse.json();
+                    currentUser.vip = membershipData.membership?.vip || null;
+                    currentUser.supreme = membershipData.membership?.supreme || false;
+                }
+            } catch (error) {
+                console.error('获取会员信息失败:', error);
+            }
+            
             socialData.currentUser = currentUser;
             updateUserAvatar();
         }
