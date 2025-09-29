@@ -13,7 +13,7 @@ const users = [
   { name: '用户11', username: 'user00011', password: '123456', avatar: 'images/user00011.jpg' },
   { name: '临时账户025', username: 'user00012', password: '123456', avatar: 'images/user00012.jpg' },
   { name: 'Sam Leung', username: 'user00013', password: '25637568', avatar: 'images/user00013.jpg' },
-  { name: '用户14', username: 'user00014', password: 'abcdef', avatar: 'images/user00014.jpg' },
+  { name: '临时账户014', username: 'user00014', password: 'garyhaha', avatar: 'images/user00014.jpg' },
   { name: '用户15', username: 'user00015', password: '888888', avatar: 'images/user00015.jpg' },
   { name: '用户16', username: 'user00016', password: '888888', avatar: 'images/user00016.jpg' },
   { name: '用户17', username: 'user00017', password: 'chaotianda', avatar: 'images/user00017.jpg' },
